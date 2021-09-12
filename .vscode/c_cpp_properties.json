@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "default",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/deps/entt/src",
+                "${workspaceFolder}/deps/glfw/include",
+                "${workspaceFolder}/deps/glm",
+                "${workspaceFolder}/deps/spdlog/include",
+                "${workspaceFolder}/deps/uvre/include",
+                "${workspaceFolder}/src"
+            ],
+            "defines": [
+                "GLFW_INCLUDE_NONE",
+                "UVRE_STATIC"
+            ],
+            "cppStandard": "c++17",
+            "cStandard": "c99"
+        }
+    ],
+    "version": 4
+}
