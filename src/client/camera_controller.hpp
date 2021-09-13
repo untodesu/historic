@@ -5,9 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <entt/entt.hpp>
 #include <math_types.hpp>
 
-struct Vertex {
-    float3_t position;
-    float2_t texcoord;
-};
+namespace camera_controller
+{
+void update(entt::registry &registry, float frametime);
+const float4x4_t &projviewMatrix();
+} // namespace camera_controller

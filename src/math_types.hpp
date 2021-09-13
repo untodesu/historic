@@ -21,16 +21,3 @@ using float4_t = glm::vec<4, float, glm::packed_highp>;
 using float4x4_t = glm::mat<4, 4, float, glm::packed_highp>;
 using floatquat_t = glm::qua<float, glm::packed_highp>;
 
-static constexpr const float2_t FLOAT2_ZERO = { 0.0f, 0.0f };
-static constexpr const float3_t FLOAT3_ZERO = { 0.0f, 0.0f, 0.0f };
-static constexpr const float4_t FLOAT4_ZERO = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-static constexpr const float2_t FLOAT2_IDENTITY = { 1.0f, 1.0f };
-static constexpr const float3_t FLOAT3_IDENTITY = { 1.0f, 1.0f, 1.0f };
-static constexpr const float4_t FLOAT4_IDENTITY = { 1.0f, 1.0f, 1.0f, 1.0f };
-static constexpr const float4x4_t FLOAT4X4_IDENTITY = glm::identity<float4x4_t>();
-static constexpr const floatquat_t FLOATQUAT_IDENTITY = glm::identity<floatquat_t>();
-
-static constexpr const float3_t FLOAT3_FORWARD = { 0.0f, 0.0f, -1.0f };
-static constexpr const float3_t FLOAT3_RIGHT = { 1.0f, 0.0f, 0.0f };
-static constexpr const float3_t FLOAT3_UP = { 0.0f, 1.0f, 0.0f };

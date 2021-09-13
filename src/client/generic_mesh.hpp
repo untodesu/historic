@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <math_types.hpp>
+#include <uvre/uvre.hpp>
 
-struct Vertex {
-    float3_t position;
-    float2_t texcoord;
+struct GenericMeshComponent {
+    uvre::Buffer *vbo;
+    uvre::Buffer *ibo;
+    size_t nv;
 };

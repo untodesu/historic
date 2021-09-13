@@ -29,3 +29,9 @@ add_executable(${vgame_target} "")
 target_compile_definitions(${vgame_target} PRIVATE GLFW_INCLUDE_NONE)
 target_link_libraries(${vgame_target} PRIVATE EnTT glm spdlog)
 add_subdirectory(src)
+
+if(MSVC)
+    # C4307 is being thrown EVERY FUCKING TIME the
+    # compiler traverses through EnTT headers. Annoying!
+    target_compile_options(${vgame_target} PRIVATE /wd4307)
+endif()

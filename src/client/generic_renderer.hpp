@@ -5,9 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <math_types.hpp>
+#include <entt/entt.hpp>
+#include <uvre/uvre.hpp>
 
-struct Vertex {
-    float3_t position;
-    float2_t texcoord;
-};
+namespace generic_renderer
+{
+void init(uvre::IRenderDevice *dp);
+void shutdown();
+void update(entt::registry &registry);
+} // namespace generic_renderer
