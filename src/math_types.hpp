@@ -15,22 +15,22 @@
 #include <stddef.h>
 #include <stdint.h>
 
-using float2 = glm::vec<2, float, glm::packed_highp>;
-using float3 = glm::vec<3, float, glm::packed_highp>;
-using float4 = glm::vec<4, float, glm::packed_highp>;
-using float4x4 = glm::mat<4, 4, float, glm::packed_highp>;
-using floatquat = glm::qua<float, glm::packed_highp>;
+using float2_t = glm::vec<2, float, glm::packed_highp>;
+using float3_t = glm::vec<3, float, glm::packed_highp>;
+using float4_t = glm::vec<4, float, glm::packed_highp>;
+using float4x4_t = glm::mat<4, 4, float, glm::packed_highp>;
+using floatquat_t = glm::qua<float, glm::packed_highp>;
 
-static constexpr const float2 FLOAT2_ZERO = { 0.0f, 0.0f };
-static constexpr const float3 FLOAT3_ZERO = { 0.0f, 0.0f, 0.0f };
-static constexpr const float4 FLOAT4_ZERO = { 0.0f, 0.0f, 0.0f, 0.0f };
+static constexpr const float2_t FLOAT2_ZERO = { 0.0f, 0.0f };
+static constexpr const float3_t FLOAT3_ZERO = { 0.0f, 0.0f, 0.0f };
+static constexpr const float4_t FLOAT4_ZERO = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-static constexpr const float2 FLOAT2_IDENTITY = { 1.0f, 1.0f };
-static constexpr const float3 FLOAT3_IDENTITY = { 1.0f, 1.0f, 1.0f };
-static constexpr const float4 FLOAT4_IDENTITY = { 1.0f, 1.0f, 1.0f, 1.0f };
-static constexpr const float4x4 FLOAT4X4_IDENTITY = glm::identity<float4x4>();
-static constexpr const floatquat FLOATQUAT_IDENTITY = glm::identity<floatquat>();
+static constexpr const float2_t FLOAT2_IDENTITY = { 1.0f, 1.0f };
+static constexpr const float3_t FLOAT3_IDENTITY = { 1.0f, 1.0f, 1.0f };
+static constexpr const float4_t FLOAT4_IDENTITY = { 1.0f, 1.0f, 1.0f, 1.0f };
+static constexpr const float4x4_t FLOAT4X4_IDENTITY = glm::identity<float4x4_t>();
+static constexpr const floatquat_t FLOATQUAT_IDENTITY = glm::identity<floatquat_t>();
 
-static constexpr const float3 FLOAT3_FORWARD = { 0.0f, 0.0f, -1.0f };
-static constexpr const float3 FLOAT3_RIGHT = { 1.0f, 0.0f, 0.0f };
-static constexpr const float3 FLOAT3_UP = { 0.0f, 1.0f, 0.0f };
+static constexpr const float3_t FLOAT3_FORWARD = { 0.0f, 0.0f, -1.0f };
+static constexpr const float3_t FLOAT3_RIGHT = { 1.0f, 0.0f, 0.0f };
+static constexpr const float3_t FLOAT3_UP = { 0.0f, 1.0f, 0.0f };
