@@ -171,6 +171,11 @@ void client_app::run()
         float frametime = curtime - lasttime;
         lasttime = curtime;
 
+        // This should be an easier way to exit
+        // than breaking my fingers to do alt+f4
+        if(input::isKeyJustPressed(GLFW_KEY_ESCAPE))
+            break;
+
         player_look::update(frametime);
         player_move::update(frametime);
         proj_view::update();
