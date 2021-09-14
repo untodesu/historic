@@ -5,9 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <math_types.hpp>
+#include <math_defs.hpp>
 
 struct Vertex {
-    float3_t position;
-    float2_t texcoord;
+    float3_t position { FLOAT3_ZERO };
+    float2_t texcoord { FLOAT2_ZERO };
 };

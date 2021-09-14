@@ -8,6 +8,7 @@
 #include <client/camera_controller.hpp>
 #include <client/input.hpp>
 #include <math_defs.hpp>
+#include <shared/transform.hpp>
 #include <spdlog/spdlog.h>
 
 // TODO: quake-ish CVar system to handle this.
@@ -30,8 +31,18 @@ void camera_controller::update(entt::registry &registry, float frametime)
     for(const auto [entity, camera] : active_group.each()) {
         float3_t position = camera.offset;
         floatquat_t orientation = floatquat_t(camera.angles);
-        projview = glm::perspective(camera.fov, camera.aspect, camera.z_near, camera.z_far);
-        projview = projview * glm::lookAt(position, position + orientation * FLOAT3_FORWARD, FLOAT3_UP);
+
+        // If the entity happens to also have a transform component,
+        // the position and orientation values are affected by it.
+        if(const TransformComponent *transform = registry.try_get<TransformComponent>(entity)) {
+            position += transform->position;
+            orientation *= transform->orientation;
+        }
+
+        projview = glm::perspective(camera.fov, camera.aspect, camera.z_near, camera.z_far) * glm::lookAt(position, position + orientation * FLOAT3_FORWARD, FLOAT3_UP);
+
+        // There shall be only one active camera
+        // during this frame, so we iterate once.
         return;
     }
 
