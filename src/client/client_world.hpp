@@ -5,9 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <math_defs.hpp>
+#include <entt/entt.hpp>
 
-struct TransformComponent {
-    float3_t position { FLOAT3_ZERO };
-    floatquat_t orientation { FLOATQUAT_IDENTITY };
-};
+namespace client_world
+{
+void init();
+void shutdown();
+entt::registry &registry();
+} // namespace client_world

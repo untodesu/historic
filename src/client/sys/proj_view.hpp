@@ -5,10 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <mathlib.hpp>
 
-// The most basic type of movement.
-// With this enabled, objects move with
-// constant velocity ignoring collision.
-struct NoclipMoveComponent {
-    float speed { 4.0f };
-};
+namespace proj_view
+{
+void update();
+const float4x4_t &get();
+} // namespace proj_view

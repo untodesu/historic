@@ -7,7 +7,7 @@
 #pragma once
 #include <uvre/uvre.hpp>
 
-struct GenericMeshComponent {
+struct GenericMeshComponent final {
     uvre::Buffer *vbo;
     uvre::Buffer *ibo;
     size_t nv;

@@ -4,12 +4,11 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <client/camera_controller.hpp>
-#include <client/generic_mesh.hpp>
-#include <client/generic_renderer.hpp>
+#include <client/comp/generic_mesh.hpp>
+#include <client/sys/generic_renderer.hpp>
+#include <client/sys/proj_view.hpp>
 #include <client/vertex.hpp>
 #include <fs.hpp>
-#include <math_defs.hpp>
 #include <spdlog/spdlog.h>
 
 struct alignas(16) UBufferData {
@@ -77,7 +76,7 @@ void generic_renderer::init(uvre::IRenderDevice *dp)
     pipeline_info.face_culling.enabled = false;
     pipeline_info.index_type = uvre::IndexType::INDEX16;
     pipeline_info.primitive_mode = uvre::PrimitiveMode::TRIANGLES;
-    pipeline_info.fill_mode = uvre::FillMode::WIREFRAME;
+    pipeline_info.fill_mode = uvre::FillMode::FILLED;
     pipeline_info.vertex_stride = sizeof(Vertex);
     pipeline_info.num_vertex_attribs = 2;
     pipeline_info.vertex_attribs = attributes;
@@ -121,7 +120,7 @@ void generic_renderer::update(entt::registry &registry)
     device->startRecording(commands);
 
     UBufferData ubuffer_data = {};
-    ubuffer_data.projview = camera_controller::projviewMatrix();
+    ubuffer_data.projview = proj_view::get();
     if(!commands->writeBuffer(ubuffer, offsetof(UBufferData, projview), sizeof(UBufferData::projview), &ubuffer_data.projview))
         std::terminate();
 

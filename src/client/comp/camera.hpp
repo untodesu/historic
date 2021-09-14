@@ -6,4 +6,9 @@
  */
 #pragma once
 
-struct PlayerComponent {};
+struct ActiveCameraComponent final {};
+struct CameraComponent final {
+    float fov;
+    float z_far;
+    float z_near;
+};

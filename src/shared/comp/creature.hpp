@@ -5,9 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <shared/world_defs.hpp>
+#include <mathlib.hpp>
 
-struct ChunkComponent {
-    chunkpos_t position { 0, 0, 0 };
-    voxel_t data[CHUNK_VOLUME];
+struct CreatureComponent final {
+    floatquat_t orientation { FLOATQUAT_IDENTITY };
+    float3_t position { FLOAT3_ZERO };
 };

@@ -5,9 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <mathlib.hpp>
+#include <shared/world.hpp>
 
-struct Vertex {
-    float3_t position { FLOAT3_ZERO };
-    float2_t texcoord { FLOAT2_ZERO };
+struct ChunkComponent final {
+    chunkpos_t position { 0, 0, 0 };
+    voxel_t data[CHUNK_VOLUME];
 };

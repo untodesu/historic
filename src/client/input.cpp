@@ -5,7 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <client/input.hpp>
-#include <math_defs.hpp>
 #include <limits>
 #include <spdlog/spdlog.h>
 

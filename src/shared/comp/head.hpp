@@ -4,5 +4,10 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <client/input.hpp>
-#include <client/movetype.hpp>
+#pragma once
+#include <mathlib.hpp>
+
+struct HeadComponent final {
+    float3_t angles { FLOAT3_ZERO };
+    float3_t offset { FLOAT3_ZERO };
+};

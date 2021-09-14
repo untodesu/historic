@@ -5,9 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <mathlib.hpp>
 
-struct Vertex {
-    float3_t position { FLOAT3_ZERO };
-    float2_t texcoord { FLOAT2_ZERO };
-};
+namespace player_look
+{
+void update(float frametime);
+} // namespace player_look

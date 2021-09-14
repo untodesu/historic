@@ -5,9 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <entt/entt.hpp>
 
-namespace move_controller
+namespace player_move
 {
-void update(entt::registry &registry);
-} // namespace move_controller
+void update(float frametime);
+} // namespace player_move
