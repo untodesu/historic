@@ -6,6 +6,7 @@
  */
 #include <client/client_app.hpp>
 #include <exception>
+#include <fs.hpp>
 #include <iostream>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -26,7 +27,9 @@ int main(int argc, char **argv)
     }
 
     spdlog::info("Hello wonderful world");
+    fs::init();
     client_app::run();
+    fs::shutdown();
 
     return 0;
 }
