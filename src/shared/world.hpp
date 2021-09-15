@@ -5,12 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <mathlib.hpp>
+#include <math/types.hpp>
+#include <math/util.hpp>
 
 constexpr static const size_t CHUNK_SIZE = 16;
 constexpr static const size_t CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE;
 constexpr static const size_t CHUNK_VOLUME = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-constexpr static const size_t CHUNK_BITSHIFT = math::log2(CHUNK_SIZE);
+constexpr static const size_t CHUNK_BITSHIFT = math_util::log2(CHUNK_SIZE);
 
 using chunkpos_t = glm::vec<3, int64_t, glm::packed_highp>;
 using voxelpos_t = glm::vec<3, int64_t, glm::packed_highp>;

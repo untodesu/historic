@@ -6,11 +6,10 @@
  */
 #pragma once
 #include <entt/entt.hpp>
-#include <uvre/uvre.hpp>
 
 namespace generic_renderer
 {
-void init(uvre::IRenderDevice *dp);
+void init();
 void shutdown();
 void update(entt::registry &registry);
 } // namespace generic_renderer

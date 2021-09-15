@@ -7,26 +7,26 @@
 #include <client/comp/generic_mesh.hpp>
 #include <client/sys/generic_renderer.hpp>
 #include <client/sys/proj_view.hpp>
+#include <client/client_globals.hpp>
 #include <client/vertex.hpp>
 #include <fs.hpp>
 #include <spdlog/spdlog.h>
+#include <uvre/uvre.hpp>
 
 struct alignas(16) UBufferData {
     float4x4_t model;
     float4x4_t projview;
 };
 
-static uvre::IRenderDevice *device = nullptr;
 static uvre::ICommandList *commands = nullptr;
 static uvre::Pipeline *pipeline = nullptr;
 static uvre::Shader *shaders[2] = { nullptr, nullptr };
 static uvre::Buffer *ubuffer = nullptr;
+static uvre::Sampler *sampler = nullptr;
 
-void generic_renderer::init(uvre::IRenderDevice *dp)
+void generic_renderer::init()
 {
-    device = dp;
-
-    commands = device->createCommandList();
+    commands = globals::render_device->createCommandList();
     if(!commands) {
         spdlog::error("Unable to create a command list");
         std::terminate();
@@ -49,7 +49,7 @@ void generic_renderer::init(uvre::IRenderDevice *dp)
     vert_info.format = uvre::ShaderFormat::SOURCE_GLSL;
     vert_info.code = vert_src.c_str();
 
-    shaders[0] = device->createShader(vert_info);
+    shaders[0] = globals::render_device->createShader(vert_info);
     if(!shaders[0]) {
         spdlog::info("Unable to compile generic_mesh.vert.glsl");
         std::terminate();
@@ -60,15 +60,15 @@ void generic_renderer::init(uvre::IRenderDevice *dp)
     frag_info.format = uvre::ShaderFormat::SOURCE_GLSL;
     frag_info.code = frag_src.c_str();
 
-    shaders[1] = device->createShader(frag_info);
+    shaders[1] = globals::render_device->createShader(frag_info);
     if(!shaders[1]) {
         spdlog::info("Unable to compile generic_mesh.frag.glsl");
         std::terminate();
     }
 
     uvre::VertexAttrib attributes[2] = {};
-    attributes[0] = uvre::VertexAttrib { 0, uvre::VertexAttribType::FLOAT32, 2, offsetof(Vertex, position), false };
-    attributes[1] = uvre::VertexAttrib { 1, uvre::VertexAttribType::FLOAT32, 1, offsetof(Vertex, texcoord), false };
+    attributes[0] = uvre::VertexAttrib { 0, uvre::VertexAttribType::FLOAT32, 3, offsetof(Vertex, position), false };
+    attributes[1] = uvre::VertexAttrib { 1, uvre::VertexAttribType::FLOAT32, 2, offsetof(Vertex, texcoord), false };
 
     uvre::PipelineInfo pipeline_info = {};
     pipeline_info.blending.enabled = false;
@@ -83,7 +83,7 @@ void generic_renderer::init(uvre::IRenderDevice *dp)
     pipeline_info.num_shaders = 2;
     pipeline_info.shaders = shaders;
 
-    pipeline = device->createPipeline(pipeline_info);
+    pipeline = globals::render_device->createPipeline(pipeline_info);
     if(!pipeline) {
         spdlog::error("Unable to create a pipeline");
         std::terminate();
@@ -93,31 +93,41 @@ void generic_renderer::init(uvre::IRenderDevice *dp)
     ubuffer_info.type = uvre::BufferType::DATA_BUFFER;
     ubuffer_info.size = sizeof(UBufferData);
 
-    ubuffer = device->createBuffer(ubuffer_info);
+    ubuffer = globals::render_device->createBuffer(ubuffer_info);
     if(!ubuffer) {
-        spdlog::info("Unable to create a buffer objects (UBuffer)");
+        spdlog::info("Unable to create a buffer object (UBuffer)");
+        std::terminate();
+    }
+
+    uvre::SamplerInfo sampler_info = {};
+    sampler_info.flags = uvre::SAMPLER_CLAMP_S | uvre::SAMPLER_CLAMP_T | uvre::SAMPLER_FILTER;
+
+    sampler = globals::render_device->createSampler(sampler_info);
+    if(!sampler) {
+        spdlog::info("Unable to create a sampler object");
         std::terminate();
     }
 }
 
 void generic_renderer::shutdown()
 {
-    device->destroyBuffer(ubuffer);
-    device->destroyPipeline(pipeline);
-    device->destroyShader(shaders[1]);
-    device->destroyShader(shaders[0]);
-    device->destroyCommandList(commands);
+    globals::render_device->destroySampler(sampler);
+    globals::render_device->destroyBuffer(ubuffer);
+    globals::render_device->destroyPipeline(pipeline);
+    globals::render_device->destroyShader(shaders[1]);
+    globals::render_device->destroyShader(shaders[0]);
+    globals::render_device->destroyCommandList(commands);
 
-    device = nullptr;
     shaders[0] = nullptr;
     shaders[1] = nullptr;
     pipeline = nullptr;
     ubuffer = nullptr;
+    sampler = nullptr;
 }
 
 void generic_renderer::update(entt::registry &registry)
 {
-    device->startRecording(commands);
+    globals::render_device->startRecording(commands);
 
     UBufferData ubuffer_data = {};
     ubuffer_data.projview = proj_view::get();
@@ -134,6 +144,8 @@ void generic_renderer::update(entt::registry &registry)
         commands->bindVertexBuffer(mesh.vbo);
         
         if(mesh.ibo) {
+            commands->bindSampler(sampler, 0);
+            commands->bindTexture(mesh.tex.get(), 0);
             commands->bindIndexBuffer(mesh.ibo);
             commands->idraw(mesh.nv, 1, 0, 0, 0);
             continue;
@@ -142,5 +154,5 @@ void generic_renderer::update(entt::registry &registry)
         commands->draw(mesh.nv, 1, 0, 0);
     }
 
-    device->submit(commands);
+    globals::render_device->submit(commands);
 }

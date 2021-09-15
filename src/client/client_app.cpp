@@ -12,6 +12,7 @@
 #include <client/sys/player_move.hpp>
 #include <client/sys/proj_view.hpp>
 #include <client/client_app.hpp>
+#include <client/client_globals.hpp>
 #include <client/client_world.hpp>
 #include <client/input.hpp>
 #include <client/screen.hpp>
@@ -19,6 +20,7 @@
 #include <shared/comp/creature.hpp>
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
+#include <shared/res.hpp>
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 #include <uvre/uvre.hpp>
@@ -102,18 +104,18 @@ void client_app::run()
         device_info.gl.user_data = window;
     }
 
-    uvre::IRenderDevice *device = uvre::createDevice(device_info);
-    if(!device) {
+    globals::render_device = uvre::createDevice(device_info);
+    if(!globals::render_device) {
         spdlog::error("uvre::createDevice() failed.");
         std::terminate();
     }
 
     // We do a little trolling
-    device->vsync(false);
+    globals::render_device->vsync(false);
 
-    uvre::ICommandList *commands = device->createCommandList();
+    uvre::ICommandList *commands = globals::render_device->createCommandList();
 
-    generic_renderer::init(device);
+    generic_renderer::init();
 
     client_world::init();
     entt::registry &registry = client_world::registry();
@@ -138,10 +140,10 @@ void client_app::run()
         entt::entity object = registry.create();
 
         const Vertex vertices[4] = {
-            Vertex { float3_t(-0.5f, -0.5f, 0.0f), float2_t(0.0f, 1.0f) },
-            Vertex { float3_t(-0.5f,  0.5f, 0.0f), float2_t(0.0f, 0.0f) },
-            Vertex { float3_t( 0.5f,  0.5f, 0.0f), float2_t(1.0f, 0.0f) },
-            Vertex { float3_t( 0.5f, -0.5f, 0.0f), float2_t(1.0f, 1.0f) }
+            Vertex { float3_t(-0.5f, -0.5f, 0.0f), float2_t(0.0f, 0.0f) },
+            Vertex { float3_t(-0.5f,  0.5f, 0.0f), float2_t(0.0f, 1.0f) },
+            Vertex { float3_t( 0.5f,  0.5f, 0.0f), float2_t(1.0f, 1.0f) },
+            Vertex { float3_t( 0.5f, -0.5f, 0.0f), float2_t(1.0f, 0.0f) }
         };
 
         const uvre::Index16 indices[6] = { 0, 1, 2, 2, 3, 0 };
@@ -157,8 +159,9 @@ void client_app::run()
         vbo_info.data = vertices;
 
         GenericMeshComponent &mesh = registry.emplace<GenericMeshComponent>(object);
-        mesh.ibo = device->createBuffer(ibo_info);
-        mesh.vbo = device->createBuffer(vbo_info);
+        mesh.ibo = globals::render_device->createBuffer(ibo_info);
+        mesh.vbo = globals::render_device->createBuffer(vbo_info);
+        mesh.tex = res::load<uvre::Texture>("test.jpg", res::ONE_SHOT);
         mesh.nv = 6;
     }
 
@@ -180,16 +183,16 @@ void client_app::run()
         player_move::update(frametime);
         proj_view::update();
 
-        device->prepare();
+        globals::render_device->prepare();
 
-        device->startRecording(commands);
+        globals::render_device->startRecording(commands);
         commands->clearColor3f(0.3f, 0.0f, 0.3f);
         commands->clear(uvre::RT_COLOR_BUFFER);
-        device->submit(commands);
+        globals::render_device->submit(commands);
         
         generic_renderer::update(registry);
 
-        device->present();
+        globals::render_device->present();
 
         input::update();
         glfwPollEvents();
@@ -197,11 +200,15 @@ void client_app::run()
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
+    client_world::shutdown();
+
+    res::cleanup<uvre::Texture>(res::PRECACHE);
+
     generic_renderer::shutdown();
 
-    device->destroyCommandList(commands);
+    globals::render_device->destroyCommandList(commands);
 
-    uvre::destroyDevice(device);
+    uvre::destroyDevice(globals::render_device);
     glfwDestroyWindow(window);
     glfwTerminate();
 }

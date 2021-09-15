@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <GLFW/glfw3.h>
-#include <mathlib.hpp>
+#include <math/types.hpp>
 
 namespace input
 {

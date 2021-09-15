@@ -19,6 +19,7 @@ set(UVRE_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(deps/entt)
 add_subdirectory(deps/glm)
 add_subdirectory(deps/spdlog)
+add_subdirectory(deps/stb)
 
 # client-side dependencies
 add_subdirectory(deps/glfw)
@@ -27,7 +28,7 @@ add_subdirectory(deps/uvre)
 set(vgame_target vgame)
 add_executable(${vgame_target} "")
 target_compile_definitions(${vgame_target} PRIVATE GLFW_INCLUDE_NONE)
-target_link_libraries(${vgame_target} PRIVATE EnTT glm spdlog)
+target_link_libraries(${vgame_target} PRIVATE EnTT glm spdlog stb)
 add_subdirectory(src)
 
 if(MSVC)

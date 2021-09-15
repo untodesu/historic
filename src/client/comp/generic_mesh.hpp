@@ -6,9 +6,11 @@
  */
 #pragma once
 #include <uvre/uvre.hpp>
+#include <memory>
 
 struct GenericMeshComponent final {
     uvre::Buffer *vbo;
     uvre::Buffer *ibo;
+    std::shared_ptr<uvre::Texture> tex;
     size_t nv;
 };

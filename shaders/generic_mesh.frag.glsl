@@ -9,7 +9,9 @@ layout(location = 0) in vec2 texcoord;
 
 layout(location = 0) out vec4 color_0;
 
+layout(binding = 0) uniform sampler2D sampler_0;
+
 void main()
 {
-    color_0 = vec4(texcoord, 1.0, 1.0);
+    color_0 = texture(sampler_0, texcoord);
 }
