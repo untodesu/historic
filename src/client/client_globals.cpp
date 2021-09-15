@@ -6,4 +6,4 @@
  */
 #include <client/client_globals.hpp>
 
-uvre::IRenderDevice *globals::render_device = nullptr;
+UVREDeviceWrapper globals::render_device = {};

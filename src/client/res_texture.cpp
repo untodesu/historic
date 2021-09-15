@@ -60,7 +60,7 @@ std::shared_ptr<uvre::Texture> res::load<uvre::Texture>(const std::string &name,
     info.width = static_cast<uint32_t>(width);
     info.height = static_cast<uint32_t>(height);
 
-    std::shared_ptr<uvre::Texture> texture(globals::render_device->createTexture(info), destroyTexture);
+    std::shared_ptr<uvre::Texture> texture = globals::render_device.createSharedTexture(info);
     if(!texture) {
         stbi_image_free(pixels);
         spdlog::warn("Unable to create a texture object for {}", path.string());

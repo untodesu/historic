@@ -5,14 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-
-// TODO: <uvre/fwd.hpp>
-namespace uvre
-{
-class IRenderDevice;
-} // namespace uvre
+#include <client/uvre_devicewrap.hpp>
 
 namespace globals
 {
-extern uvre::IRenderDevice *render_device;    
+extern UVREDeviceWrapper render_device;
 } // namespace globals

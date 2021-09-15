@@ -141,12 +141,12 @@ void generic_renderer::update(entt::registry &registry)
     for(const auto [entity, mesh] : view.each()) {
         ubuffer_data.model = FLOAT4X4_IDENTITY;
         commands->writeBuffer(ubuffer, offsetof(UBufferData, model), sizeof(UBufferData::model), &ubuffer_data.model);
-        commands->bindVertexBuffer(mesh.vbo);
+        commands->bindVertexBuffer(mesh.vbo.get());
         
         if(mesh.ibo) {
             commands->bindSampler(sampler, 0);
             commands->bindTexture(mesh.tex.get(), 0);
-            commands->bindIndexBuffer(mesh.ibo);
+            commands->bindIndexBuffer(mesh.ibo.get());
             commands->idraw(mesh.nv, 1, 0, 0, 0);
             continue;
         }
