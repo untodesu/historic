@@ -5,9 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <math/types.hpp>
+#include <uvre/fwd.hpp>
+#include <vector>
 
-struct Vertex {
-    float3_t position { FLOAT3_ZERO };
-    float2_t texcoord { FLOAT2_ZERO };
+struct VoxelMesh final {
+    uvre::Buffer vbo;
+    uvre::Buffer ibo;
+    uvre::Texture texture;
+    size_t count;
+};
+
+struct NeedsVoxelMeshComponent final {};
+struct VoxelMeshComponent final {
+    std::vector<VoxelMesh> data;
 };

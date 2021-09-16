@@ -5,12 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <uvre/uvre.hpp>
-#include <memory>
+#include <entt/entt.hpp>
 
-struct GenericMeshComponent final {
-    uvre::Buffer vbo;
-    uvre::Buffer ibo;
-    uvre::Texture tex;
-    size_t nv;
-};
+namespace voxel_mesher
+{
+void update(entt::registry &registry);
+} // namespace voxel_mesher

@@ -33,7 +33,7 @@ void player_move::update(float frametime)
 
     auto pg = client_world::registry().group(entt::get<LocalPlayerComponent, CreatureComponent, HeadComponent, PlayerComponent>);
     for(auto [entity, creature, head] : pg.each()) {
-        creature.position += floatquat_t(math_util::fixAngle180(head.angles)) * direction * 8.0f * frametime;
+        creature.position += floatquat_t(math::fixAngle180(head.angles)) * direction * 8.0f * frametime;
         return;
     }
 }

@@ -7,3 +7,4 @@ target_sources(${vgame_target} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/res_texture.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/screen.cpp")
 add_subdirectory(sys)
+add_subdirectory(util)

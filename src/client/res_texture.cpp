@@ -31,12 +31,9 @@ uvre::Texture res::load<uvre::Texture>(const std::string &name, res::priority_t 
         return found->ptr;
     }
 
-    // textures/{filename}
-    const stdfs::path path = stdfs::path("textures") / stdfs::path(name);
-
     std::vector<uint8_t> buffer;
-    if(!fs::readBytes(path, buffer)) {
-        spdlog::warn("Unable to read {}", path.string());
+    if(!fs::readBytes(name, buffer)) {
+        spdlog::warn("Unable to read {}", name);
         return nullptr;
     }
 
@@ -45,7 +42,7 @@ uvre::Texture res::load<uvre::Texture>(const std::string &name, res::priority_t 
     int width, height;
     void *pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc *>(buffer.data()), static_cast<int>(buffer.size()), &width, &height, nullptr, STBI_rgb_alpha);
     if(!pixels) {
-        spdlog::warn("Unable to parse {}", path.string());
+        spdlog::warn("Unable to parse {}", name);
         return nullptr;
     }
 
@@ -58,7 +55,7 @@ uvre::Texture res::load<uvre::Texture>(const std::string &name, res::priority_t 
     uvre::Texture texture = globals::render_device->createTexture(info);
     if(!texture) {
         stbi_image_free(pixels);
-        spdlog::warn("Unable to create a texture object for {}", path.string());
+        spdlog::warn("Unable to create a texture object for {}", name);
         return nullptr;
     }
 

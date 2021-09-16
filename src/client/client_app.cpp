@@ -5,25 +5,28 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <client/comp/camera.hpp>
-#include <client/comp/generic_mesh.hpp>
 #include <client/comp/local_player.hpp>
-#include <client/sys/generic_renderer.hpp>
+#include <client/comp/voxel_mesh.hpp>
 #include <client/sys/player_look.hpp>
 #include <client/sys/player_move.hpp>
 #include <client/sys/proj_view.hpp>
+#include <client/sys/voxel_mesher.hpp>
+#include <client/sys/voxel_renderer.hpp>
 #include <client/client_app.hpp>
 #include <client/client_globals.hpp>
 #include <client/client_world.hpp>
 #include <client/input.hpp>
 #include <client/screen.hpp>
-#include <client/vertex.hpp>
 #include <shared/comp/creature.hpp>
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
+#include <shared/comp/chunk.hpp>
 #include <shared/res.hpp>
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 #include <uvre/uvre.hpp>
+#include <cstdlib>
+#include <ctime>
 
 static void glfwOnError(int code, const char *message)
 {
@@ -75,6 +78,7 @@ void client_app::run()
         glfwWindowHint(GLFW_OPENGL_PROFILE, backend_info.gl.core_profile ? GLFW_OPENGL_CORE_PROFILE : GLFW_OPENGL_ANY_PROFILE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, backend_info.gl.version_major);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, backend_info.gl.version_minor);
+        glfwWindowHint(GLFW_DEPTH_BITS, 24);
 
 #ifdef __APPLE__
         // As always MacOS with its Metal shits itself and dies
@@ -115,7 +119,7 @@ void client_app::run()
 
     uvre::ICommandList *commands = globals::render_device->createCommandList();
 
-    generic_renderer::init();
+    voxel_renderer::init();
 
     client_world::init();
     entt::registry &registry = client_world::registry();
@@ -135,34 +139,18 @@ void client_app::run()
         camera.z_near = 0.01f;
     }
 
-    // A mesh!
+    // A chunk!
     {
-        entt::entity object = registry.create();
+        entt::entity chunk = registry.create();
 
-        const Vertex vertices[4] = {
-            Vertex { float3_t(-0.5f, -0.5f, 0.0f), float2_t(0.0f, 0.0f) },
-            Vertex { float3_t(-0.5f,  0.5f, 0.0f), float2_t(0.0f, 1.0f) },
-            Vertex { float3_t( 0.5f,  0.5f, 0.0f), float2_t(1.0f, 1.0f) },
-            Vertex { float3_t( 0.5f, -0.5f, 0.0f), float2_t(1.0f, 0.0f) }
-        };
+        std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-        const uvre::Index16 indices[6] = { 0, 1, 2, 2, 3, 0 };
+        ChunkComponent &comp = registry.emplace<ChunkComponent>(chunk);
+        comp.position = chunkpos_t(0, 0, 0);
+        for(size_t i = 0; i < CHUNK_AREA; i++)
+            comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xFF;
 
-        uvre::BufferInfo ibo_info = {};
-        ibo_info.type = uvre::BufferType::INDEX_BUFFER;
-        ibo_info.size = sizeof(indices);
-        ibo_info.data = indices;
-
-        uvre::BufferInfo vbo_info = {};
-        vbo_info.type = uvre::BufferType::VERTEX_BUFFER;
-        vbo_info.size = sizeof(vertices);
-        vbo_info.data = vertices;
-
-        GenericMeshComponent &mesh = registry.emplace<GenericMeshComponent>(object);
-        mesh.ibo = globals::render_device->createBuffer(ibo_info);
-        mesh.vbo = globals::render_device->createBuffer(vbo_info);
-        mesh.tex = res::load<uvre::Texture>("test.jpg", res::ONE_SHOT);
-        mesh.nv = 6;
+        registry.emplace<NeedsVoxelMeshComponent>(chunk);
     }
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -183,14 +171,16 @@ void client_app::run()
         player_move::update(frametime);
         proj_view::update();
 
+        voxel_mesher::update(registry);
+
         globals::render_device->prepare();
 
         globals::render_device->startRecording(commands);
         commands->setClearColor3f(0.3f, 0.0f, 0.3f);
-        commands->clear(uvre::RT_COLOR_BUFFER);
+        commands->clear(uvre::RT_COLOR_BUFFER | uvre::RT_DEPTH_BUFFER);
         globals::render_device->submit(commands);
         
-        generic_renderer::update(registry);
+        voxel_renderer::update(registry);
 
         globals::render_device->present();
 
@@ -204,7 +194,7 @@ void client_app::run()
 
     res::cleanup<uvre::Texture>(res::PRECACHE);
 
-    generic_renderer::shutdown();
+    voxel_renderer::shutdown();
 
     globals::render_device->destroyCommandList(commands);
 

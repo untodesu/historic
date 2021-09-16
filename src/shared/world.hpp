@@ -8,12 +8,12 @@
 #include <math/types.hpp>
 #include <math/util.hpp>
 
-constexpr static const size_t CHUNK_SIZE = 16;
+constexpr static const size_t CHUNK_SIZE = 32;
 constexpr static const size_t CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE;
 constexpr static const size_t CHUNK_VOLUME = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-constexpr static const size_t CHUNK_BITSHIFT = math_util::log2(CHUNK_SIZE);
+constexpr static const size_t CHUNK_BITSHIFT = math::log2(CHUNK_SIZE);
 
-using chunkpos_t = glm::vec<3, int64_t, glm::packed_highp>;
+using chunkpos_t = glm::vec<3, int32_t, glm::packed_highp>;
 using voxelpos_t = glm::vec<3, int64_t, glm::packed_highp>;
 using localpos_t = glm::vec<3, uint16_t, glm::packed_highp>;
 using voxelidx_t = size_t;
@@ -21,7 +21,7 @@ using voxel_t = uint8_t;
 
 constexpr static inline const chunkpos_t toChunkPos(const float3_t &wp)
 {
-    return chunkpos_t(static_cast<int64_t>(wp.x) >> CHUNK_BITSHIFT, static_cast<int64_t>(wp.y) >> CHUNK_BITSHIFT, static_cast<int64_t>(wp.z) >> CHUNK_BITSHIFT);
+    return chunkpos_t(static_cast<int32_t>(wp.x) >> CHUNK_BITSHIFT, static_cast<int32_t>(wp.y) >> CHUNK_BITSHIFT, static_cast<int32_t>(wp.z) >> CHUNK_BITSHIFT);
 }
 
 constexpr static inline const chunkpos_t toChunkPos(const voxelpos_t &vp)

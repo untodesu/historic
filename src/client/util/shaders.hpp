@@ -5,11 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <entt/entt.hpp>
+#include <fs.hpp>
+#include <uvre/const.hpp>
+#include <uvre/fwd.hpp>
 
-namespace generic_renderer
+namespace util
 {
-void init();
-void shutdown();
-void update(entt::registry &registry);
-} // namespace generic_renderer
+uvre::Shader loadShader(const stdfs::path &path, uvre::ShaderFormat format, uvre::ShaderStage stage);
+} // namespace util

@@ -8,14 +8,14 @@
 #include <glm/trigonometric.hpp>
 #include <type_traits>
 
-namespace math_util
+namespace math
 {
 template<typename T>
 constexpr static inline const T log2(const T x)
 {
-    if(x <= 0)
+    if(x < 2)
         return 0;
-    return math_util::log2<T>((x + 1) >> 1) + 1;
+    return math::log2<T>((x + 1) >> 1) + 1;
 }
 
 template<typename T, typename F>
@@ -53,7 +53,7 @@ static inline const glm::vec<L, F, Q> fixAngle180(const glm::vec<L, F, Q> &angle
 {
     glm::vec<L, F, Q> result;
     for(glm::length_t i = 0; i < L; i++)
-        result[i] = math_util::fixAngle180<F>(angles[i]);
+        result[i] = math::fixAngle180<F>(angles[i]);
     return result;
 }
 
@@ -71,10 +71,7 @@ static inline const glm::vec<L, F, Q> fixAngle360(const glm::vec<L, F, Q> &angle
 {
     glm::vec<L, F, Q> result;
     for(glm::length_t i = 0; i < L; i++)
-        result[i] = math_util::fixAngle360<F>(angles[i]);
+        result[i] = math::fixAngle360<F>(angles[i]);
     return result;
 }
-
-
-
-} // namespace math_util
+} // namespace math

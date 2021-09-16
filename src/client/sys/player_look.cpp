@@ -21,7 +21,7 @@ void player_look::update(float frametime)
     for(auto [entity, head] : hg.each()) {
         head.angles.x -= delta.y;
         head.angles.y -= delta.x;
-        head.angles.x = math_util::clamp(head.angles.x, glm::radians(-89.0f), glm::radians(89.0f));
+        head.angles.x = math::clamp(head.angles.x, glm::radians(-89.0f), glm::radians(89.0f));
         return;
     }
 }
