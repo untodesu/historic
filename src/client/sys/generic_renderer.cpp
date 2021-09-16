@@ -19,10 +19,10 @@ struct alignas(16) UBufferData {
 };
 
 static uvre::ICommandList *commands = nullptr;
-static uvre::Pipeline *pipeline = nullptr;
-static uvre::Shader *shaders[2] = { nullptr, nullptr };
-static uvre::Buffer *ubuffer = nullptr;
-static uvre::Sampler *sampler = nullptr;
+static uvre::Pipeline pipeline = nullptr;
+static uvre::Shader shaders[2] = { nullptr, nullptr };
+static uvre::Buffer ubuffer = nullptr;
+static uvre::Sampler sampler = nullptr;
 
 void generic_renderer::init()
 {
@@ -111,13 +111,7 @@ void generic_renderer::init()
 
 void generic_renderer::shutdown()
 {
-    globals::render_device->destroySampler(sampler);
-    globals::render_device->destroyBuffer(ubuffer);
-    globals::render_device->destroyPipeline(pipeline);
-    globals::render_device->destroyShader(shaders[1]);
-    globals::render_device->destroyShader(shaders[0]);
     globals::render_device->destroyCommandList(commands);
-
     shaders[0] = nullptr;
     shaders[1] = nullptr;
     pipeline = nullptr;
@@ -131,8 +125,7 @@ void generic_renderer::update(entt::registry &registry)
 
     UBufferData ubuffer_data = {};
     ubuffer_data.projview = proj_view::get();
-    if(!commands->writeBuffer(ubuffer, offsetof(UBufferData, projview), sizeof(UBufferData::projview), &ubuffer_data.projview))
-        std::terminate();
+    commands->writeBuffer(ubuffer, offsetof(UBufferData, projview), sizeof(UBufferData::projview), &ubuffer_data.projview);
 
     commands->bindPipeline(pipeline);
     commands->bindUniformBuffer(ubuffer, 0);
@@ -141,12 +134,12 @@ void generic_renderer::update(entt::registry &registry)
     for(const auto [entity, mesh] : view.each()) {
         ubuffer_data.model = FLOAT4X4_IDENTITY;
         commands->writeBuffer(ubuffer, offsetof(UBufferData, model), sizeof(UBufferData::model), &ubuffer_data.model);
-        commands->bindVertexBuffer(mesh.vbo.get());
+        commands->bindVertexBuffer(mesh.vbo);
         
         if(mesh.ibo) {
             commands->bindSampler(sampler, 0);
-            commands->bindTexture(mesh.tex.get(), 0);
-            commands->bindIndexBuffer(mesh.ibo.get());
+            commands->bindTexture(mesh.tex, 0);
+            commands->bindIndexBuffer(mesh.ibo);
             commands->idraw(mesh.nv, 1, 0, 0, 0);
             continue;
         }

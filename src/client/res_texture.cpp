@@ -8,15 +8,10 @@
 #include <shared/res.hpp>
 #include <spdlog/spdlog.h>
 #include <stb_image.h>
-#include <uvre/uvre.hpp>
+#include <uvre/renderdevice.hpp>
 #include <fs.hpp>
 
 static res::ResourceList<uvre::Texture> list;
-
-static void destroyTexture(uvre::Texture *texture)
-{
-        globals::render_device->destroyTexture(texture);
-}
 
 template<>
 size_t res::cleanup<uvre::Texture>(res::priority_t priority)
@@ -25,7 +20,7 @@ size_t res::cleanup<uvre::Texture>(res::priority_t priority)
 }
 
 template<>
-std::shared_ptr<uvre::Texture> res::load<uvre::Texture>(const std::string &name, res::priority_t priority)
+uvre::Texture res::load<uvre::Texture>(const std::string &name, res::priority_t priority)
 {
     const hash_t hash = std::hash<std::string>()(name);
 
@@ -42,7 +37,7 @@ std::shared_ptr<uvre::Texture> res::load<uvre::Texture>(const std::string &name,
     std::vector<uint8_t> buffer;
     if(!fs::readBytes(path, buffer)) {
         spdlog::warn("Unable to read {}", path.string());
-        return HASH_ZERO;
+        return nullptr;
     }
 
     stbi_set_flip_vertically_on_load(1);
@@ -51,7 +46,7 @@ std::shared_ptr<uvre::Texture> res::load<uvre::Texture>(const std::string &name,
     void *pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc *>(buffer.data()), static_cast<int>(buffer.size()), &width, &height, nullptr, STBI_rgb_alpha);
     if(!pixels) {
         spdlog::warn("Unable to parse {}", path.string());
-        return HASH_ZERO;
+        return nullptr;
     }
 
     uvre::TextureInfo info = {};
@@ -60,14 +55,14 @@ std::shared_ptr<uvre::Texture> res::load<uvre::Texture>(const std::string &name,
     info.width = static_cast<uint32_t>(width);
     info.height = static_cast<uint32_t>(height);
 
-    std::shared_ptr<uvre::Texture> texture = globals::render_device.createSharedTexture(info);
+    uvre::Texture texture = globals::render_device->createTexture(info);
     if(!texture) {
         stbi_image_free(pixels);
         spdlog::warn("Unable to create a texture object for {}", path.string());
-        return HASH_ZERO;
+        return nullptr;
     }
 
-    globals::render_device->writeTexture2D(texture.get(), 0, 0, width, height, uvre::PixelFormat::R8G8B8A8_UNORM, pixels);
+    globals::render_device->writeTexture2D(texture, 0, 0, width, height, uvre::PixelFormat::R8G8B8A8_UNORM, pixels);
     stbi_image_free(pixels);
 
     res::Resource<uvre::Texture> resource = {};
@@ -81,7 +76,7 @@ std::shared_ptr<uvre::Texture> res::load<uvre::Texture>(const std::string &name,
 }
 
 template<>
-std::shared_ptr<uvre::Texture> res::find<uvre::Texture>(const std::string &name, bool complain)
+uvre::Texture res::find<uvre::Texture>(const std::string &name, bool complain)
 {
     const hash_t hash = std::hash<std::string>()(name);
     res::Resource<uvre::Texture> *resource = list.find(hash);

@@ -6,6 +6,7 @@
  */
 #pragma once
 #include <math/types.hpp>
+#include <traits.hpp>
 #include <string>
 #include <utility>
 #include <vector>
@@ -20,7 +21,7 @@ template<typename T>
 struct Resource final {
     hash_t hash { HASH_ZERO };
     priority_t priority { ONE_SHOT };
-    std::shared_ptr<T> ptr;
+    std::shared_ptr<no_pointer<T>> ptr;
 };
 
 template<typename T>
@@ -31,7 +32,7 @@ public:
 
     inline Resource<T> *find(const hash_t hash)
     {
-        for(vector_type::iterator it = data.begin(); it != data.end(); it++) {
+        for(typename vector_type::iterator it = data.begin(); it != data.end(); it++) {
             if(it->hash != hash)
                 continue;
             return &(*it);
@@ -42,14 +43,14 @@ public:
 
     inline size_t cleanup(priority_t priority)
     {
-        std::vector<vector_type::const_iterator> list;
-        for(vector_type::const_iterator it = data.cbegin(); it != data.cend(); it++) {
+        std::vector<typename vector_type::const_iterator> list;
+        for(typename vector_type::const_iterator it = data.cbegin(); it != data.cend(); it++) {
             if(it->priority > priority || it->ptr.use_count() > 1)
                 continue;
             list.push_back(it);
         }
 
-        for(vector_type::const_iterator &it : list)
+        for(typename vector_type::const_iterator &it : list)
             data.erase(it);
         return list.size();
     }
@@ -58,7 +59,7 @@ public:
 template<typename T>
 size_t cleanup(priority_t priority);
 template<typename T>
-std::shared_ptr<T> load(const std::string &name, priority_t priority);
+std::shared_ptr<no_pointer<T>> load(const std::string &name, priority_t priority);
 template<typename T>
-std::shared_ptr<T> find(const std::string &name, bool complain);
+std::shared_ptr<no_pointer<T>> find(const std::string &name, bool complain);
 } // namespace res

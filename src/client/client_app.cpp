@@ -104,8 +104,8 @@ void client_app::run()
         device_info.gl.user_data = window;
     }
 
-    globals::render_device.set(uvre::createDevice(device_info));
-    if(!globals::render_device.get()) {
+    globals::render_device = uvre::createDevice(device_info);
+    if(!globals::render_device) {
         spdlog::error("uvre::createDevice() failed.");
         std::terminate();
     }
@@ -159,8 +159,8 @@ void client_app::run()
         vbo_info.data = vertices;
 
         GenericMeshComponent &mesh = registry.emplace<GenericMeshComponent>(object);
-        mesh.ibo = globals::render_device.createSharedBuffer(ibo_info);
-        mesh.vbo = globals::render_device.createSharedBuffer(vbo_info);
+        mesh.ibo = globals::render_device->createBuffer(ibo_info);
+        mesh.vbo = globals::render_device->createBuffer(vbo_info);
         mesh.tex = res::load<uvre::Texture>("test.jpg", res::ONE_SHOT);
         mesh.nv = 6;
     }
@@ -186,7 +186,7 @@ void client_app::run()
         globals::render_device->prepare();
 
         globals::render_device->startRecording(commands);
-        commands->clearColor3f(0.3f, 0.0f, 0.3f);
+        commands->setClearColor3f(0.3f, 0.0f, 0.3f);
         commands->clear(uvre::RT_COLOR_BUFFER);
         globals::render_device->submit(commands);
         
@@ -208,7 +208,7 @@ void client_app::run()
 
     globals::render_device->destroyCommandList(commands);
 
-    uvre::destroyDevice(globals::render_device.get());
+    uvre::destroyDevice(globals::render_device);
     glfwDestroyWindow(window);
     glfwTerminate();
 }
