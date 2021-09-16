@@ -171,7 +171,7 @@ void client_app::run()
         player_move::update(frametime);
         proj_view::update();
 
-        voxel_mesher::update(registry);
+        voxel_mesher::update();
 
         globals::render_device->prepare();
 
@@ -180,7 +180,7 @@ void client_app::run()
         commands->clear(uvre::RT_COLOR_BUFFER | uvre::RT_DEPTH_BUFFER);
         globals::render_device->submit(commands);
         
-        voxel_renderer::update(registry);
+        voxel_renderer::update();
 
         globals::render_device->present();
 

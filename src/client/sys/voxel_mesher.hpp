@@ -9,5 +9,5 @@
 
 namespace voxel_mesher
 {
-void update(entt::registry &registry);
+void update();
 } // namespace voxel_mesher

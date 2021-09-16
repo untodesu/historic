@@ -10,6 +10,7 @@
 #include <client/util/shaders.hpp>
 #include <client/client_globals.hpp>
 #include <client/packed_vertex.hpp>
+#include <client/client_world.hpp>
 #include <shared/comp/chunk.hpp>
 #include <spdlog/spdlog.h>
 #include <uvre/uvre.hpp>
@@ -88,8 +89,10 @@ void voxel_renderer::shutdown()
     commands = nullptr;
 }
 
-void voxel_renderer::update(entt::registry &registry)
+void voxel_renderer::update()
 {
+    entt::registry &registry = client_world::registry();
+
     globals::render_device->startRecording(commands);
 
     UBufferData ubuffer_data = {};

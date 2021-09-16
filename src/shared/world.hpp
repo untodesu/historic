@@ -19,6 +19,8 @@ using localpos_t = glm::vec<3, uint16_t, glm::packed_highp>;
 using voxelidx_t = size_t;
 using voxel_t = uint8_t;
 
+constexpr static const voxel_t NULL_VOXEL = 0x00;
+
 constexpr static inline const chunkpos_t toChunkPos(const float3_t &wp)
 {
     return chunkpos_t(static_cast<int32_t>(wp.x) >> CHUNK_BITSHIFT, static_cast<int32_t>(wp.y) >> CHUNK_BITSHIFT, static_cast<int32_t>(wp.z) >> CHUNK_BITSHIFT);

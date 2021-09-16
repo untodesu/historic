@@ -8,6 +8,7 @@
 #include <client/sys/voxel_mesher.hpp>
 #include <client/client_globals.hpp>
 #include <client/packed_vertex.hpp>
+#include <client/client_world.hpp>
 #include <shared/comp/chunk.hpp>
 #include <shared/res.hpp>
 #include <uvre/uvre.hpp>
@@ -27,8 +28,9 @@ void MeshBuilder::push(const Vertex &vtx)
 }
 
 // UNDONE: better greedy meshing?
-void voxel_mesher::update(entt::registry &registry)
+void voxel_mesher::update()
 {
+    entt::registry &registry = client_world::registry();
     auto group = registry.group<NeedsVoxelMeshComponent>(entt::get<ChunkComponent>);
     for(auto [entity, chunk] : group.each()) {
         MeshBuilder builder;

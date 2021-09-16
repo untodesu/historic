@@ -5,11 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <entt/entt.hpp>
+#include <shared/world.hpp>
 
-namespace voxel_renderer
+namespace util
 {
-void init();
-void shutdown();
-void update();
-} // namespace voxel_renderer
+bool isVoxelAt(const chunkpos_t &cp, const localpos_t &lp);
+bool isVoxelAt(const chunkpos_t &cp, const localpos_t &lp, voxel_t compare);
+} // namespace util
