@@ -113,8 +113,10 @@ static void pushFace(ChunkMeshBuilder &builder, const localpos_t &lp, voxel_face
 
 static bool isOccupied(const ChunkComponent &chunk, const localpos_t &lp, voxel_face_t face)
 {
-    const voxel_t compare = isLocalPosInRange(lp) ? chunk.data[toVoxelIdx(lp)] : client_util::getVoxel(chunk.position, lp);
-    const VoxelInfo *info = voxel_def::get(compare);
+    const voxel_t voxel = isLocalPosInRange(lp)
+        ? chunk.data[toVoxelIdx(lp)]
+        : client_util::getVoxel(chunk.position, lp);
+    const VoxelInfo *info = voxel_def::get(voxel);
     return info ? !(info->transparency & face) : false;
 }
 
@@ -145,13 +147,6 @@ static void genMesh(VoxelMeshComponent &mesh, const ChunkComponent &chunk, voxel
         }
 
         if(!builder.empty()) {
-            if(face_info.mask == 48) {
-                const size_t nv = builder.numVertices();
-                const Vertex *vtxs = builder.getVertices();
-                for(size_t x = 0; x < nv; x++)
-                    spdlog::debug("{} {} {}", vtxs[x].position.x, vtxs[x].position.y, vtxs[x].position.z);
-            }
-
             uvre::BufferInfo ibo_info = {};
             ibo_info.type = uvre::BufferType::INDEX_BUFFER;
             ibo_info.size = builder.calcIBOSize();

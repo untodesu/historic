@@ -160,20 +160,22 @@ void client_app::run()
         camera.z_near = 0.01f;
     }
 
-    // A chunk!
-    {
-        entt::entity chunk = registry.create();
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    
+    // A bunch of chunks with random stuff
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            entt::entity chunk = registry.create();
 
-        std::srand(static_cast<unsigned int>(std::time(nullptr)));
+            ChunkComponent &comp = registry.emplace<ChunkComponent>(chunk);
+            comp.position = chunkpos_t(i, j, 0);
+            for(size_t i = 0; i < CHUNK_AREA / 2; i++) {
+                comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xEE;
+                comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xFF;
+            }
 
-        ChunkComponent &comp = registry.emplace<ChunkComponent>(chunk);
-        comp.position = chunkpos_t(0, 0, 0);
-        for(size_t i = 0; i < CHUNK_AREA / 2; i++) {
-            comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xEE;
-            comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xFF;
+            registry.emplace<NeedsVoxelMeshComponent>(chunk);
         }
-
-        registry.emplace<NeedsVoxelMeshComponent>(chunk);
     }
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);

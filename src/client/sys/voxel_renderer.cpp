@@ -20,7 +20,7 @@ constexpr static const char *FRAG_NAME = "shaders/voxel.frag.glsl";
 
 struct alignas(16) UBufferData final {
     float4x4_t projview;
-    chunkpos_t chunkpos;
+    float3_t chunkpos;
 };
 
 static uvre::ICommandList *commands = nullptr;
@@ -106,7 +106,7 @@ void voxel_renderer::update()
 
     auto group = registry.group(entt::get<VoxelMeshComponent, ChunkComponent>);
     for(const auto [entity, mesh, chunk] : group.each()) {
-        ubuffer_data.chunkpos = chunk.position;
+        ubuffer_data.chunkpos = toWorldPos(chunk.position);
         commands->writeBuffer(ubuffer, offsetof(UBufferData, chunkpos), sizeof(ubuffer_data.chunkpos), &ubuffer_data.chunkpos);
         for(const VoxelMesh &part : mesh.data) {
             commands->bindIndexBuffer(part.ibo);

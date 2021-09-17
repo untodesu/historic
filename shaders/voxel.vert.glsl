@@ -16,11 +16,11 @@ out gl_PerVertex { vec4 gl_Position; };
 
 layout(std140, binding = 0) uniform UBO {
     mat4x4 projview;
-    uvec3 chunkpos;
+    vec3 chunkpos;
 };
 
 void main()
 {
     fs_texcoord = texcoord;
-    gl_Position = projview * vec4(position, 1.0);
+    gl_Position = projview * vec4(chunkpos + position, 1.0);
 }
