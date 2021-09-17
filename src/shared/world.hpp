@@ -60,3 +60,12 @@ constexpr static inline const float3_t toWorldPos(const chunkpos_t &cp)
 {
     return float3_t(cp.x << CHUNK_BITSHIFT, cp.y << CHUNK_BITSHIFT, cp.z << CHUNK_BITSHIFT);
 }
+
+constexpr static inline const bool isLocalPosInRange(const localpos_t &lp)
+{
+    if(lp.x < 0 || lp.y < 0 || lp.z < 0)
+        return false;
+    if(lp.x >= CHUNK_SIZE || lp.y >= CHUNK_SIZE || lp.z >= CHUNK_SIZE)
+        return false;
+    return true;
+}

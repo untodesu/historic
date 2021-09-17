@@ -27,6 +27,7 @@
 #include <uvre/uvre.hpp>
 #include <cstdlib>
 #include <ctime>
+#include <shared/voxel_def.hpp>
 
 static void glfwOnError(int code, const char *message)
 {
@@ -115,7 +116,7 @@ void client_app::run()
     }
 
     // We do a little trolling
-    globals::render_device->vsync(false);
+    globals::render_device->vsync(true);
 
     uvre::ICommandList *commands = globals::render_device->createCommandList();
 
@@ -123,6 +124,26 @@ void client_app::run()
 
     client_world::init();
     entt::registry &registry = client_world::registry();
+
+    // A test voxel #1
+    {
+        VoxelInfo vinfo = {};
+        vinfo.type = VoxelType::SOLID;
+        vinfo.transparency = 0;
+        vinfo.faces.push_back({ VOXEL_FACE_SIDES, "textures/test.jpg" });
+        vinfo.faces.push_back({ VOXEL_FACE_UP, "textures/obama.png" });
+        vinfo.faces.push_back({ VOXEL_FACE_DN, "textures/obama.png" });
+        voxel_def::add(0xEE, vinfo);
+    }
+
+    // A test voxel #2
+    {
+        VoxelInfo vinfo = {};
+        vinfo.type = VoxelType::SOLID;
+        vinfo.transparency = 0;
+        vinfo.faces.push_back({ VOXEL_FACE_SOLID, "textures/obama.png" });
+        voxel_def::add(0xFF, vinfo);
+    }
 
     // Player entity >_<
     {
@@ -147,8 +168,10 @@ void client_app::run()
 
         ChunkComponent &comp = registry.emplace<ChunkComponent>(chunk);
         comp.position = chunkpos_t(0, 0, 0);
-        for(size_t i = 0; i < CHUNK_AREA; i++)
+        for(size_t i = 0; i < CHUNK_AREA / 2; i++) {
+            comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xEE;
             comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xFF;
+        }
 
         registry.emplace<NeedsVoxelMeshComponent>(chunk);
     }

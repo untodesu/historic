@@ -16,6 +16,7 @@ public:
     void clearVertices();
     void push(const IT &idx);
     void push(const VT &vtx);
+    const bool empty() const;
     const IT *getIndices() const;
     const VT *getVertices() const;
     const size_t numIndices() const;
@@ -64,6 +65,12 @@ template<typename IT, typename VT>
 inline void MeshBuilder<IT, VT>::push(const VT &vtx)
 {
     vertices.push_back(vtx);
+}
+
+template<typename IT, typename VT>
+inline const bool MeshBuilder<IT, VT>::empty() const
+{
+    return indices.empty() && vertices.empty();
 }
 
 template<typename IT, typename VT>
