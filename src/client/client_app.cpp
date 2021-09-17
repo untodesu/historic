@@ -163,19 +163,17 @@ void client_app::run()
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     
     // A bunch of chunks with random stuff
-    for(int i = 0; i < 4; i++) {
-        for(int j = 0; j < 4; j++) {
-            entt::entity chunk = registry.create();
+    for(int i = 0; i < 16; i++) {
+        entt::entity chunk = registry.create();
 
-            ChunkComponent &comp = registry.emplace<ChunkComponent>(chunk);
-            comp.position = chunkpos_t(i, j, 0);
-            for(size_t i = 0; i < CHUNK_AREA / 2; i++) {
-                comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xEE;
-                comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xFF;
-            }
-
-            registry.emplace<NeedsVoxelMeshComponent>(chunk);
+        ChunkComponent &comp = registry.emplace<ChunkComponent>(chunk);
+        comp.position = chunkpos_t(i * 2, 0, 0);
+        for(size_t i = 0; i < CHUNK_VOLUME; i++) {
+            comp.data[i] = 0xEE;
+            //comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xFF;
         }
+
+        registry.emplace<NeedsVoxelMeshComponent>(chunk);
     }
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
