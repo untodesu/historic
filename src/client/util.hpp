@@ -4,6 +4,12 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <client/client_globals.hpp>
+#pragma once
+#include <entt/entt.hpp>
+#include <shared/world.hpp>
 
-uvre::IRenderDevice *globals::render_device = nullptr;
+namespace client_util
+{
+voxel_t getVoxel(const voxelpos_t &vp);
+voxel_t getVoxel(const chunkpos_t &cp, const localpos_t &lp);
+} // namespace client_util

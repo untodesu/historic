@@ -6,25 +6,92 @@
  */
 #include <client/comp/voxel_mesh.hpp>
 #include <client/sys/voxel_mesher.hpp>
-#include <client/client_globals.hpp>
-#include <client/packed_vertex.hpp>
-#include <client/client_world.hpp>
+#include <client/globals.hpp>
+#include <client/world.hpp>
 #include <shared/comp/chunk.hpp>
 #include <shared/res.hpp>
 #include <uvre/uvre.hpp>
+#include <math/vertex.hpp>
+#include <client/mesh_builder.hpp>
 
-class MeshBuilder final {
-public:
-    void push(const Vertex &vtx);
-    uvre::Index32 base = 0;
-    std::vector<uvre::Index32> indices;
-    std::vector<Vertex> vertices;
+// TODO: move this somewhere else
+enum class VoxelFace {
+    LEFT,   // 
+    RIGHT,  // 
+    BACK,   // 
+    FRONT,  // 
+    TOP,    // 
+    BOTTOM  // 
 };
 
-void MeshBuilder::push(const Vertex &vtx)
+using ChunkMeshBuilder = MeshBuilder<uvre::Index32, Vertex>;
+
+static void pushFace(ChunkMeshBuilder &builder, const localpos_t &lp, VoxelFace face, uvre::Index32 &base)
 {
-    indices.push_back(base++);
-    vertices.push_back(vtx);
+    const float3_t lpf = float3_t(lp);
+
+    switch(face) {
+        case VoxelFace::LEFT:
+            builder.push(Vertex { lpf + float3_t(0.0f, 0.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(0.0f, 0.0f, 1.0f) });
+            builder.push(Vertex { lpf + float3_t(0.0f, 1.0f, 1.0f) });
+            builder.push(Vertex { lpf + float3_t(0.0f, 1.0f, 0.0f) });
+            break;
+        case VoxelFace::RIGHT:
+            builder.push(Vertex { lpf + float3_t(1.0f, 0.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 1.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 1.0f, 1.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 0.0f, 1.0f) });
+            break;
+        case VoxelFace::BACK:
+            builder.push(Vertex { lpf + float3_t(0.0f, 0.0f, 1.0f) });
+            builder.push(Vertex { lpf + float3_t(0.0f, 1.0f, 1.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 1.0f, 1.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 0.0f, 1.0f) });
+            break;
+        case VoxelFace::FRONT:
+            builder.push(Vertex { lpf + float3_t(0.0f, 0.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 0.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 1.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(0.0f, 1.0f, 0.0f) });
+            break;
+        case VoxelFace::TOP:
+            builder.push(Vertex { lpf + float3_t(0.0f, 1.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 1.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 1.0f, 1.0f) });
+            builder.push(Vertex { lpf + float3_t(0.0f, 1.0f, 1.0f) });
+            break;
+        case VoxelFace::BOTTOM:
+            builder.push(Vertex { lpf + float3_t(0.0f, 0.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 0.0f, 0.0f) });
+            builder.push(Vertex { lpf + float3_t(1.0f, 0.0f, 1.0f) });
+            builder.push(Vertex { lpf + float3_t(0.0f, 0.0f, 1.0f) });
+            break;
+    }
+
+    builder.push(base + 0);
+    builder.push(base + 1);
+    builder.push(base + 2);
+    builder.push(base + 2);
+    builder.push(base + 3);
+    builder.push(base + 0);
+    base += 4;
+}
+
+static void genMesh(const ChunkComponent &chunk, voxel_t voxel, ChunkMeshBuilder &builder)
+{
+    uvre::Index32 base = 0;
+    for(voxelidx_t i = 0; i < CHUNK_VOLUME; i++) {
+        if(chunk.data[i] == voxel) {
+            const localpos_t lp = toLocalPos(i);
+            pushFace(builder, lp, VoxelFace::LEFT, base);
+            pushFace(builder, lp, VoxelFace::RIGHT, base);
+            //pushFace(builder, lp, VoxelFace::BACK, base);
+            //pushFace(builder, lp, VoxelFace::FRONT, base);
+            //pushFace(builder, lp, VoxelFace::TOP, base);
+            //pushFace(builder, lp, VoxelFace::BOTTOM, base);
+        }
+    }
 }
 
 // UNDONE: better greedy meshing?
@@ -33,26 +100,15 @@ void voxel_mesher::update()
     entt::registry &registry = client_world::registry();
     auto group = registry.group<NeedsVoxelMeshComponent>(entt::get<ChunkComponent>);
     for(auto [entity, chunk] : group.each()) {
-        MeshBuilder builder;
-
-        for(voxelidx_t i = 0; i < CHUNK_VOLUME; i++) {
-            if(chunk.data[i] == 0xFF) {
-                float3_t lp = float3_t(toLocalPos(i));
-                builder.push(Vertex { lp + float3_t(0.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) });
-                builder.push(Vertex { lp + float3_t(1.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) });
-                builder.push(Vertex { lp + float3_t(1.0f, 1.0f, 0.0f), float2_t(1.0f, 1.0f) });
-                builder.push(Vertex { lp + float3_t(1.0f, 1.0f, 0.0f), float2_t(1.0f, 1.0f) });
-                builder.push(Vertex { lp + float3_t(0.0f, 1.0f, 0.0f), float2_t(0.0f, 1.0f) });
-                builder.push(Vertex { lp + float3_t(0.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) });
-            }
-        }
-
+        ChunkMeshBuilder builder;
+        genMesh(chunk, 0xFF, builder);
+        
         // We have the component already.
         if(VoxelMeshComponent *mesh = registry.try_get<VoxelMeshComponent>(entity)) {
             for(VoxelMesh &part : mesh->data) {
-                globals::render_device->resizeBuffer(part.ibo, sizeof(uvre::Index16) * builder.indices.size(), builder.indices.data());
-                globals::render_device->resizeBuffer(part.vbo, sizeof(Vertex) * builder.vertices.size(), builder.vertices.data());
-                part.count = builder.indices.size();
+                globals::render_device->resizeBuffer(part.ibo, builder.calcIBOSize(), builder.getIndices());
+                globals::render_device->resizeBuffer(part.vbo, builder.calcVBOSize(), builder.getVertices());
+                part.count = builder.numIndices();
             }
 
             continue;
@@ -60,13 +116,13 @@ void voxel_mesher::update()
 
         uvre::BufferInfo ibo_info = {};
         ibo_info.type = uvre::BufferType::INDEX_BUFFER;
-        ibo_info.size = sizeof(uvre::Index32) * builder.indices.size();
-        ibo_info.data = builder.indices.data();
+        ibo_info.size = builder.calcIBOSize();
+        ibo_info.data = builder.getIndices();
 
         uvre::BufferInfo vbo_info = {};
         vbo_info.type = uvre::BufferType::VERTEX_BUFFER;
-        vbo_info.size = sizeof(Vertex) * builder.vertices.size();
-        vbo_info.data = builder.vertices.data();
+        vbo_info.size = builder.calcVBOSize();
+        vbo_info.data = builder.getVertices();
 
         VoxelMeshComponent &comp = registry.emplace<VoxelMeshComponent>(entity);
         comp.data.clear();
@@ -74,9 +130,10 @@ void voxel_mesher::update()
         part.ibo = globals::render_device->createBuffer(ibo_info);
         part.vbo = globals::render_device->createBuffer(vbo_info);
         part.texture = res::load<uvre::Texture>("textures/test.jpg", 0xAB);
-        part.count = builder.indices.size();
+        part.count = builder.numIndices();
         comp.data.push_back(part);
 
+        // Un-flag the entity
         registry.remove<NeedsVoxelMeshComponent>(entity);
     }
 }

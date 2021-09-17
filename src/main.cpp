@@ -6,7 +6,7 @@
  */
 #include <client/client_app.hpp>
 #include <exception>
-#include <fs.hpp>
+#include <filesystem.hpp>
 #include <iostream>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>

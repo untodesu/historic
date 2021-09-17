@@ -4,12 +4,12 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <client/client_globals.hpp>
+#include <client/globals.hpp>
 #include <shared/res.hpp>
 #include <spdlog/spdlog.h>
 #include <stb_image.h>
 #include <uvre/renderdevice.hpp>
-#include <fs.hpp>
+#include <filesystem.hpp>
 
 static res::ResourceList<uvre::Texture> list;
 

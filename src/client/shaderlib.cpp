@@ -4,12 +4,12 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <client/util/shaders.hpp>
-#include <client/client_globals.hpp>
+#include <client/shaderlib.hpp>
+#include <client/globals.hpp>
 #include <spdlog/spdlog.h>
 #include <uvre/uvre.hpp>
 
-uvre::Shader util::loadShader(const stdfs::path &path, uvre::ShaderFormat format, uvre::ShaderStage stage)
+uvre::Shader shaderlib::load(const stdfs::path &path, uvre::ShaderFormat format, uvre::ShaderStage stage)
 {
     std::string src_buffer;
     std::vector<uint8_t> bin_buffer;

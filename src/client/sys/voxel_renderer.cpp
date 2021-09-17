@@ -7,13 +7,13 @@
 #include <client/comp/voxel_mesh.hpp>
 #include <client/sys/proj_view.hpp>
 #include <client/sys/voxel_renderer.hpp>
-#include <client/util/shaders.hpp>
-#include <client/client_globals.hpp>
-#include <client/packed_vertex.hpp>
-#include <client/client_world.hpp>
+#include <client/shaderlib.hpp>
+#include <client/globals.hpp>
+#include <client/world.hpp>
 #include <shared/comp/chunk.hpp>
 #include <spdlog/spdlog.h>
 #include <uvre/uvre.hpp>
+#include <math/vertex.hpp>
 
 constexpr static const char *VERT_NAME = "shaders/voxel.vert.glsl";
 constexpr static const char *FRAG_NAME = "shaders/voxel.frag.glsl";
@@ -35,8 +35,8 @@ void voxel_renderer::init()
     if(!commands) 
         std::terminate();
 
-    shaders[0] = util::loadShader(VERT_NAME, uvre::ShaderFormat::SOURCE_GLSL, uvre::ShaderStage::VERTEX);
-    shaders[1] = util::loadShader(FRAG_NAME, uvre::ShaderFormat::SOURCE_GLSL, uvre::ShaderStage::FRAGMENT);
+    shaders[0] = shaderlib::load(VERT_NAME, uvre::ShaderFormat::SOURCE_GLSL, uvre::ShaderStage::VERTEX);
+    shaders[1] = shaderlib::load(FRAG_NAME, uvre::ShaderFormat::SOURCE_GLSL, uvre::ShaderStage::FRAGMENT);
     if(!shaders[0] || !shaders[1])
         std::terminate();
     
@@ -48,10 +48,11 @@ void voxel_renderer::init()
     pipeline_info.blending.enabled = false;
     pipeline_info.depth_testing.enabled = true;
     pipeline_info.depth_testing.func = uvre::DepthFunc::LESS;
-    pipeline_info.face_culling.enabled = false;
+    pipeline_info.face_culling.enabled = true;
+    pipeline_info.face_culling.flags = uvre::CULL_BACK;
     pipeline_info.index_type = uvre::IndexType::INDEX32;
     pipeline_info.primitive_mode = uvre::PrimitiveMode::TRIANGLES;
-    pipeline_info.fill_mode = uvre::FillMode::FILLED;
+    pipeline_info.fill_mode = uvre::FillMode::WIREFRAME;
     pipeline_info.vertex_stride = sizeof(Vertex);
     pipeline_info.num_vertex_attribs = 2;
     pipeline_info.vertex_attribs = attributes;

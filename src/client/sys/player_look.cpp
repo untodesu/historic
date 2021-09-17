@@ -6,7 +6,7 @@
  */
 #include <client/comp/local_player.hpp>
 #include <client/sys/player_look.hpp>
-#include <client/client_world.hpp>
+#include <client/world.hpp>
 #include <client/input.hpp>
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>

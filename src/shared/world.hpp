@@ -15,7 +15,7 @@ constexpr static const size_t CHUNK_BITSHIFT = math::log2(CHUNK_SIZE);
 
 using chunkpos_t = glm::vec<3, int32_t, glm::packed_highp>;
 using voxelpos_t = glm::vec<3, int64_t, glm::packed_highp>;
-using localpos_t = glm::vec<3, uint16_t, glm::packed_highp>;
+using localpos_t = glm::vec<3, int16_t, glm::packed_highp>;
 using voxelidx_t = size_t;
 using voxel_t = uint8_t;
 

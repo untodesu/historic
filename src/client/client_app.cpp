@@ -13,8 +13,8 @@
 #include <client/sys/voxel_mesher.hpp>
 #include <client/sys/voxel_renderer.hpp>
 #include <client/client_app.hpp>
-#include <client/client_globals.hpp>
-#include <client/client_world.hpp>
+#include <client/globals.hpp>
+#include <client/world.hpp>
 #include <client/input.hpp>
 #include <client/screen.hpp>
 #include <shared/comp/creature.hpp>

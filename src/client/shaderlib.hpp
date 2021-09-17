@@ -5,10 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <shared/world.hpp>
+#include <filesystem.hpp>
+#include <uvre/const.hpp>
+#include <uvre/fwd.hpp>
 
-namespace util
+namespace shaderlib
 {
-bool isVoxelAt(const chunkpos_t &cp, const localpos_t &lp);
-bool isVoxelAt(const chunkpos_t &cp, const localpos_t &lp, voxel_t compare);
-} // namespace util
+uvre::Shader load(const stdfs::path &path, uvre::ShaderFormat format, uvre::ShaderStage stage);
+} // namespace shaderlib
+

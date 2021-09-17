@@ -7,7 +7,7 @@
 #include <client/comp/camera.hpp>
 #include <client/comp/local_player.hpp>
 #include <client/sys/proj_view.hpp>
-#include <client/client_world.hpp>
+#include <client/world.hpp>
 #include <client/input.hpp>
 #include <client/screen.hpp>
 #include <shared/comp/creature.hpp>

@@ -4,7 +4,7 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <client/client_world.hpp>
+#include <client/world.hpp>
 #include <spdlog/spdlog.h>
 
 static entt::registry clw_registry;
