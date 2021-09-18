@@ -19,8 +19,35 @@ using voxelpos_t = glm::vec<3, int64_t, glm::packed_highp>;
 using localpos_t = glm::vec<3, int16_t, glm::packed_highp>;
 using voxelidx_t = size_t;
 using voxel_t = uint8_t;
-
 using voxel_array_t = std::array<voxel_t, CHUNK_VOLUME>;
+using voxel_face_t = uint16_t;
+
+constexpr static const voxel_face_t VOXEL_FACE_LF = (1 << 0);
+constexpr static const voxel_face_t VOXEL_FACE_RT = (1 << 1);
+constexpr static const voxel_face_t VOXEL_FACE_FT = (1 << 2);
+constexpr static const voxel_face_t VOXEL_FACE_BK = (1 << 3);
+constexpr static const voxel_face_t VOXEL_FACE_UP = (1 << 4);
+constexpr static const voxel_face_t VOXEL_FACE_DN = (1 << 5);
+constexpr static const voxel_face_t VOXEL_FACE_SIDES = VOXEL_FACE_LF | VOXEL_FACE_RT | VOXEL_FACE_FT | VOXEL_FACE_BK;
+constexpr static const voxel_face_t VOXEL_FACE_SOLID = VOXEL_FACE_LF | VOXEL_FACE_RT | VOXEL_FACE_FT | VOXEL_FACE_BK | VOXEL_FACE_UP | VOXEL_FACE_DN;
+
+enum class VoxelType {
+    SOLID,          // A solid voxel. Rendered through voxel_renderer.
+    SOLID_ENTITY,   // A solid voxel entity. Reserved.
+    SOLID_FLORA,    // A solid voxel flora. Reserved.
+    LIQUID,         // A liquid voxel. Reserved.
+};
+
+struct VoxelFaceInfo final {
+    voxel_face_t mask;
+    std::string texture;
+};
+
+struct VoxelInfo final {
+    VoxelType type;
+    voxel_face_t transparency;
+    std::vector<VoxelFaceInfo> faces;
+};
 
 constexpr static const voxel_t NULL_VOXEL = 0x00;
 

@@ -8,7 +8,7 @@
 #include <spdlog/spdlog.h>
 #include <unordered_map>
 
-static std::unordered_map<voxel_t, VoxelInfo> def;
+static std::unordered_map<voxel_t, VoxelInfo> def_map;
 static std::vector<voxel_t> def_list;
 
 void voxel_def::add(voxel_t voxel, const VoxelInfo &info)
@@ -53,35 +53,25 @@ void voxel_def::add(voxel_t voxel, const VoxelInfo &info)
 
     VoxelInfo patched_info = {};
     patched_info.type = info.type;
-    patched_info.visibility = 0;
     patched_info.transparency = info.transparency;
     patched_info.faces = patched_faces;
 
-    for(const auto &it : patched_faces) {
-        patched_info.visibility |= it.mask;
-    }
-
-    if(def.find(voxel) != def.cend())
+    if(def_map.find(voxel) != def_map.cend())
         spdlog::warn("Overriding VoxelInfo for {}", voxel);
     else
         def_list.push_back(voxel);
-    def[voxel] = patched_info;
-}
-
-bool voxel_def::exists(voxel_t voxel)
-{
-    return def.find(voxel) != def.cend();
+    def_map[voxel] = patched_info;
 }
 
 const VoxelInfo *voxel_def::get(voxel_t voxel)
 {
-    const auto it = def.find(voxel);
-    if(it != def.cend())
+    const auto it = def_map.find(voxel);
+    if(it != def_map.cend())
         return &it->second;
     return nullptr;
 }
 
-size_t voxel_def::listSize()
+size_t voxel_def::count()
 {
     return def_list.size();
 }

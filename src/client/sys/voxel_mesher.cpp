@@ -244,9 +244,9 @@ void voxel_mesher::update()
         data.trySetChunk(cpl + chunkpos_t(0, 0, 1));
         data.trySetChunk(cpl - chunkpos_t(0, 0, 1));
 
-        const size_t list_size = voxel_def::listSize();
+        const size_t count = voxel_def::count();
         const voxel_t *list = voxel_def::list();
-        for(size_t i = 0; i < list_size; i++) {
+        for(size_t i = 0; i < count; i++) {
             const VoxelInfo *info = voxel_def::get(list[i]);
             if(!info)
                 continue;

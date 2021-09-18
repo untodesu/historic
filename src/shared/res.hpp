@@ -43,16 +43,15 @@ public:
 
     inline size_t cleanup(priority_t priority)
     {
-        std::vector<typename vector_type::const_iterator> list;
+        size_t count = 0;
         for(typename vector_type::const_iterator it = data.cbegin(); it != data.cend(); it++) {
             if(it->priority > priority || it->ptr.use_count() > 1)
                 continue;
-            list.push_back(it);
+            it = data.erase(it);
+            count++;
         }
 
-        for(typename vector_type::const_iterator &it : list)
-            data.erase(it);
-        return list.size();
+        return count;
     }
 };
 
