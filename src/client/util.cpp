@@ -8,24 +8,27 @@
 #include <client/world.hpp>
 #include <shared/comp/chunk.hpp>
 
-voxel_t client_util::getVoxel(const voxelpos_t &vp)
+bool client_util::getChunk(const chunkpos_t &cp, voxel_array_t &out)
 {
-    const chunkpos_t &cp = toChunkPos(vp);
-    const voxelidx_t idx = toVoxelIdx(toLocalPos(vp));
     const auto view = client_world::registry().view<ChunkComponent>();
     for(const auto [entity, chunk] : view.each()) {
         if(chunk.position != cp)
             continue;
-        return chunk.data[idx];
+        std::copy(chunk.data.cbegin(), chunk.data.cend(), out.begin());
+        return true;
     }
 
-    return NULL_VOXEL;
+    return false;
 }
 
-voxel_t client_util::getVoxel(const chunkpos_t &cp, const localpos_t &lp)
+voxel_array_t *client_util::getChunk(const chunkpos_t &cp)
 {
-    // localpos_t can have negative values and 
-    // values that are way over CHUNK_SIZE. This allows
-    // getVoxel() to return voxel data past the chunk specified
-    return client_util::getVoxel(toVoxelPos(cp, lp));
+    const auto view = client_world::registry().view<ChunkComponent>();
+    for(const auto [entity, chunk] : view.each()) {
+        if(chunk.position != cp)
+            continue;
+        return &chunk.data;
+    }
+
+    return nullptr;
 }

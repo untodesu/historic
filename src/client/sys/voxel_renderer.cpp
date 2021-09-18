@@ -48,11 +48,11 @@ void voxel_renderer::init()
     pipeline_info.blending.enabled = false;
     pipeline_info.depth_testing.enabled = true;
     pipeline_info.depth_testing.func = uvre::DepthFunc::LESS_OR_EQUAL;
-    pipeline_info.face_culling.enabled = false;
+    pipeline_info.face_culling.enabled = true;
     pipeline_info.face_culling.flags = uvre::CULL_BACK;
     pipeline_info.index_type = uvre::IndexType::INDEX32;
     pipeline_info.primitive_mode = uvre::PrimitiveMode::TRIANGLES;
-    pipeline_info.fill_mode = uvre::FillMode::WIREFRAME;
+    pipeline_info.fill_mode = uvre::FillMode::FILLED;
     pipeline_info.vertex_stride = sizeof(Vertex);
     pipeline_info.num_vertex_attribs = 2;
     pipeline_info.vertex_attribs = attributes;

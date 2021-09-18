@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <array>
 #include <math/types.hpp>
 #include <math/util.hpp>
 
@@ -18,6 +19,8 @@ using voxelpos_t = glm::vec<3, int64_t, glm::packed_highp>;
 using localpos_t = glm::vec<3, int16_t, glm::packed_highp>;
 using voxelidx_t = size_t;
 using voxel_t = uint8_t;
+
+using voxel_array_t = std::array<voxel_t, CHUNK_VOLUME>;
 
 constexpr static const voxel_t NULL_VOXEL = 0x00;
 

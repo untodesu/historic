@@ -10,6 +10,6 @@
 
 namespace client_util
 {
-voxel_t getVoxel(const voxelpos_t &vp);
-voxel_t getVoxel(const chunkpos_t &cp, const localpos_t &lp);
+bool getChunk(const chunkpos_t &cp, voxel_array_t &out);
+voxel_array_t *getChunk(const chunkpos_t &cp);
 } // namespace client_util

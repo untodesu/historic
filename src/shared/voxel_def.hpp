@@ -33,6 +33,7 @@ struct VoxelFaceInfo final {
 };
 
 struct VoxelInfo final {
+    voxel_face_t visibility;
     voxel_face_t transparency;
     VoxelType type;
     std::vector<VoxelFaceInfo> faces;

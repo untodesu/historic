@@ -6,6 +6,7 @@
  */
 #include <client/comp/camera.hpp>
 #include <client/comp/local_player.hpp>
+#include <client/clock.hpp>
 #include <client/comp/voxel_mesh.hpp>
 #include <client/sys/player_look.hpp>
 #include <client/sys/player_move.hpp>
@@ -17,6 +18,7 @@
 #include <client/world.hpp>
 #include <client/input.hpp>
 #include <client/screen.hpp>
+#include <client/util.hpp>
 #include <shared/comp/creature.hpp>
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
@@ -116,7 +118,7 @@ void client_app::run()
     }
 
     // We do a little trolling
-    globals::render_device->vsync(true);
+    globals::render_device->vsync(false);
 
     uvre::ICommandList *commands = globals::render_device->createCommandList();
 
@@ -145,6 +147,15 @@ void client_app::run()
         voxel_def::add(0xFF, vinfo);
     }
 
+    // A test voxel #3
+    {
+        VoxelInfo vinfo = {};
+        vinfo.type = VoxelType::SOLID;
+        vinfo.transparency = 0;
+        vinfo.faces.push_back({ VOXEL_FACE_SOLID, "textures/gman.jpeg" });
+        voxel_def::add(0xAC, vinfo);
+    }
+
     // Player entity >_<
     {
         entt::entity player = registry.create();
@@ -164,26 +175,28 @@ void client_app::run()
     
     // A bunch of chunks with random stuff
     for(int i = 0; i < 16; i++) {
-        entt::entity chunk = registry.create();
-
-        ChunkComponent &comp = registry.emplace<ChunkComponent>(chunk);
-        comp.position = chunkpos_t(i * 2, 0, 0);
-        for(size_t i = 0; i < CHUNK_VOLUME; i++) {
-            comp.data[i] = 0xEE;
-            //comp.data[std::rand() % static_cast<int>(CHUNK_VOLUME)] = 0xFF;
+        for(int j = 0; j < 16; j++) {
+            entt::entity chunk = registry.create();
+            ChunkComponent &comp = registry.emplace<ChunkComponent>(chunk);
+            comp.position = chunkpos_t(i, 0, j);
+            for(size_t u = 0; u < CHUNK_VOLUME; u++, comp.data[std::rand() % CHUNK_VOLUME] = 0xEE);
+            registry.emplace<NeedsVoxelMeshComponent>(chunk);
         }
-
-        registry.emplace<NeedsVoxelMeshComponent>(chunk);
     }
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    float lasttime = static_cast<float>(glfwGetTime());
-
+    Clock fps_clock, print_clock;
+    float avg_frametime = 0.0f;
     while(!glfwWindowShouldClose(window)) {
-        float curtime = static_cast<float>(glfwGetTime());
-        float frametime = curtime - lasttime;
-        lasttime = curtime;
+        const float frametime = fps_clock.restart();
+        avg_frametime += frametime;
+        avg_frametime *= 0.5f;
+
+        if(print_clock.elapsed() >= 1.0f) {
+            spdlog::debug("Perf: {:.03f} ms ({:.02f} FPS)", avg_frametime * 1000.0f, 1.0f / avg_frametime);
+            print_clock.restart();
+        }
 
         // This should be an easier way to exit
         // than breaking my fingers to do alt+f4

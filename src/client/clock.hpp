@@ -5,9 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <shared/world.hpp>
 
-struct ChunkComponent final {
-    chunkpos_t position { 0, 0, 0 };
-    voxel_array_t data;
+class Clock final {
+public:
+    Clock();
+    const float elapsed() const;
+    const float restart();
+
+private:
+    float start;
 };

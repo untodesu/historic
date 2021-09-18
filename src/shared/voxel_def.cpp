@@ -53,8 +53,13 @@ void voxel_def::add(voxel_t voxel, const VoxelInfo &info)
 
     VoxelInfo patched_info = {};
     patched_info.type = info.type;
+    patched_info.visibility = 0;
     patched_info.transparency = info.transparency;
     patched_info.faces = patched_faces;
+
+    for(const auto &it : patched_faces) {
+        patched_info.visibility |= it.mask;
+    }
 
     if(def.find(voxel) != def.cend())
         spdlog::warn("Overriding VoxelInfo for {}", voxel);
