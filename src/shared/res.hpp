@@ -54,11 +54,12 @@ public:
         return count;
     }
 };
-
 template<typename T>
 size_t cleanup(priority_t priority);
 template<typename T>
 std::shared_ptr<no_pointer<T>> load(const std::string &name, priority_t priority);
 template<typename T>
 std::shared_ptr<no_pointer<T>> find(const std::string &name, bool complain);
+template<typename T>
+void shutdown();
 } // namespace res

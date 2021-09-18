@@ -8,5 +8,5 @@
 
 namespace player_move
 {
-void update(float frametime);
+void update();
 } // namespace player_move

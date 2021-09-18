@@ -4,7 +4,7 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <client/shaderlib.hpp>
+#include <client/util/shaderlib.hpp>
 #include <client/globals.hpp>
 #include <spdlog/spdlog.h>
 #include <uvre/uvre.hpp>

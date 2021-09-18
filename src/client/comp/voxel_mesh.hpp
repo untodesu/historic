@@ -8,14 +8,9 @@
 #include <uvre/fwd.hpp>
 #include <vector>
 
-struct VoxelMesh final {
-    uvre::Buffer vbo;
-    uvre::Buffer ibo;
-    uvre::Texture texture;
-    size_t count;
-};
-
 struct NeedsVoxelMeshComponent final {};
 struct VoxelMeshComponent final {
-    std::vector<VoxelMesh> data;
+    uvre::Buffer ibo;
+    uvre::Buffer vbo;
+    size_t count;
 };

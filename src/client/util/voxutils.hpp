@@ -5,11 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <entt/entt.hpp>
+#include <shared/world.hpp>
 
-namespace client_world
+namespace voxutils
 {
-void init();
-void shutdown();
-entt::registry &registry();
-} // namespace client_world
+bool chunk(const chunkpos_t &cp, voxel_array_t &out);
+voxel_array_t *chunk(const chunkpos_t &cp);
+} // namespace voxutils

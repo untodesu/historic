@@ -9,4 +9,7 @@
 float globals::curtime = 0.0f;
 float globals::frametime = 0.0f;
 uint64_t globals::frame_count = 0;
+entt::registry globals::registry = entt::registry();
 uvre::IRenderDevice *globals::render_device = nullptr;
+VoxelDef globals::voxels = VoxelDef();
+Atlas globals::solid_textures = Atlas();

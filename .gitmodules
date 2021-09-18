@@ -13,3 +13,6 @@
 [submodule "deps/uvre"]
 	path = deps/uvre
 	url = https://github.com/undnull/uvre.git
+[submodule "deps/meshoptimizer"]
+	path = deps/meshoptimizer
+	url = https://github.com/zeux/meshoptimizer.git

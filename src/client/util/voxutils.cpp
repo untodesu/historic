@@ -4,13 +4,13 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <client/util.hpp>
-#include <client/world.hpp>
+#include <client/globals.hpp>
+#include <client/util/voxutils.hpp>
 #include <shared/comp/chunk.hpp>
 
-bool client_util::getChunk(const chunkpos_t &cp, voxel_array_t &out)
+bool voxutils::chunk(const chunkpos_t &cp, voxel_array_t &out)
 {
-    const auto view = client_world::registry().view<ChunkComponent>();
+    const auto view = globals::registry.view<ChunkComponent>();
     for(const auto [entity, chunk] : view.each()) {
         if(chunk.position != cp)
             continue;
@@ -21,9 +21,9 @@ bool client_util::getChunk(const chunkpos_t &cp, voxel_array_t &out)
     return false;
 }
 
-voxel_array_t *client_util::getChunk(const chunkpos_t &cp)
+voxel_array_t *voxutils::chunk(const chunkpos_t &cp)
 {
-    const auto view = client_world::registry().view<ChunkComponent>();
+    const auto view = globals::registry.view<ChunkComponent>();
     for(const auto [entity, chunk] : view.each()) {
         if(chunk.position != cp)
             continue;

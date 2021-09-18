@@ -6,14 +6,14 @@
  */
 #include <client/comp/local_player.hpp>
 #include <client/sys/player_move.hpp>
-#include <client/world.hpp>
+#include <client/globals.hpp>
 #include <client/input.hpp>
 #include <shared/comp/creature.hpp>
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
 #include <math/util.hpp>
 
-void player_move::update(float frametime)
+void player_move::update()
 {
     float3_t direction = FLOAT3_ZERO;
 
@@ -31,9 +31,9 @@ void player_move::update(float frametime)
     if(input::isKeyPressed(GLFW_KEY_LEFT_SHIFT))
         direction -= FLOAT3_UP;
 
-    auto pg = client_world::registry().group(entt::get<LocalPlayerComponent, CreatureComponent, HeadComponent, PlayerComponent>);
+    auto pg = globals::registry.group(entt::get<LocalPlayerComponent, CreatureComponent, HeadComponent, PlayerComponent>);
     for(auto [entity, creature, head] : pg.each()) {
-        creature.position += floatquat_t(math::fixAngle180(head.angles)) * direction * 32.0f * frametime;
+        creature.position += floatquat_t(math::fixAngle180(head.angles)) * direction * 32.0f * globals::frametime;
         return;
     }
 }

@@ -8,5 +8,5 @@
 
 namespace player_look
 {
-void update(float frametime);
+void update();
 } // namespace player_look

@@ -85,3 +85,9 @@ uvre::Texture res::find<uvre::Texture>(const std::string &name, bool complain)
 
     return resource->ptr;
 }
+
+template<>
+void res::shutdown<uvre::Texture>()
+{
+    list.data.clear();
+}

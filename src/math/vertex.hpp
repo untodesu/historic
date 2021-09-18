@@ -10,4 +10,5 @@
 struct Vertex final {
     float3_t position { FLOAT3_ZERO };
     float2_t texcoord { FLOAT2_ZERO };
+    uint32_t atlas_id { 0 };
 };

@@ -7,8 +7,9 @@
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texcoord;
+layout(location = 2) in uint atlas_id;
 
-layout(location = 0) out vec2 fs_texcoord;
+layout(location = 0) out vec3 fs_texcoord;
 
 #if defined(_UVRE_)
 out gl_PerVertex { vec4 gl_Position; };
@@ -21,6 +22,7 @@ layout(std140, binding = 0) uniform UBO {
 
 void main()
 {
-    fs_texcoord = texcoord;
+    fs_texcoord.xy = texcoord;
+    fs_texcoord.z = max(0.0, floor(float(atlas_id) + 0.5));
     gl_Position = projview * vec4(chunkpos + position, 1.0);
 }

@@ -4,16 +4,27 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <shared/voxel_def.hpp>
+#include <shared/voxels.hpp>
 #include <spdlog/spdlog.h>
-#include <unordered_map>
 
-static std::unordered_map<voxel_t, VoxelInfo> def_map;
-static std::vector<voxel_t> def_list;
-
-void voxel_def::add(voxel_t voxel, const VoxelInfo &info)
+VoxelDef::VoxelDef()
+    : def()
 {
-    // voxel_face_t is a bitmask. With that in mind
+}
+
+bool VoxelDef::set(voxel_t voxel, const VoxelInfo &info)
+{
+    if(voxel == NULL_VOXEL) {
+        spdlog::error("VoxelDef: NULL_VOXEL is reserved!");
+        return false;
+    }
+
+    if(def.find(voxel) != def.cend()) {
+        spdlog::error("VoxelDef: voxel {} is already present!", voxel);
+        return true;
+    }
+
+    // Voxel face is a bit mask. With that in mind
     // we need to convert the separate face textures
     // into a single big bitmask to avoid generating
     // a fuck-ton of meshes for a fuck-ton of faces.
@@ -56,27 +67,14 @@ void voxel_def::add(voxel_t voxel, const VoxelInfo &info)
     patched_info.transparency = info.transparency;
     patched_info.faces = patched_faces;
 
-    if(def_map.find(voxel) != def_map.cend())
-        spdlog::warn("Overriding VoxelInfo for {}", voxel);
-    else
-        def_list.push_back(voxel);
-    def_map[voxel] = patched_info;
+    def[voxel] = patched_info;
+    return true;
 }
 
-const VoxelInfo *voxel_def::get(voxel_t voxel)
+const VoxelInfo *VoxelDef::tryGet(voxel_t voxel) const
 {
-    const auto it = def_map.find(voxel);
-    if(it != def_map.cend())
+    const auto it = def.find(voxel);
+    if(it != def.cend())
         return &it->second;
     return nullptr;
-}
-
-size_t voxel_def::count()
-{
-    return def_list.size();
-}
-
-const voxel_t *voxel_def::list()
-{
-    return def_list.data();
 }

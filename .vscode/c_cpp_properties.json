@@ -10,6 +10,7 @@
                 "${workspaceFolder}/deps/spdlog/include",
                 "${workspaceFolder}/deps/stb",
                 "${workspaceFolder}/deps/uvre/include",
+                "${workspaceFolder}/deps/uvre/src_gl/glad/include",
                 "${workspaceFolder}/src"
             ],
             "defines": [

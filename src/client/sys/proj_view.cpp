@@ -7,7 +7,7 @@
 #include <client/comp/camera.hpp>
 #include <client/comp/local_player.hpp>
 #include <client/sys/proj_view.hpp>
-#include <client/world.hpp>
+#include <client/globals.hpp>
 #include <client/input.hpp>
 #include <client/screen.hpp>
 #include <shared/comp/creature.hpp>
@@ -18,20 +18,18 @@ static float4x4_t matrix = FLOAT4X4_IDENTITY;
 
 void proj_view::update()
 {
-    entt::registry &registry = client_world::registry();
-
     matrix = FLOAT4X4_IDENTITY;
 
-    const auto cg = registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
+    const auto cg = globals::registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
     for(const auto [entity, camera] : cg.each()) {
         matrix *= glm::perspective(camera.fov, screen::getAspectRatio(), camera.z_near, camera.z_far);
         break;
     }
 
-    const auto hg = registry.group(entt::get<LocalPlayerComponent, HeadComponent, PlayerComponent>);
+    const auto hg = globals::registry.group(entt::get<LocalPlayerComponent, HeadComponent, PlayerComponent>);
     for(const auto [entity, head] : hg.each()) {
         float3_t position = head.offset;
-        if(CreatureComponent *creature = registry.try_get<CreatureComponent>(entity))
+        if(CreatureComponent *creature = globals::registry.try_get<CreatureComponent>(entity))
             position += creature->position;
         matrix *= glm::lookAt(position, position + floatquat_t(head.angles) * FLOAT3_FORWARD, FLOAT3_UP);
         break;

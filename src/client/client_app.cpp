@@ -6,7 +6,7 @@
  */
 #include <client/comp/camera.hpp>
 #include <client/comp/local_player.hpp>
-#include <client/clock.hpp>
+#include <client/util/clock.hpp>
 #include <client/comp/voxel_mesh.hpp>
 #include <client/sys/player_look.hpp>
 #include <client/sys/player_move.hpp>
@@ -15,10 +15,8 @@
 #include <client/sys/voxel_renderer.hpp>
 #include <client/client_app.hpp>
 #include <client/globals.hpp>
-#include <client/world.hpp>
 #include <client/input.hpp>
 #include <client/screen.hpp>
-#include <client/util.hpp>
 #include <shared/comp/creature.hpp>
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
@@ -29,7 +27,6 @@
 #include <uvre/uvre.hpp>
 #include <cstdlib>
 #include <ctime>
-#include <shared/voxel_def.hpp>
 
 static void glfwOnError(int code, const char *message)
 {
@@ -124,48 +121,29 @@ void client_app::run()
 
     voxel_renderer::init();
 
-    client_world::init();
-    entt::registry &registry = client_world::registry();
+    globals::registry.clear();
 
     // A test voxel #1
     {
         VoxelInfo vinfo = {};
         vinfo.type = VoxelType::SOLID;
         vinfo.transparency = 0;
-        vinfo.faces.push_back({ VOXEL_FACE_SIDES, "textures/test.jpg" });
-        vinfo.faces.push_back({ VOXEL_FACE_UP, "textures/obama.png" });
-        vinfo.faces.push_back({ VOXEL_FACE_DN, "textures/obama.png" });
-        voxel_def::add(0xEE, vinfo);
-    }
-
-    // A test voxel #2
-    {
-        VoxelInfo vinfo = {};
-        vinfo.type = VoxelType::SOLID;
-        vinfo.transparency = 0;
-        vinfo.faces.push_back({ VOXEL_FACE_SOLID, "textures/obama.png" });
-        voxel_def::add(0xFF, vinfo);
-    }
-
-    // A test voxel #3
-    {
-        VoxelInfo vinfo = {};
-        vinfo.type = VoxelType::SOLID;
-        vinfo.transparency = 0;
-        vinfo.faces.push_back({ VOXEL_FACE_SOLID, "textures/gman.jpeg" });
-        voxel_def::add(0xAC, vinfo);
+        vinfo.faces.push_back({ VOXEL_FACE_SIDES, "textures/vox_1.png" });
+        vinfo.faces.push_back({ VOXEL_FACE_UP, "textures/vox_2.png" });
+        vinfo.faces.push_back({ VOXEL_FACE_DN, "textures/vox_0.png" });
+        globals::voxels.set(0xFF, vinfo);
     }
 
     // Player entity >_<
     {
-        entt::entity player = registry.create();
-        registry.emplace<ActiveCameraComponent>(player);
-        registry.emplace<LocalPlayerComponent>(player);
-        registry.emplace<CreatureComponent>(player);
-        registry.emplace<HeadComponent>(player);
-        registry.emplace<PlayerComponent>(player);
+        entt::entity player = globals::registry.create();
+        globals::registry.emplace<ActiveCameraComponent>(player);
+        globals::registry.emplace<LocalPlayerComponent>(player);
+        globals::registry.emplace<CreatureComponent>(player);
+        globals::registry.emplace<HeadComponent>(player);
+        globals::registry.emplace<PlayerComponent>(player);
 
-        CameraComponent &camera = registry.emplace<CameraComponent>(player);
+        CameraComponent &camera = globals::registry.emplace<CameraComponent>(player);
         camera.fov = glm::radians(90.0f);
         camera.z_far = 1024.0f;
         camera.z_near = 0.01f;
@@ -176,21 +154,24 @@ void client_app::run()
     // A bunch of chunks with random stuff
     for(int i = 0; i < 16; i++) {
         for(int j = 0; j < 16; j++) {
-            entt::entity chunk = registry.create();
-            ChunkComponent &comp = registry.emplace<ChunkComponent>(chunk);
+            entt::entity chunk = globals::registry.create();
+            ChunkComponent &comp = globals::registry.emplace<ChunkComponent>(chunk);
             comp.position = chunkpos_t(i, 0, j);
-            for(size_t u = 0; u < CHUNK_VOLUME; u++, comp.data[std::rand() % CHUNK_VOLUME] = 0xEE);
-            registry.emplace<NeedsVoxelMeshComponent>(chunk);
+            for(size_t u = 0; u < CHUNK_VOLUME; comp.data[u++] = 0xFF);
+            globals::registry.emplace<NeedsVoxelMeshComponent>(chunk);
         }
     }
+
+    globals::solid_textures.create(16, 16, MAX_VOXELS);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     Clock fps_clock, print_clock;
     float avg_frametime = 0.0f;
     while(!glfwWindowShouldClose(window)) {
-        const float frametime = fps_clock.restart();
-        avg_frametime += frametime;
+        globals::curtime = static_cast<float>(glfwGetTime());
+        globals::frametime = fps_clock.restart();
+        avg_frametime += globals::frametime;
         avg_frametime *= 0.5f;
 
         if(print_clock.elapsed() >= 1.0f) {
@@ -203,8 +184,8 @@ void client_app::run()
         if(input::isKeyJustPressed(GLFW_KEY_ESCAPE))
             break;
 
-        player_look::update(frametime);
-        player_move::update(frametime);
+        player_look::update();
+        player_move::update();
         proj_view::update();
 
         voxel_mesher::update();
@@ -226,9 +207,11 @@ void client_app::run()
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-    client_world::shutdown();
+    globals::solid_textures.destroy();
 
-    res::cleanup<uvre::Texture>(res::PRECACHE);
+    globals::registry.clear();
+
+    res::shutdown<uvre::Texture>();
 
     voxel_renderer::shutdown();
 

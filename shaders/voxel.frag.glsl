@@ -5,11 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-layout(location = 0) in vec2 texcoord;
+layout(location = 0) in vec3 texcoord;
 
 layout(location = 0) out vec4 color_0;
 
-layout(binding = 0) uniform sampler2D sampler_0;
+layout(binding = 0) uniform sampler2DArray sampler_0;
 
 void main()
 {
