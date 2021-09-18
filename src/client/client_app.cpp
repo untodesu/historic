@@ -130,7 +130,7 @@ void client_app::run()
         vinfo.transparency = 0;
         vinfo.faces.push_back({ VOXEL_FACE_SIDES, "textures/vox_1.png" });
         vinfo.faces.push_back({ VOXEL_FACE_UP, "textures/vox_2.png" });
-        vinfo.faces.push_back({ VOXEL_FACE_DN, "textures/vox_0.png" });
+        vinfo.faces.push_back({ VOXEL_FACE_DN, "textures/vox_2.png" });
         globals::voxels.set(0xFF, vinfo);
     }
 
@@ -152,13 +152,15 @@ void client_app::run()
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     
     // A bunch of chunks with random stuff
-    for(int i = 0; i < 16; i++) {
-        for(int j = 0; j < 16; j++) {
-            entt::entity chunk = globals::registry.create();
-            ChunkComponent &comp = globals::registry.emplace<ChunkComponent>(chunk);
-            comp.position = chunkpos_t(i, 0, j);
-            for(size_t u = 0; u < CHUNK_VOLUME; comp.data[u++] = 0xFF);
-            globals::registry.emplace<NeedsVoxelMeshComponent>(chunk);
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            for(int k = 0; k < 4; k++) {
+                entt::entity chunk = globals::registry.create();
+                ChunkComponent &comp = globals::registry.emplace<ChunkComponent>(chunk);
+                comp.position = chunkpos_t(i, j, k);
+                for(size_t u = 0; u < CHUNK_AREA; u++, comp.data[std::rand() % CHUNK_VOLUME] = 0xFF);
+                globals::registry.emplace<NeedsVoxelMeshComponent>(chunk);
+            }
         }
     }
 

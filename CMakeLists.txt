@@ -23,7 +23,6 @@ add_subdirectory(deps/stb)
 
 # client-side dependencies
 add_subdirectory(deps/glfw)
-add_subdirectory(deps/meshoptimizer)
 add_subdirectory(deps/uvre)
 
 set(vgame_target vgame)
