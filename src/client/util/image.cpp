@@ -44,6 +44,8 @@ Image &Image::operator=(Image &&rhs)
 
 bool Image::load(const stdfs::path &path)
 {
+    stbi_set_flip_vertically_on_load(1);
+
     if(pixels) {
         stbi_image_free(pixels);
         pixels = nullptr;

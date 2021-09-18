@@ -6,11 +6,12 @@
  */
 #include <client/comp/voxel_mesh.hpp>
 #include <client/sys/voxel_mesher.hpp>
+#include <client/packed_vertex.hpp>
 #include <client/globals.hpp>
 #include <shared/comp/chunk.hpp>
 #include <shared/res.hpp>
 #include <uvre/uvre.hpp>
-#include <math/vertex.hpp>
+#include <client/vertex.hpp>
 #include <client/util/mesh_builder.hpp>
 #include <shared/voxels.hpp>
 #include <shared/res.hpp>
@@ -42,7 +43,7 @@ struct MesherData final {
     }
 };
 
-using ChunkMeshBuilder = MeshBuilder<uvre::Index32, Vertex>;
+using ChunkMeshBuilder = MeshBuilder<uvre::Index32, PackedVertex>;
 
 // A lot of copypasta. Too bad!
 static void pushFace(ChunkMeshBuilder &builder, const AtlasNode &node, const localpos_t &lp, voxel_face_t face, uvre::Index32 &base)

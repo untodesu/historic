@@ -8,11 +8,12 @@
 #include <client/sys/proj_view.hpp>
 #include <client/sys/voxel_renderer.hpp>
 #include <client/util/shaderlib.hpp>
+#include <client/packed_vertex.hpp>
 #include <client/globals.hpp>
 #include <shared/comp/chunk.hpp>
 #include <spdlog/spdlog.h>
 #include <uvre/uvre.hpp>
-#include <math/vertex.hpp>
+#include <client/vertex.hpp>
 
 constexpr static const char *VERT_NAME = "shaders/voxel.vert.glsl";
 constexpr static const char *FRAG_NAME = "shaders/voxel.frag.glsl";
@@ -39,10 +40,9 @@ void voxel_renderer::init()
     if(!shaders[0] || !shaders[1])
         std::terminate();
     
-    uvre::VertexAttrib attributes[3] = {};
-    attributes[0] = uvre::VertexAttrib { 0, uvre::VertexAttribType::FLOAT32, 3, offsetof(Vertex, position), false };
-    attributes[1] = uvre::VertexAttrib { 1, uvre::VertexAttribType::FLOAT32, 2, offsetof(Vertex, texcoord), false };
-    attributes[2] = uvre::VertexAttrib { 2, uvre::VertexAttribType::UNSIGNED_INT32, 1, offsetof(Vertex, atlas_id), false };
+    uvre::VertexAttrib attributes[2] = {};
+    attributes[0] = uvre::VertexAttrib { 0, uvre::VertexAttribType::UNSIGNED_INT32, 2, offsetof(PackedVertex, pos_uv), false };
+    attributes[1] = uvre::VertexAttrib { 1, uvre::VertexAttribType::UNSIGNED_INT32, 1, offsetof(PackedVertex, tex_id), false };
 
     uvre::PipelineInfo pipeline_info = {};
     pipeline_info.blending.enabled = false;
@@ -52,9 +52,9 @@ void voxel_renderer::init()
     pipeline_info.face_culling.flags = uvre::CULL_BACK;
     pipeline_info.index_type = uvre::IndexType::INDEX32;
     pipeline_info.primitive_mode = uvre::PrimitiveMode::TRIANGLES;
-    pipeline_info.fill_mode = uvre::FillMode::WIREFRAME;
-    pipeline_info.vertex_stride = sizeof(Vertex);
-    pipeline_info.num_vertex_attribs = 3;
+    pipeline_info.fill_mode = uvre::FillMode::FILLED;
+    pipeline_info.vertex_stride = sizeof(PackedVertex);
+    pipeline_info.num_vertex_attribs = 2;
     pipeline_info.vertex_attribs = attributes;
     pipeline_info.num_shaders = 2;
     pipeline_info.shaders = shaders;
