@@ -5,12 +5,12 @@
             "includePath": [
                 "${default}",
                 "${workspaceFolder}/deps/entt/src",
+                "${workspaceFolder}/deps/glad/include",
                 "${workspaceFolder}/deps/glfw/include",
                 "${workspaceFolder}/deps/glm",
                 "${workspaceFolder}/deps/spdlog/include",
                 "${workspaceFolder}/deps/stb",
-                "${workspaceFolder}/deps/uvre/include",
-                "${workspaceFolder}/deps/uvre/src_gl/glad/include",
+                "${workspaceFolder}/deps/thread_pool",
                 "${workspaceFolder}/src"
             ],
             "defines": [

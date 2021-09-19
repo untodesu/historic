@@ -9,6 +9,7 @@
 #include <math/types.hpp>
 #include <math/util.hpp>
 #include <string>
+#include <utility>
 #include <vector>
 
 constexpr static const size_t CHUNK_SIZE = 32;
@@ -25,6 +26,14 @@ using voxel_array_t = std::array<voxel_t, CHUNK_VOLUME>;
 
 constexpr static const voxel_t NULL_VOXEL = 0x00;
 constexpr static const size_t MAX_VOXELS = static_cast<size_t>(std::numeric_limits<voxel_t>::max()) + 1;
+
+template<>
+struct std::hash<chunkpos_t> final {
+    size_t operator()(const chunkpos_t &cp) const
+    {
+        return (cp.x * 73856093) ^ (cp.y * 19349663) ^ (cp.z * 83492791);
+    }
+};
 
 constexpr static inline const chunkpos_t toChunkPos(const float3_t &wp)
 {

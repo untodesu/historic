@@ -5,12 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <uvre/fwd.hpp>
+#include <client/gl/drawcmd.hpp>
+#include <client/gl/vertexarray.hpp>
 #include <vector>
 
 struct NeedsVoxelMeshComponent final {};
 struct VoxelMeshComponent final {
-    uvre::Buffer ibo;
-    uvre::Buffer vbo;
-    size_t count;
+    gl::Buffer ibo, vbo;
+    gl::VertexArray vao;
+    gl::DrawCommand cmd;
 };

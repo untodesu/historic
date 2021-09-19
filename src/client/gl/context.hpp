@@ -5,9 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <shared/world.hpp>
 
-struct ChunkComponent final {
-    chunkpos_t position { 0, 0, 0 };
-    voxel_array_t data;
-};
+namespace gl
+{
+void setHints();
+void init();
+} // namespace gl

@@ -15,12 +15,6 @@ struct BasicVertex final {
     BasicVertex(const float3_t &pos, const float2_t &uv);
 };
 
-using voxel_uv_t = uint8_t;
-constexpr static const voxel_uv_t VOXEL_UV_0_0 = 0;
-constexpr static const voxel_uv_t VOXEL_UV_0_1 = 1;
-constexpr static const voxel_uv_t VOXEL_UV_1_0 = 2;
-constexpr static const voxel_uv_t VOXEL_UV_1_1 = 3;
-
 struct VoxelVertex final {
     constexpr static const float POS_EPSILON = 1.0f / 64.0f;
     uint32_t pack[2];

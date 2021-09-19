@@ -20,15 +20,16 @@ add_subdirectory(deps/entt)
 add_subdirectory(deps/glm)
 add_subdirectory(deps/spdlog)
 add_subdirectory(deps/stb)
+add_subdirectory(deps/thread_pool)
 
 # client-side dependencies
+add_subdirectory(deps/glad)
 add_subdirectory(deps/glfw)
-add_subdirectory(deps/uvre)
 
 set(vgame_target vgame)
 add_executable(${vgame_target} "")
 target_compile_definitions(${vgame_target} PRIVATE GLFW_INCLUDE_NONE)
-target_link_libraries(${vgame_target} PRIVATE EnTT glm spdlog stb)
+target_link_libraries(${vgame_target} PRIVATE EnTT glm spdlog stb thread_pool)
 add_subdirectory(src)
 
 if(MSVC)

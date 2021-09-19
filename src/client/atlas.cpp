@@ -8,10 +8,9 @@
 #include <client/atlas.hpp>
 #include <client/globals.hpp>
 #include <spdlog/spdlog.h>
-#include <uvre/uvre.hpp>
 
 Atlas::Atlas()
-    : w(0), h(0), d(0), head(0), texture(nullptr), list()
+    : w(0), h(0), d(0), head(0), texture(), list()
 {
 }
 
@@ -24,15 +23,8 @@ bool Atlas::create(uint32_t width, uint32_t height, uint32_t layers)
     d = layers;
     head = 0;
 
-    uvre::TextureInfo info = {};
-    info.type = uvre::TextureType::TEXTURE_ARRAY;
-    info.format = uvre::PixelFormat::R8G8B8A8_UNORM;
-    info.width = static_cast<int>(width);
-    info.height = static_cast<int>(height);
-    info.depth = static_cast<int>(layers);
-
-    texture = globals::render_device->createTexture(info);
-    if(!texture) {
+    texture.create();
+    if(!texture.storage(static_cast<int>(width), static_cast<int>(height), static_cast<int>(layers), gl::PixelFormat::R8G8B8A8_UNORM)) {
         spdlog::warn("Atlas: unable to create a texture array.");
         destroy();
         return false;
@@ -47,12 +39,17 @@ void Atlas::destroy()
     h = 0;
     d = 0;
     head = std::numeric_limits<uint32_t>::max();
-    texture = nullptr;
+    texture.destroy();
+}
+
+void Atlas::submit()
+{
+    texture.genMipmap();
 }
 
 const AtlasNode *Atlas::push(const std::string &path)
 {
-    if(!texture) {
+    if(!texture.valid()) {
         spdlog::warn("Atlas: cannot push() while destroyed.");
         return nullptr;
     }
@@ -81,7 +78,7 @@ const AtlasNode *Atlas::push(const std::string &path)
         node.max_uv.x = static_cast<float>(img_w) / static_cast<float>(w);
         node.max_uv.y = static_cast<float>(img_h) / static_cast<float>(h);
 
-        globals::render_device->writeTextureArray(texture, 0, 0, node.index, img_w, img_h, 1, Image::FORMAT, image.data());
+        texture.write(static_cast<int>(node.index), 0, 0, img_w, img_h, Image::FORMAT, image.data());
         return &(list[path] = node);
     }
 
@@ -97,7 +94,7 @@ const AtlasNode *Atlas::getNode(const std::string &path) const
     return nullptr;
 }
 
-uvre::Texture Atlas::getTexture() const
+const gl::Texture2DArray &Atlas::getTexture() const
 {
     return texture;
 }

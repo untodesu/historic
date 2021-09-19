@@ -10,6 +10,3 @@
 [submodule "deps/glfw"]
 	path = deps/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "deps/uvre"]
-	path = deps/uvre
-	url = https://github.com/undnull/uvre.git

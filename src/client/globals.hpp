@@ -8,16 +8,16 @@
 #include <client/atlas.hpp>
 #include <entt/entt.hpp>
 #include <math/types.hpp>
+#include <shared/chunks.hpp>
 #include <shared/voxels.hpp>
-#include <uvre/fwd.hpp>
 
 namespace globals
 {
 extern float curtime;
 extern float frametime;
 extern uint64_t frame_count;
-extern uvre::IRenderDevice *render_device;
 extern entt::registry registry;
+extern ChunkManager chunks;
 extern VoxelDef voxels;
 extern Atlas solid_textures;
 } // namespace globals

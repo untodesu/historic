@@ -9,5 +9,6 @@
 
 namespace voxel_mesher
 {
+void shutdown();
 void update();
 } // namespace voxel_mesher

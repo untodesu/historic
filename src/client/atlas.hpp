@@ -5,10 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <math/types.hpp>
+#include <client/gl/texture.hpp>
 #include <string>
 #include <unordered_map>
-#include <uvre/fwd.hpp>
 
 struct AtlasNode final {
     uint16_t index;
@@ -21,13 +20,14 @@ public:
 
     bool create(uint32_t width, uint32_t height, uint32_t layers);
     void destroy();
+    void submit();
 
     const AtlasNode *push(const std::string &path);
     const AtlasNode *getNode(const std::string &path) const;
-    uvre::Texture getTexture() const;
+    const gl::Texture2DArray &getTexture() const;
 
 private:
     uint32_t w, h, d, head;
-    uvre::Texture texture;
+    gl::Texture2DArray texture;
     std::unordered_map<std::string, AtlasNode> list;
 };

@@ -5,12 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <client/gl/texture.hpp>
 #include <filesystem.hpp>
-#include <uvre/const.hpp>
 
 class Image final {
 public:
-    constexpr static const uvre::PixelFormat FORMAT = uvre::PixelFormat::R8G8B8A8_UNORM;
+    constexpr static const gl::PixelFormat FORMAT = gl::PixelFormat::R8G8B8A8_UNORM;
 
 public:
     Image();

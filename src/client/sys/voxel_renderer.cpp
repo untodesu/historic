@@ -4,16 +4,17 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+#include <filesystem.hpp>
 #include <client/comp/voxel_mesh.hpp>
 #include <client/sys/proj_view.hpp>
 #include <client/sys/voxel_renderer.hpp>
-#include <client/util/shaderlib.hpp>
 #include <client/globals.hpp>
-#include <shared/comp/chunk.hpp>
 #include <spdlog/spdlog.h>
-#include <uvre/uvre.hpp>
 #include <client/vertex.hpp>
 #include <math/util.hpp>
+#include <client/gl/pipeline.hpp>
+#include <client/gl/sampler.hpp>
+#include <client/gl/shader.hpp>
 
 constexpr static const char *VERT_NAME = "shaders/voxel.vert.glsl";
 constexpr static const char *FRAG_NAME = "shaders/voxel.frag.glsl";
@@ -23,71 +24,44 @@ struct alignas(16) UBufferData final {
     float3_t chunkpos;
 };
 
-static uvre::ICommandList *commands = nullptr;
-static uvre::Shader shaders[2] = { nullptr, nullptr };
-static uvre::Pipeline pipeline = nullptr;
-static uvre::Sampler sampler = nullptr;
-static uvre::Buffer ubuffer = nullptr;
+static gl::Shader shaders[2];
+static gl::Pipeline pipeline;
+static gl::Sampler sampler;
+static gl::Buffer ubuffer;
 
 void voxel_renderer::init()
 {
-    commands = globals::render_device->createCommandList();
-    if(!commands) 
+    std::string vsrc, fsrc;
+    if(!fs::readText(VERT_NAME, vsrc) || !fs::readText(FRAG_NAME, fsrc))
         std::terminate();
 
-    shaders[0] = shaderlib::load(VERT_NAME, uvre::ShaderFormat::SOURCE_GLSL, uvre::ShaderStage::VERTEX);
-    shaders[1] = shaderlib::load(FRAG_NAME, uvre::ShaderFormat::SOURCE_GLSL, uvre::ShaderStage::FRAGMENT);
-    if(!shaders[0] || !shaders[1])
+    shaders[0].create();
+    if(!shaders[0].glsl(GL_VERTEX_SHADER, vsrc))
         std::terminate();
 
-    const uvre::VertexAttrib attributes[] = {
-        { 0, uvre::VertexAttribType::UNSIGNED_INT32, 2, offsetof(VoxelVertex, pack), false }
-    };
-
-    uvre::PipelineInfo pipeline_info = {};
-    pipeline_info.blending.enabled = false;
-    pipeline_info.depth_testing.enabled = true;
-    pipeline_info.depth_testing.func = uvre::DepthFunc::LESS_OR_EQUAL;
-    pipeline_info.face_culling.enabled = true;
-    pipeline_info.face_culling.flags = uvre::CULL_BACK;
-    pipeline_info.index_type = uvre::IndexType::INDEX16;
-    pipeline_info.primitive_mode = uvre::PrimitiveMode::TRIANGLES;
-    pipeline_info.fill_mode = uvre::FillMode::FILLED;
-    pipeline_info.vertex_stride = sizeof(VoxelVertex);
-    pipeline_info.num_vertex_attribs = math::arraySize(attributes);
-    pipeline_info.vertex_attribs = attributes;
-    pipeline_info.num_shaders = 2;
-    pipeline_info.shaders = shaders;
-
-    pipeline = globals::render_device->createPipeline(pipeline_info);
-    if(!pipeline)
+    shaders[1].create();
+    if(!shaders[1].glsl(GL_FRAGMENT_SHADER, fsrc))
         std::terminate();
 
-    uvre::SamplerInfo sampler_info = {};
-    sampler_info.flags = uvre::SAMPLER_CLAMP_S | uvre::SAMPLER_CLAMP_T;
+    pipeline.create();
+    pipeline.stage(shaders[0]);
+    pipeline.stage(shaders[1]);
 
-    sampler = globals::render_device->createSampler(sampler_info);
-    if(!sampler)
-        std::terminate();
+    sampler.create();
+    sampler.parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    sampler.parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    uvre::BufferInfo ubuffer_info = {};
-    ubuffer_info.type = uvre::BufferType::DATA_BUFFER;
-    ubuffer_info.size = sizeof(UBufferData);
-
-    ubuffer = globals::render_device->createBuffer(ubuffer_info);
-    if(!ubuffer)
-        std::terminate();
+    ubuffer.create();
+    ubuffer.resize(sizeof(UBufferData), nullptr, GL_DYNAMIC_DRAW);
 }
 
 void voxel_renderer::shutdown()
 {
-    globals::render_device->destroyCommandList(commands);
-    ubuffer = nullptr;
-    sampler = nullptr;
-    pipeline = nullptr;
-    shaders[1] = nullptr;
-    shaders[0] = nullptr;
-    commands = nullptr;
+    ubuffer.destroy();
+    sampler.destroy();
+    pipeline.destroy();
+    shaders[1].destroy();
+    shaders[0].destroy();
 }
 
 // UNDONE: move this somewhere else
@@ -115,29 +89,33 @@ static inline bool isInFrustum(const Frustum &frustum, const chunkpos_t &cp)
 
 void voxel_renderer::update()
 {
-    globals::render_device->startRecording(commands);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
+    //glFrontFace(GL_CCW);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     UBufferData ubuffer_data = {};
     ubuffer_data.projview = proj_view::matrix();
+    ubuffer.write(offsetof(UBufferData, projview), sizeof(UBufferData::projview), &ubuffer_data.projview);
 
-    commands->writeBuffer(ubuffer, offsetof(UBufferData, projview), sizeof(ubuffer_data.projview), &ubuffer_data.projview);
-    commands->bindPipeline(pipeline);
-    commands->bindUniformBuffer(ubuffer, 0);
-    commands->bindSampler(sampler, 0);
-    commands->bindTexture(globals::solid_textures.getTexture(), 0);
+    pipeline.bind();
+    sampler.bind(0);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubuffer.get());
+    globals::solid_textures.getTexture().bind(0);
 
     const Frustum &frustum = proj_view::frustum();
 
-    auto group = globals::registry.group(entt::get<VoxelMeshComponent, ChunkComponent>);
-    for(const auto [entity, mesh, chunk] : group.each()) {
-        if(isInFrustum(frustum, chunk.position)) {
-            ubuffer_data.chunkpos = toWorldPos(chunk.position);
-            commands->writeBuffer(ubuffer, offsetof(UBufferData, chunkpos), sizeof(ubuffer_data.chunkpos), &ubuffer_data.chunkpos);
-            commands->bindIndexBuffer(mesh.ibo);
-            commands->bindVertexBuffer(mesh.vbo);
-            commands->idraw(mesh.count, 1, 0, 0, 0);
+    auto group = globals::registry.group(entt::get<VoxelMeshComponent, chunkpos_t>);
+    for(const auto [entity, mesh, chunkpos] : group.each()) {
+        if(isInFrustum(frustum, chunkpos)) {
+            ubuffer_data.chunkpos = toWorldPos(chunkpos);
+            ubuffer.write(offsetof(UBufferData, chunkpos), sizeof(UBufferData::chunkpos), &ubuffer_data.chunkpos);
+            mesh.vao.bind();
+            mesh.cmd.invoke();
         }
     }
-
-    globals::render_device->submit(commands);
 }
