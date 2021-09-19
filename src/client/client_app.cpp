@@ -153,18 +153,24 @@ void client_app::run()
     
     // A bunch of chunks with random stuff
     for(int i = 0; i < 4; i++) {
-        for(int j = 0; j < 4; j++) {
+        for(int j = 0; j < 1; j++) {
             for(int k = 0; k < 4; k++) {
                 entt::entity chunk = globals::registry.create();
                 ChunkComponent &comp = globals::registry.emplace<ChunkComponent>(chunk);
                 comp.position = chunkpos_t(i, j, k);
-                for(size_t u = 0; u < CHUNK_AREA; u++, comp.data[std::rand() % CHUNK_VOLUME] = 0xFF);
+                //for(size_t u = 0; u < CHUNK_AREA; u++, comp.data[std::rand() % CHUNK_VOLUME] = 0xFF);
+                for(size_t u = 0; u < CHUNK_VOLUME; comp.data[u++] = 0xFF);
                 globals::registry.emplace<NeedsVoxelMeshComponent>(chunk);
             }
         }
     }
 
     globals::solid_textures.create(16, 16, MAX_VOXELS);
+    for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
+        for(const VoxelFaceInfo &face : it->second.faces) {
+            globals::solid_textures.push(face.texture);
+        }
+    }
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 

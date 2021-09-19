@@ -5,10 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <math/types.hpp>
+#include <math/frustum.hpp>
 
 namespace proj_view
 {
 void update();
-const float4x4_t &get();
+const float4x4_t &matrix();
+const Frustum &frustum();
 } // namespace proj_view

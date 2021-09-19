@@ -90,12 +90,35 @@ void voxel_renderer::shutdown()
     commands = nullptr;
 }
 
+// UNDONE: move this somewhere else
+static inline bool isInFrustum(const Frustum &frustum, const chunkpos_t &cp)
+{
+    const float3_t wp = toWorldPos(cp);
+    if(frustum.point(wp + float3_t(0.0f, 0.0f, 0.0f)))
+        return true;
+    if(frustum.point(wp + float3_t(0.0f, 0.0f, CHUNK_SIZE)))
+        return true;
+    if(frustum.point(wp + float3_t(0.0f, CHUNK_SIZE, 0.0f)))
+        return true;
+    if(frustum.point(wp + float3_t(0.0f, CHUNK_SIZE, CHUNK_SIZE)))
+        return true;
+    if(frustum.point(wp + float3_t(CHUNK_SIZE, 0.0f, 0.0f)))
+        return true;
+    if(frustum.point(wp + float3_t(CHUNK_SIZE, 0.0f, CHUNK_SIZE)))
+        return true;
+    if(frustum.point(wp + float3_t(CHUNK_SIZE, CHUNK_SIZE, 0.0f)))
+        return true;
+    if(frustum.point(wp + float3_t(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
+        return true;
+    return false;
+}
+
 void voxel_renderer::update()
 {
     globals::render_device->startRecording(commands);
 
     UBufferData ubuffer_data = {};
-    ubuffer_data.projview = proj_view::get();
+    ubuffer_data.projview = proj_view::matrix();
 
     commands->writeBuffer(ubuffer, offsetof(UBufferData, projview), sizeof(ubuffer_data.projview), &ubuffer_data.projview);
     commands->bindPipeline(pipeline);
@@ -103,13 +126,17 @@ void voxel_renderer::update()
     commands->bindSampler(sampler, 0);
     commands->bindTexture(globals::solid_textures.getTexture(), 0);
 
+    const Frustum &frustum = proj_view::frustum();
+
     auto group = globals::registry.group(entt::get<VoxelMeshComponent, ChunkComponent>);
     for(const auto [entity, mesh, chunk] : group.each()) {
-        ubuffer_data.chunkpos = toWorldPos(chunk.position);
-        commands->writeBuffer(ubuffer, offsetof(UBufferData, chunkpos), sizeof(ubuffer_data.chunkpos), &ubuffer_data.chunkpos);
-        commands->bindIndexBuffer(mesh.ibo);
-        commands->bindVertexBuffer(mesh.vbo);
-        commands->idraw(mesh.count, 1, 0, 0, 0);
+        if(isInFrustum(frustum, chunk.position)) {
+            ubuffer_data.chunkpos = toWorldPos(chunk.position);
+            commands->writeBuffer(ubuffer, offsetof(UBufferData, chunkpos), sizeof(ubuffer_data.chunkpos), &ubuffer_data.chunkpos);
+            commands->bindIndexBuffer(mesh.ibo);
+            commands->bindVertexBuffer(mesh.vbo);
+            commands->idraw(mesh.count, 1, 0, 0, 0);
+        }
     }
 
     globals::render_device->submit(commands);

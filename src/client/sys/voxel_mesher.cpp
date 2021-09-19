@@ -166,7 +166,7 @@ static void genMesh(ChunkMeshBuilder &builder, const MesherData &data)
             for(const VoxelFaceInfo &face : info->faces) {
                 // UNDONE: we should push() that only when we finish
                 // registering voxel information in VoxelDef.
-                const AtlasNode *node = globals::solid_textures.push(face.texture);
+                const AtlasNode *node = globals::solid_textures.getNode(face.texture);
                 if(node) {
                     const localpos_t lp = toLocalPos(i);
                     voxel_face_t mask = face.mask;
@@ -189,68 +189,13 @@ static void genMesh(ChunkMeshBuilder &builder, const MesherData &data)
     }
 }
 
-#if 0
-static void genMesh(VoxelMeshComponent &mesh, const MesherData &data, voxel_t voxel, const VoxelInfo &info)
-{
-    for(const VoxelFaceInfo &face_info : info.faces) {
-        uvre::Index32 base = 0;
-        ChunkMeshBuilder builder;
-        size_t num_voxels = 0;
-
-        for(voxelidx_t i = 0; i < CHUNK_VOLUME; i++) {
-            if(data.self_data->second[i] == voxel) {
-                num_voxels++;
-                const localpos_t lp = toLocalPos(i);
-                voxel_face_t mask = face_info.mask;
-                if((mask & VOXEL_FACE_LF) && isOccupied(data, lp - localpos_t(1, 0, 0), voxel, VOXEL_FACE_RT))
-                    mask &= ~VOXEL_FACE_LF;
-                if((mask & VOXEL_FACE_RT) && isOccupied(data, lp + localpos_t(1, 0, 0), voxel, VOXEL_FACE_LF))
-                    mask &= ~VOXEL_FACE_RT;
-                if((mask & VOXEL_FACE_BK) && isOccupied(data, lp + localpos_t(0, 0, 1), voxel, VOXEL_FACE_FT))
-                    mask &= ~VOXEL_FACE_BK;
-                if((mask & VOXEL_FACE_FT) && isOccupied(data, lp - localpos_t(0, 0, 1), voxel, VOXEL_FACE_BK))
-                    mask &= ~VOXEL_FACE_FT;
-                if((mask & VOXEL_FACE_UP) && isOccupied(data, lp + localpos_t(0, 1, 0), voxel, VOXEL_FACE_DN))
-                    mask &= ~VOXEL_FACE_UP;
-                if((mask & VOXEL_FACE_DN) && isOccupied(data, lp - localpos_t(0, 1, 0), voxel, VOXEL_FACE_UP))
-                    mask &= ~VOXEL_FACE_DN;
-                pushFace(builder, lp, mask, base);
-            }
-        }
-
-        if(!builder.empty()) {
-            uvre::BufferInfo ibo_info = {};
-            ibo_info.type = uvre::BufferType::INDEX_BUFFER;
-            ibo_info.size = builder.isize();
-            ibo_info.data = builder.idata();
-
-            uvre::BufferInfo vbo_info = {};
-            vbo_info.type = uvre::BufferType::VERTEX_BUFFER;
-            vbo_info.size = builder.vsize();
-            vbo_info.data = builder.vdata();
-
-            VoxelMesh submesh = {};
-            submesh.ibo = globals::render_device->createBuffer(ibo_info);
-            submesh.vbo = globals::render_device->createBuffer(vbo_info);
-            submesh.texture = res::load<uvre::Texture>(face_info.texture, res::PRECACHE);
-            submesh.count = builder.icount();
-
-            mesh.data.push_back(std::move(submesh));
-
-            base = 0;
-            builder.clear();
-        }
-    }
-}
-#endif
-
 // UNDONE: better greedy meshing?
 void voxel_mesher::update()
 {
     auto group = globals::registry.group<NeedsVoxelMeshComponent>(entt::get<ChunkComponent>);
     for(auto [entity, chunk] : group.each()) {
-        VoxelMeshComponent &mesh = globals::registry.emplace_or_replace<VoxelMeshComponent>(entity);
-        
+        globals::registry.remove<VoxelMeshComponent>(entity);
+
         chunkpos_t cpl = chunk.position;
         voxel_array_t voxels;
 
@@ -274,6 +219,8 @@ void voxel_mesher::update()
         genMesh(builder, data);
 
         if(!builder.empty()) {
+            VoxelMeshComponent &mesh = globals::registry.emplace_or_replace<VoxelMeshComponent>(entity);
+
             uvre::BufferInfo ibo_info = {};
             ibo_info.type = uvre::BufferType::INDEX_BUFFER;
             ibo_info.size = builder.isize();

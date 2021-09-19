@@ -59,8 +59,8 @@ const AtlasNode *Atlas::push(const std::string &path)
 
     const auto it = list.find(path);
     if(it != list.cend()) {
-        // FIXME: It FLOODS
-        //spdlog::warn("Atlas: {} is already present in the atlas.", path);
+        // It FLOODS
+        // spdlog::warn("Atlas: {} is already present in the atlas.", path);
         return &it->second;
     }
 
