@@ -18,7 +18,7 @@ layout(std140, binding = 0) uniform UBO {
 
 void main()
 {
-    gl_Position = projview * vec4(floor(unpackUnorm4x8(pack.x & 0x00FFFFFF).xyz * 64.0) + chunkpos, 1.0);
+    gl_Position = projview * vec4(floor((unpackUnorm4x8(pack.x & 0x00FFFFFF).xyz * 32.0) + 0.5) + chunkpos, 1.0);
     out_uv.xy = unpackUnorm4x8(pack.y & 0x0000FFFF).xy;
     out_uv.z = max(0.0, floor(float((pack.y >> 16) & 0xFFFF) + 0.5));
 }

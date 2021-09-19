@@ -16,7 +16,7 @@ struct BasicVertex final {
 };
 
 struct VoxelVertex final {
-    constexpr static const float POS_EPSILON = 1.0f / 64.0f;
+    constexpr static const float POS_EPSILON = 1.0f / 32.0f;
     uint32_t pack[2];
     VoxelVertex(const float3_t &pos, const float2_t &uv, uint16_t tex_id);
 };

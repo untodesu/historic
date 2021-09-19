@@ -31,8 +31,21 @@ struct MesherData final {
 
 using ChunkMeshBuilder = MeshBuilder<uint16_t, VoxelVertex>;
 
+static void pushQuad(ChunkMeshBuilder *builder, uint16_t &base, const VoxelVertex data[4])
+{
+    for(int i = 0; i < 4; i++)
+        builder->vertex(data[i]);
+    builder->index(base + 0);
+    builder->index(base + 1);
+    builder->index(base + 2);
+    builder->index(base + 2);
+    builder->index(base + 3);
+    builder->index(base + 0);
+    base += 4;
+}
+
 // A lot of copypasta. Too bad!
-static void pushFace(ChunkMeshBuilder *builder, const AtlasNode *&node, const localpos_t &lp, voxel_face_t face, uint16_t &base)
+static void pushFace(ChunkMeshBuilder *builder, const AtlasNode *node, const localpos_t &lp, voxel_face_t face, uint16_t &base)
 {
     const float3_t lpf = float3_t(lp);
 
@@ -216,8 +229,8 @@ void voxel_mesher::update()
                 mesh.vbo.create();
                 mesh.vao.create();
                 mesh.cmd.create();
-                mesh.ibo.resize(mesher.builder->isize(), mesher.builder->idata(), GL_STATIC_DRAW);
-                mesh.vbo.resize(mesher.builder->vsize(), mesher.builder->vdata(), GL_STATIC_DRAW);
+                mesh.ibo.storage(mesher.builder->isize(), mesher.builder->idata(), 0);
+                mesh.vbo.storage(mesher.builder->vsize(), mesher.builder->vdata(), 0);
                 mesh.vao.setIndexBuffer(mesh.ibo);
                 mesh.vao.setVertexBuffer(0, mesh.vbo, sizeof(VoxelVertex));
                 mesh.vao.enableAttribute(0, true);

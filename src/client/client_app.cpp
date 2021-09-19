@@ -88,9 +88,9 @@ void client_app::run()
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     
     // A bunch of chunks with random stuff
-    for(int i = -11; i < 12; i++) {
-        for(int j = 0; j < 2; j++) {
-            for(int k = -11; k < 12; k++) {
+    for(int i = 0; i < 1; i++) {
+        for(int j = 0; j < 1; j++) {
+            for(int k = 0; k < 1; k++) {
                 const chunkpos_t cp = chunkpos_t(i, j, k);
 
                 entt::entity chunk_ent = globals::registry.create();
@@ -98,8 +98,8 @@ void client_app::run()
                 globals::registry.emplace<NeedsVoxelMeshComponent>(chunk_ent);
 
                 voxel_array_t *chunk = globals::chunks.findOrCreate(cp);
-                //for(size_t u = 0; u < CHUNK_AREA; u++, chunk->at(std::rand() % CHUNK_VOLUME) = 0xFF);
-                for(size_t u = 0; u < CHUNK_VOLUME; chunk->at(u++) = 0xFF);
+                for(size_t u = 0; u < CHUNK_AREA; u++, chunk->at(std::rand() % CHUNK_VOLUME) = 0xFF);
+                //for(size_t u = 0; u < CHUNK_VOLUME; chunk->at(u++) = 0xFF);
             }
         }
     }
@@ -112,7 +112,7 @@ void client_app::run()
     }
     globals::solid_textures.submit();
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 

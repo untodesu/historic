@@ -16,6 +16,7 @@ public:
     Buffer &operator=(Buffer &&rhs);
     void create();
     void destroy();
+    void storage(size_t size, const void *data, uint32_t flags);
     void resize(size_t new_size, const void *data, uint32_t usage);
     void write(size_t offset, size_t size, const void *data);
 };
@@ -46,6 +47,11 @@ inline void gl::Buffer::destroy()
         glDeleteBuffers(1, &handle);
         handle = 0;
     }
+}
+
+inline void gl::Buffer::storage(size_t size, const void *data, uint32_t flags)
+{
+    glNamedBufferStorage(handle, static_cast<GLsizeiptr>(size), data, flags);
 }
 
 inline void gl::Buffer::resize(size_t new_size, const void *data, uint32_t usage)
