@@ -6,7 +6,6 @@
  */
 #include <client/comp/voxel_mesh.hpp>
 #include <client/sys/voxel_mesher.hpp>
-#include <client/packed_vertex.hpp>
 #include <client/globals.hpp>
 #include <shared/comp/chunk.hpp>
 #include <shared/res.hpp>
@@ -43,19 +42,19 @@ struct MesherData final {
     }
 };
 
-using ChunkMeshBuilder = MeshBuilder<uvre::Index32, PackedVertex>;
+using ChunkMeshBuilder = MeshBuilder<uvre::Index16, VoxelVertex>;
 
 // A lot of copypasta. Too bad!
-static void pushFace(ChunkMeshBuilder &builder, const AtlasNode &node, const localpos_t &lp, voxel_face_t face, uvre::Index32 &base)
+static void pushFace(ChunkMeshBuilder &builder, const AtlasNode *&node, const localpos_t &lp, voxel_face_t face, uvre::Index16 &base)
 {
     const float3_t lpf = float3_t(lp);
     uvre::Index32 num_faces = 0;
 
     if(face & VOXEL_FACE_LF) {
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 0.0f, 1.0f), float2_t(1.0f, 0.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 1.0f, 1.0f), float2_t(1.0f, 1.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 1.0f, 0.0f), float2_t(0.0f, 1.0f) * node.max_uv, node.index });
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 1.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 1.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 0.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
         builder.index(base + 0);
         builder.index(base + 1);
         builder.index(base + 2);
@@ -66,10 +65,10 @@ static void pushFace(ChunkMeshBuilder &builder, const AtlasNode &node, const loc
     }
 
     if(face & VOXEL_FACE_RT) {
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 1.0f, 0.0f), float2_t(1.0f, 1.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 1.0f, 1.0f), float2_t(0.0f, 1.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 0.0f, 1.0f), float2_t(0.0f, 0.0f) * node.max_uv, node.index });
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 0.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 1.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 1.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
         builder.index(base + 0);
         builder.index(base + 1);
         builder.index(base + 2);
@@ -80,10 +79,10 @@ static void pushFace(ChunkMeshBuilder &builder, const AtlasNode &node, const loc
     }
 
     if(face & VOXEL_FACE_BK) {
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 0.0f, 1.0f), float2_t(0.0f, 0.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 0.0f, 1.0f), float2_t(1.0f, 0.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 1.0f, 1.0f), float2_t(1.0f, 1.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 1.0f, 1.0f), float2_t(0.0f, 1.0f) * node.max_uv, node.index });
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 1.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 1.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 1.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 1.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
         builder.index(base + 0);
         builder.index(base + 1);
         builder.index(base + 2);
@@ -94,10 +93,10 @@ static void pushFace(ChunkMeshBuilder &builder, const AtlasNode &node, const loc
     }
 
     if(face & VOXEL_FACE_FT) {
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 1.0f, 0.0f), float2_t(1.0f, 1.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 1.0f, 0.0f), float2_t(0.0f, 1.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) * node.max_uv, node.index });
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 0.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 0.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
         builder.index(base + 0);
         builder.index(base + 1);
         builder.index(base + 2);
@@ -108,10 +107,10 @@ static void pushFace(ChunkMeshBuilder &builder, const AtlasNode &node, const loc
     }
 
     if(face & VOXEL_FACE_UP) {
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 1.0f, 0.0f), float2_t(1.0f, 0.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 1.0f, 1.0f), float2_t(1.0f, 1.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 1.0f, 1.0f), float2_t(0.0f, 1.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 1.0f, 0.0f), float2_t(0.0f, 0.0f) * node.max_uv, node.index });
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 0.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 1.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 1.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 0.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
         builder.index(base + 0);
         builder.index(base + 1);
         builder.index(base + 2);
@@ -122,10 +121,10 @@ static void pushFace(ChunkMeshBuilder &builder, const AtlasNode &node, const loc
     }
 
     if(face & VOXEL_FACE_DN) {
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(1.0f, 0.0f, 1.0f), float2_t(1.0f, 1.0f) * node.max_uv, node.index });
-        builder.vertex(Vertex { lpf + float3_t(0.0f, 0.0f, 1.0f), float2_t(0.0f, 1.0f) * node.max_uv, node.index });
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 1.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
+        builder.vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 1.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
         builder.index(base + 0);
         builder.index(base + 1);
         builder.index(base + 2);
@@ -159,7 +158,7 @@ static bool isOccupied(const MesherData &data, const localpos_t &lp, voxel_t vox
 static void genMesh(ChunkMeshBuilder &builder, const MesherData &data)
 {
     builder.clear();
-    uvre::Index32 base = 0;
+    uvre::Index16 base = 0;
     for(voxelidx_t i = 0; i < CHUNK_VOLUME; i++) {
         const voxel_t voxel = data.self_data->second[i];
         const VoxelInfo *info = globals::voxels.tryGet(voxel);
@@ -183,7 +182,7 @@ static void genMesh(ChunkMeshBuilder &builder, const MesherData &data)
                         mask &= ~VOXEL_FACE_UP;
                     if((mask & VOXEL_FACE_DN) && isOccupied(data, lp - localpos_t(0, 1, 0), voxel, VOXEL_FACE_UP))
                         mask &= ~VOXEL_FACE_DN;
-                    pushFace(builder, *node, lp, mask, base);
+                    pushFace(builder, node, lp, mask, base);
                 }
             }
         }

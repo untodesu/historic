@@ -11,7 +11,7 @@
 #include <uvre/fwd.hpp>
 
 struct AtlasNode final {
-    uint32_t index;
+    uint16_t index;
     float2_t max_uv;
 };
 

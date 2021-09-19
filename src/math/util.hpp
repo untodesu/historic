@@ -74,4 +74,10 @@ static inline const glm::vec<L, F, Q> fixAngle360(const glm::vec<L, F, Q> &angle
         result[i] = math::fixAngle360<F>(angles[i]);
     return result;
 }
+
+template<typename T, size_t L>
+constexpr static inline const size_t arraySize(T(&)[L])
+{
+    return L;
+}
 } // namespace math

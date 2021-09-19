@@ -5,10 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-layout(location = 0) in uvec2 pos_uv;
-layout(location = 1) in uint tex_id;
-
-layout(location = 0) out vec3 fs_texcoord;
+layout(location = 0) in uvec2 pack;
+layout(location = 0) out vec3 out_uv;
 
 #if defined(_UVRE_)
 out gl_PerVertex { vec4 gl_Position; };
@@ -21,9 +19,7 @@ layout(std140, binding = 0) uniform UBO {
 
 void main()
 {
-    gl_Position.xy = unpackUnorm2x16(pos_uv.x);
-    gl_Position.zw = unpackUnorm2x16(pos_uv.y);
-    gl_Position = projview * vec4((gl_Position.xyz * 64.0) + chunkpos, 1.0);
-    fs_texcoord.xy = unpackUnorm4x8(pos_uv.y).zw;
-    fs_texcoord.z = max(0.0, floor(float(tex_id) + 0.5));
+    gl_Position = projview * vec4(unpackUnorm4x8(pack.x & 0x00FFFFFF).xyz * 64.0 + chunkpos, 1.0);
+    out_uv.xy = unpackUnorm4x8(pack.y & 0x0000FFFF).xy;
+    out_uv.z = max(0.0, floor(float((pack.y >> 16) & 0xFFFF) + 0.5));
 }

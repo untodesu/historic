@@ -77,7 +77,7 @@ const AtlasNode *Atlas::push(const std::string &path)
         img_h = math::clamp<int>(img_h, 0, w);
 
         AtlasNode node = {};
-        node.index = head++;
+        node.index = static_cast<uint16_t>(head++);
         node.max_uv.x = static_cast<float>(img_w) / static_cast<float>(w);
         node.max_uv.y = static_cast<float>(img_h) / static_cast<float>(h);
 
