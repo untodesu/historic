@@ -14,11 +14,13 @@
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
 
+static float3_t pv_position = FLOAT3_ZERO;
 static float4x4_t pv_matrix = FLOAT4X4_IDENTITY;
 static Frustum pv_frustum;
 
 void proj_view::update()
 {
+    pv_position = FLOAT3_ZERO;
     pv_matrix = FLOAT4X4_IDENTITY;
 
     const auto cg = globals::registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
@@ -29,14 +31,19 @@ void proj_view::update()
 
     const auto hg = globals::registry.group(entt::get<LocalPlayerComponent, HeadComponent, PlayerComponent>);
     for(const auto [entity, head] : hg.each()) {
-        float3_t position = head.offset;
+        pv_position = head.offset;
         if(CreatureComponent *creature = globals::registry.try_get<CreatureComponent>(entity))
-            position += creature->position;
-        pv_matrix *= glm::lookAt(position, position + floatquat_t(head.angles) * FLOAT3_FORWARD, FLOAT3_UP);
+            pv_position += creature->position;
+        pv_matrix *= glm::lookAt(pv_position, pv_position + floatquat_t(head.angles) * FLOAT3_FORWARD, FLOAT3_UP);
         break;
     }
 
     pv_frustum.update(pv_matrix);
+}
+
+const float3_t &proj_view::position()
+{
+    return pv_position;
 }
 
 const float4x4_t &proj_view::matrix()

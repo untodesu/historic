@@ -17,9 +17,25 @@ void ChunkManager::clear()
     data.clear();
 }
 
+bool ChunkManager::set(const voxelpos_t &vp, voxel_t voxel)
+{
+    auto it = data.find(toChunkPos(vp));
+    if(it != data.end()) {
+        it->second[toVoxelIdx(toLocalPos(vp))] = voxel;
+        return true;
+    }
+
+    return false;
+}
+
+void ChunkManager::forceSet(const voxelpos_t &vp, voxel_t voxel)
+{
+    findOrCreate(toChunkPos(vp))->at(toVoxelIdx(toLocalPos(vp))) = voxel;
+}
+
 voxel_array_t *ChunkManager::find(const chunkpos_t &cp)
 {
-    const auto &it = data.find(cp);
+    const auto it = data.find(cp);
     if(it != data.cend())
         return &it->second;
     return nullptr;
@@ -27,7 +43,7 @@ voxel_array_t *ChunkManager::find(const chunkpos_t &cp)
 
 voxel_array_t *ChunkManager::findOrCreate(const chunkpos_t &cp)
 {
-    const auto &it = data.find(cp);
+    const auto it = data.find(cp);
     if(it != data.cend())
         return &it->second;
     return &(data[cp] = voxel_array_t());

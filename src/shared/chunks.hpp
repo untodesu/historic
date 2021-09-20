@@ -16,6 +16,8 @@ class ChunkManager final {
 public:
     ChunkManager();
     void clear();
+    bool set(const voxelpos_t &vp, voxel_t voxel);
+    void forceSet(const voxelpos_t &vp, voxel_t voxel);
     voxel_array_t *find(const chunkpos_t &cp);
     voxel_array_t *findOrCreate(const chunkpos_t &cp);
 

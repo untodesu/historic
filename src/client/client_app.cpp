@@ -25,10 +25,50 @@
 #include <cstdlib>
 #include <ctime>
 #include <client/gl/context.hpp>
+#include <glm/gtc/noise.hpp>
 
 static void glfwOnError(int code, const char *message)
 {
     spdlog::error("GLFW ({}): {}", code, message);
+}
+
+static inline float octonoise(const float2_t &v, unsigned int oct)
+{
+    float result = 1.0;
+    for(unsigned int i = 1; i <= oct; i++)
+        result += glm::simplex(v * static_cast<float>(i));
+    return result / static_cast<float>(oct);
+}
+
+static void generate()
+{
+    constexpr const int64_t START = -512;
+    constexpr const int64_t END = 512;
+
+    std::unordered_set<chunkpos_t> chunks;
+    
+    for(int64_t vx = START; vx < END; vx++) {
+        for(int64_t vz = START; vz < END; vz++) {
+            const float2_t vxz = float2_t(vx, vz);
+            const float solidity = octonoise(vxz / 160.0f, 3);
+            if(solidity >= 0.2f) {
+                int64_t height = ((solidity - 0.2f) * 32.0f);
+                for(int64_t vy = 2; vy < height; vy++) {
+                    const voxelpos_t vp = voxelpos_t(vx, -vy, vz);
+                    const chunkpos_t cp = toChunkPos(vp);
+                    globals::chunks.forceSet(vp, 0xFF);
+                    chunks.insert(cp);
+                }
+            }
+        }
+    }
+
+    // Give chunks birth and mark them for meshing
+    for(const chunkpos_t &cp : chunks) {
+        entt::entity entity = globals::registry.create();
+        globals::registry.emplace<chunkpos_t>(entity, cp);
+        globals::registry.emplace<NeedsVoxelMeshComponent>(entity);
+    }
 }
 
 void client_app::run()
@@ -66,7 +106,7 @@ void client_app::run()
         vinfo.transparency = 0;
         vinfo.faces.push_back({ VOXEL_FACE_SIDES, "textures/vox_1.png" });
         vinfo.faces.push_back({ VOXEL_FACE_UP, "textures/vox_2.png" });
-        vinfo.faces.push_back({ VOXEL_FACE_DN, "textures/vox_2.png" });
+        vinfo.faces.push_back({ VOXEL_FACE_DN, "textures/vox_0.png" });
         globals::voxels.set(0xFF, vinfo);
     }
 
@@ -85,24 +125,7 @@ void client_app::run()
         camera.z_near = 0.01f;
     }
 
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    
-    // A bunch of chunks with random stuff
-    for(int i = 0; i < 1; i++) {
-        for(int j = 0; j < 1; j++) {
-            for(int k = 0; k < 1; k++) {
-                const chunkpos_t cp = chunkpos_t(i, j, k);
-
-                entt::entity chunk_ent = globals::registry.create();
-                globals::registry.emplace<chunkpos_t>(chunk_ent, cp);
-                globals::registry.emplace<NeedsVoxelMeshComponent>(chunk_ent);
-
-                voxel_array_t *chunk = globals::chunks.findOrCreate(cp);
-                for(size_t u = 0; u < CHUNK_AREA; u++, chunk->at(std::rand() % CHUNK_VOLUME) = 0xFF);
-                //for(size_t u = 0; u < CHUNK_VOLUME; chunk->at(u++) = 0xFF);
-            }
-        }
-    }
+    generate();
 
     globals::solid_textures.create(16, 16, MAX_VOXELS);
     for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {

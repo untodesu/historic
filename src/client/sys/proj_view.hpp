@@ -10,6 +10,7 @@
 namespace proj_view
 {
 void update();
+const float3_t &position();
 const float4x4_t &matrix();
 const Frustum &frustum();
 } // namespace proj_view

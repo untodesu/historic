@@ -80,4 +80,9 @@ constexpr static inline const size_t arraySize(T(&)[L])
 {
     return L;
 }
+
+constexpr static inline const bool isInBB(const float3_t &p, const float3_t &a, const float3_t &b)
+{
+    return p.x >= a.x && p.y >= a.y && p.z >= a.z && p.x <= b.x && p.y <= b.y && p.z <= b.z;
+}
 } // namespace math

@@ -61,3 +61,37 @@ public:
 private:
     map_type def;
 };
+
+constexpr static inline const voxel_face_t backVoxelFace(voxel_face_t face)
+{
+    if(face & VOXEL_FACE_LF)
+        return VOXEL_FACE_RT;
+    if(face & VOXEL_FACE_RT)
+        return VOXEL_FACE_LF;
+    if(face & VOXEL_FACE_FT)
+        return VOXEL_FACE_BK;
+    if(face & VOXEL_FACE_BK)
+        return VOXEL_FACE_FT;
+    if(face & VOXEL_FACE_UP)
+        return VOXEL_FACE_DN;
+    if(face & VOXEL_FACE_DN)
+        return VOXEL_FACE_UP;
+    return 0;
+}
+
+static inline void unwrapVoxelFaces(voxel_face_t face, std::vector<voxel_face_t> &unwrap)
+{
+    unwrap.clear();
+    if(voxel_face_t f = face & VOXEL_FACE_LF)
+        unwrap.push_back(f);
+    if(voxel_face_t f = face & VOXEL_FACE_RT)
+        unwrap.push_back(f);
+    if(voxel_face_t f = face & VOXEL_FACE_FT)
+        unwrap.push_back(f);
+    if(voxel_face_t f = face & VOXEL_FACE_BK)
+        unwrap.push_back(f);
+    if(voxel_face_t f = face & VOXEL_FACE_UP)
+        unwrap.push_back(f);
+    if(voxel_face_t f = face & VOXEL_FACE_DN)
+        unwrap.push_back(f);
+}

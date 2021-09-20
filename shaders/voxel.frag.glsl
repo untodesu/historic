@@ -14,5 +14,5 @@ layout(binding = 0) uniform sampler2DArray sampler_0;
 
 void main()
 {
-    color_0 = texture(sampler_0, texcoord);
+    color_0 = texture(sampler_0, vec3(texcoord.xy, texcoord.z));
 }

@@ -65,9 +65,11 @@ void voxel_renderer::shutdown()
 }
 
 // UNDONE: move this somewhere else
-static inline bool isInFrustum(const Frustum &frustum, const chunkpos_t &cp)
+static inline bool isInFrustum(const Frustum &frustum, const float3_t &view, const chunkpos_t &cp)
 {
     const float3_t wp = toWorldPos(cp);
+    if(math::isInBB(view, wp, wp + float3_t(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
+        return true;
     if(frustum.point(wp + float3_t(0.0f, 0.0f, 0.0f)))
         return true;
     if(frustum.point(wp + float3_t(0.0f, 0.0f, CHUNK_SIZE)))
@@ -107,11 +109,12 @@ void voxel_renderer::update()
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubuffer.get());
     globals::solid_textures.getTexture().bind(0);
 
+    const float3_t &view = proj_view::position();
     const Frustum &frustum = proj_view::frustum();
 
     auto group = globals::registry.group(entt::get<VoxelMeshComponent, chunkpos_t>);
     for(const auto [entity, mesh, chunkpos] : group.each()) {
-        if(isInFrustum(frustum, chunkpos)) {
+        if(isInFrustum(frustum, view, chunkpos)) {
             ubuffer_data.chunkpos = toWorldPos(chunkpos);
             ubuffer.write(offsetof(UBufferData, chunkpos), sizeof(UBufferData::chunkpos), &ubuffer_data.chunkpos);
             mesh.vao.bind();
