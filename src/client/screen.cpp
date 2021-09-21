@@ -4,6 +4,7 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+#include <glad/gl.h>
 #include <client/screen.hpp>
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
@@ -13,6 +14,7 @@ static float aspect_ratio = 1.0f;
 
 static void onFramebufferSize(GLFWwindow *, int width, int height)
 {
+    glViewport(0, 0, width, height);
     screen_size = float2_t(width, height);
     aspect_ratio = (screen_size.x > screen_size.y) ? (screen_size.x / screen_size.y) : (screen_size.y / screen_size.x);
 }

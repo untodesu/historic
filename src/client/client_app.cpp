@@ -26,13 +26,16 @@
 #include <ctime>
 #include <client/gl/context.hpp>
 #include <glm/gtc/noise.hpp>
+#include <client/client_chunks.hpp>
+#include <shared/voxels.hpp>
+#include <client/atlas.hpp>
 
 static void glfwOnError(int code, const char *message)
 {
     spdlog::error("GLFW ({}): {}", code, message);
 }
 
-static inline float octonoise(const float2_t &v, unsigned int oct)
+static inline float octanoise(const float2_t &v, unsigned int oct)
 {
     float result = 1.0;
     for(unsigned int i = 1; i <= oct; i++)
@@ -45,29 +48,17 @@ static void generate()
     constexpr const int64_t START = -512;
     constexpr const int64_t END = 512;
 
-    std::unordered_set<chunkpos_t> chunks;
-    
     for(int64_t vx = START; vx < END; vx++) {
         for(int64_t vz = START; vz < END; vz++) {
             const float2_t vxz = float2_t(vx, vz);
-            const float solidity = octonoise(vxz / 160.0f, 3);
-            if(solidity >= 0.2f) {
-                int64_t height = ((solidity - 0.2f) * 32.0f);
+            const float solidity = octanoise(vxz / 160.0f, 3);
+            if(solidity > 0.5f) {
+                int64_t height = ((solidity - 0.5f) * 32.0f);
                 for(int64_t vy = 2; vy < height; vy++) {
-                    const voxelpos_t vp = voxelpos_t(vx, -vy, vz);
-                    const chunkpos_t cp = toChunkPos(vp);
-                    globals::chunks.forceSet(vp, 0xFF);
-                    chunks.insert(cp);
+                    globals::chunks.set(voxelpos_t(vx, -vy, vz), 0xFF, true);
                 }
             }
         }
-    }
-
-    // Give chunks birth and mark them for meshing
-    for(const chunkpos_t &cp : chunks) {
-        entt::entity entity = globals::registry.create();
-        globals::registry.emplace<chunkpos_t>(entity, cp);
-        globals::registry.emplace<NeedsVoxelMeshComponent>(entity);
     }
 }
 
@@ -79,7 +70,8 @@ void client_app::run()
         std::terminate();
     }
 
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    
     gl::setHints();
 
     // UNDONE: quake-ish CVar functions?
@@ -103,10 +95,12 @@ void client_app::run()
     {
         VoxelInfo vinfo = {};
         vinfo.type = VoxelType::SOLID;
-        vinfo.transparency = 0;
-        vinfo.faces.push_back({ VOXEL_FACE_SIDES, "textures/vox_1.png" });
-        vinfo.faces.push_back({ VOXEL_FACE_UP, "textures/vox_2.png" });
-        vinfo.faces.push_back({ VOXEL_FACE_DN, "textures/vox_0.png" });
+        vinfo.faces.push_back({ VoxelFace::LF, "textures/vox_1.png" });
+        vinfo.faces.push_back({ VoxelFace::RT, "textures/vox_1.png" });
+        vinfo.faces.push_back({ VoxelFace::FT, "textures/vox_1.png" });
+        vinfo.faces.push_back({ VoxelFace::BK, "textures/vox_1.png" });
+        vinfo.faces.push_back({ VoxelFace::UP, "textures/vox_2.png" });
+        vinfo.faces.push_back({ VoxelFace::DN, "textures/vox_0.png" });
         globals::voxels.set(0xFF, vinfo);
     }
 
@@ -121,7 +115,7 @@ void client_app::run()
 
         CameraComponent &camera = globals::registry.emplace<CameraComponent>(player);
         camera.fov = glm::radians(90.0f);
-        camera.z_far = 1024.0f;
+        camera.z_far = static_cast<float>(CHUNK_SIZE) * 64.0f;
         camera.z_near = 0.01f;
     }
 

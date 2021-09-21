@@ -5,11 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <client/atlas.hpp>
 #include <entt/entt.hpp>
 #include <math/types.hpp>
-#include <shared/chunks.hpp>
-#include <shared/voxels.hpp>
+
+class ClientChunkManager;
+class VoxelDef;
+class Atlas;
 
 namespace globals
 {
@@ -17,7 +18,7 @@ extern float curtime;
 extern float frametime;
 extern uint64_t frame_count;
 extern entt::registry registry;
-extern ChunkManager chunks;
+extern ClientChunkManager chunks;
 extern VoxelDef voxels;
 extern Atlas solid_textures;
 } // namespace globals

@@ -7,6 +7,7 @@
 #pragma once
 #include <shared/world.hpp>
 #include <unordered_map>
+#include <unordered_set>
 
 enum class VoxelType {
     GAS,            // Kind of a liquid voxel, but in reverse. Reserved.
@@ -16,24 +17,68 @@ enum class VoxelType {
     LIQUID,         // A liquid voxel. Reserved.
 };
 
-using voxel_face_t = uint16_t;
-constexpr static const voxel_face_t VOXEL_FACE_LF = (1 << 0);
-constexpr static const voxel_face_t VOXEL_FACE_RT = (1 << 1);
-constexpr static const voxel_face_t VOXEL_FACE_FT = (1 << 2);
-constexpr static const voxel_face_t VOXEL_FACE_BK = (1 << 3);
-constexpr static const voxel_face_t VOXEL_FACE_UP = (1 << 4);
-constexpr static const voxel_face_t VOXEL_FACE_DN = (1 << 5);
-constexpr static const voxel_face_t VOXEL_FACE_SIDES = VOXEL_FACE_LF | VOXEL_FACE_RT | VOXEL_FACE_FT | VOXEL_FACE_BK;
-constexpr static const voxel_face_t VOXEL_FACE_SOLID = VOXEL_FACE_LF | VOXEL_FACE_RT | VOXEL_FACE_FT | VOXEL_FACE_BK | VOXEL_FACE_UP | VOXEL_FACE_DN;
+enum class VoxelFace : uint16_t {
+    LF, // west
+    RT, // east
+    FT, // south
+    BK, // north
+    UP, // up
+    DN, // down
+};
+
+constexpr static inline const VoxelFace backVoxelFace(const VoxelFace face)
+{
+    if(face == VoxelFace::LF)
+        return VoxelFace::RT;
+    if(face == VoxelFace::RT)
+        return VoxelFace::LF;
+    if(face == VoxelFace::FT)
+        return VoxelFace::BK;
+    if(face == VoxelFace::BK)
+        return VoxelFace::FT;
+    if(face == VoxelFace::UP)
+        return VoxelFace::DN;
+    if(face == VoxelFace::DN)
+        return VoxelFace::UP;
+    return VoxelFace::LF;
+}
+
+constexpr static inline const int16_t voxelFaceNormal(const VoxelFace face)
+{
+    if(face == VoxelFace::LF)
+        return 1;
+    if(face == VoxelFace::FT)
+        return 1;
+    if(face == VoxelFace::DN)
+        return 1;
+    if(face == VoxelFace::RT)
+        return -1;
+    if(face == VoxelFace::BK)
+        return -1;
+    if(face == VoxelFace::UP)
+        return -1;
+    return 0;
+}
+
+constexpr static inline const bool isBackVoxelFace(const VoxelFace face)
+{
+    if(face == VoxelFace::LF)
+        return true;
+    if(face == VoxelFace::FT)
+        return true;
+    if(face == VoxelFace::DN)
+        return true;
+    return false;
+}
 
 struct VoxelFaceInfo final {
-    voxel_face_t mask;
+    VoxelFace face;
     std::string texture;
 };
 
 struct VoxelInfo final {
     VoxelType type;
-    voxel_face_t transparency;
+    std::unordered_set<VoxelFace> transparency;
     std::vector<VoxelFaceInfo> faces;
 };
 
@@ -61,37 +106,3 @@ public:
 private:
     map_type def;
 };
-
-constexpr static inline const voxel_face_t backVoxelFace(voxel_face_t face)
-{
-    if(face & VOXEL_FACE_LF)
-        return VOXEL_FACE_RT;
-    if(face & VOXEL_FACE_RT)
-        return VOXEL_FACE_LF;
-    if(face & VOXEL_FACE_FT)
-        return VOXEL_FACE_BK;
-    if(face & VOXEL_FACE_BK)
-        return VOXEL_FACE_FT;
-    if(face & VOXEL_FACE_UP)
-        return VOXEL_FACE_DN;
-    if(face & VOXEL_FACE_DN)
-        return VOXEL_FACE_UP;
-    return 0;
-}
-
-static inline void unwrapVoxelFaces(voxel_face_t face, std::vector<voxel_face_t> &unwrap)
-{
-    unwrap.clear();
-    if(voxel_face_t f = face & VOXEL_FACE_LF)
-        unwrap.push_back(f);
-    if(voxel_face_t f = face & VOXEL_FACE_RT)
-        unwrap.push_back(f);
-    if(voxel_face_t f = face & VOXEL_FACE_FT)
-        unwrap.push_back(f);
-    if(voxel_face_t f = face & VOXEL_FACE_BK)
-        unwrap.push_back(f);
-    if(voxel_face_t f = face & VOXEL_FACE_UP)
-        unwrap.push_back(f);
-    if(voxel_face_t f = face & VOXEL_FACE_DN)
-        unwrap.push_back(f);
-}

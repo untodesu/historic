@@ -4,12 +4,15 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+#include <client/atlas.hpp>
+#include <client/client_chunks.hpp>
 #include <client/globals.hpp>
+#include <shared/voxels.hpp>
 
 float globals::curtime = 0.0f;
 float globals::frametime = 0.0f;
 uint64_t globals::frame_count = 0;
 entt::registry globals::registry = entt::registry();
-ChunkManager globals::chunks = ChunkManager();
+ClientChunkManager globals::chunks = ClientChunkManager();
 VoxelDef globals::voxels = VoxelDef();
 Atlas globals::solid_textures = Atlas();

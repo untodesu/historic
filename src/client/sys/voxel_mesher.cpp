@@ -8,6 +8,8 @@
 #include <client/sys/voxel_mesher.hpp>
 #include <client/globals.hpp>
 #include <client/vertex.hpp>
+#include <client/atlas.hpp>
+#include <client/client_chunks.hpp>
 #include <client/util/mesh_builder.hpp>
 #include <shared/voxels.hpp>
 #include <spdlog/spdlog.h>
@@ -15,14 +17,14 @@
 #include <thread_pool.hpp>
 
 struct MesherData final {
-    using map_type = std::unordered_map<chunkpos_t, voxel_array_t>;
+    using map_type = std::unordered_map<chunkpos_t, ClientChunk>;
     chunkpos_t self_pos;
     map_type::const_iterator self_data;
     map_type data;
 
     void trySetChunk(const chunkpos_t &cp)
     {
-        voxel_array_t *chunk = globals::chunks.find(cp);
+        ClientChunk *chunk = globals::chunks.find(cp);
         if(!chunk)
             return;
         data[cp] = *chunk;
@@ -44,59 +46,51 @@ static inline void pushQuad(ChunkMeshBuilder *builder, uint16_t &base, const Vox
     base += 4;
 }
 
-static inline bool isOccupied(const chunkpos_t &cp, const localpos_t &lp, voxel_t current, const VoxelInfo &current_info, voxel_face_t face)
+static inline bool isOccupied(const chunkpos_t &cp, const localpos_t &lp, voxel_t current, const VoxelInfo &current_info, VoxelFace face)
 {
     const voxelpos_t vp = toVoxelPos(cp, lp);
-    if(const voxel_array_t *chunk = globals::chunks.find(toChunkPos(vp))) {
-        const voxel_t compare = chunk->at(toVoxelIdx(toLocalPos(vp)));
+    if(voxel_t compare = globals::chunks.get(vp)) {
         if(compare != current) {
-            const VoxelInfo *info = globals::voxels.tryGet(compare);
-            return info ? !(info->transparency & face) : false;
+            if(const VoxelInfo *info = globals::voxels.tryGet(compare))
+                return (info->transparency.find(face) == info->transparency.cend());
+            return false;
         }
 
-        return !(current_info.transparency & face);
+        return (current_info.transparency.find(face) == current_info.transparency.cend());
     }
 
     return false;
 }
 
-static inline const int faceNormalInv(voxel_face_t face)
+static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const VoxelInfo &info, const AtlasNode *node, voxel_t voxel, VoxelFace face, uint16_t &base)
 {
-    if(face & VOXEL_FACE_LF)
-        return -1;
-    if(face & VOXEL_FACE_FT)
-        return -1;
-    if(face & VOXEL_FACE_DN)
-        return -1;
-    if(face & VOXEL_FACE_RT)
-        return 1;
-    if(face & VOXEL_FACE_BK)
-        return 1;
-    if(face & VOXEL_FACE_UP)
-        return 1;
-    return 0;
-}
-
-static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const VoxelInfo &info, const AtlasNode *node, voxel_t voxel, voxel_face_t face, uint16_t &base)
-{
-    const voxel_face_t back_face = backVoxelFace(face);
+    const VoxelFace back_face = backVoxelFace(face);
 
     std::array<bool, CHUNK_AREA> mask;
 
     int16_t d = 0;
-    if(face & (VOXEL_FACE_LF | VOXEL_FACE_RT))
-        d = 0; // x
-    else if(face & (VOXEL_FACE_UP | VOXEL_FACE_DN))
-        d = 1; // y
-    else if(face & (VOXEL_FACE_FT | VOXEL_FACE_BK))
-        d = 2; // z
-    else
-        return;
+    switch(face) {
+        case VoxelFace::LF:
+        case VoxelFace::RT:
+            d = 0;
+            break;
+        case VoxelFace::UP:
+        case VoxelFace::DN:
+            d = 1;
+            break;
+        case VoxelFace::FT:
+        case VoxelFace::BK:
+            d = 2;
+            break;
+        default:
+            return;
+    }
+
     const int16_t u = (d + 1) % 3;
     const int16_t v = (d + 2) % 3;
     localpos_t x = localpos_t(0, 0, 0);
     localpos_t q = localpos_t(0, 0, 0);
-    q[d] = faceNormalInv(face);
+    q[d] = -voxelFaceNormal(face);
 
     // Go through each slice of the chunk
     constexpr const int16_t CHUNK_SIZE_I16 = static_cast<int16_t>(CHUNK_SIZE);
@@ -123,7 +117,7 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
                     int16_t qw, qh;
 
                     // Calculate the quad width.
-                    for(qw = 1; mask[maskpos + qw] && (i + qw) < CHUNK_SIZE_I16; qw++);
+                    for(qw = 1; (i + qw) < CHUNK_SIZE_I16 && mask[maskpos + qw]; qw++);
 
                     // Calculate the quad height.
                     bool qh_done = false;
@@ -142,9 +136,6 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
                     x[u] = i;
                     x[v] = j;
 
-                    // HACK
-                    const bool is_back_face = face & (VOXEL_FACE_LF | VOXEL_FACE_FT | VOXEL_FACE_DN);
-
                     float2_t uv = float2_t(qw, qh) * node->max_uv;
                     float3_t pos = float3_t(x.x, x.y, x.z);
                     float3_t du = FLOAT3_ZERO;
@@ -153,49 +144,51 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
                     dv[v] = static_cast<float>(qh);
 
                     // HACK
-                    if(is_back_face)
+                    if(isBackVoxelFace(face))
                         pos[d] += q[d];
 
                     float2_t uvs[4];
-                    if(face & VOXEL_FACE_LF) {
-                        uvs[0] = float2_t(0.0f, 0.0f);
-                        uvs[1] = float2_t(uv.y, 0.0f);
-                        uvs[2] = float2_t(uv.y, uv.x);
-                        uvs[3] = float2_t(0.0f, uv.x);
-                    }
-                    else if(face & VOXEL_FACE_RT) {
-                        uvs[0] = float2_t(uv.y, 0.0f);
-                        uvs[1] = float2_t(uv.y, uv.x);
-                        uvs[2] = float2_t(0.0f, uv.x);
-                        uvs[3] = float2_t(0.0f, 0.0f);
-                    }
-                    else if(face & VOXEL_FACE_FT) {
-                        uvs[0] = float2_t(uv.x, 0.0f);
-                        uvs[1] = float2_t(uv.x, uv.y);
-                        uvs[2] = float2_t(0.0f, uv.y);
-                        uvs[3] = float2_t(0.0f, 0.0f);
-                    }
-                    else if(face & VOXEL_FACE_BK) {
-                        uvs[0] = float2_t(0.0f, 0.0f);
-                        uvs[1] = float2_t(uv.x, 0.0f);
-                        uvs[2] = float2_t(uv.x, uv.y);
-                        uvs[3] = float2_t(0.0f, uv.y);
-                    }
-                    else if(face & VOXEL_FACE_UP) {
-                        uvs[0] = float2_t(0.0f, uv.x);
-                        uvs[1] = float2_t(0.0f, 0.0f);
-                        uvs[2] = float2_t(uv.y, 0.0f);
-                        uvs[3] = float2_t(uv.y, uv.x);
-                    }
-                    else if(face & VOXEL_FACE_DN) {
-                        uvs[0] = float2_t(uv.y, uv.x);
-                        uvs[1] = float2_t(0.0f, uv.x);
-                        uvs[2] = float2_t(0.0f, 0.0f);
-                        uvs[3] = float2_t(uv.y, 0.0f);
+                    switch(face) {
+                        case VoxelFace::LF:
+                            uvs[0] = float2_t(0.0f, 0.0f);
+                            uvs[1] = float2_t(uv.y, 0.0f);
+                            uvs[2] = float2_t(uv.y, uv.x);
+                            uvs[3] = float2_t(0.0f, uv.x);
+                            break;
+                        case VoxelFace::RT:
+                            uvs[0] = float2_t(uv.y, 0.0f);
+                            uvs[1] = float2_t(uv.y, uv.x);
+                            uvs[2] = float2_t(0.0f, uv.x);
+                            uvs[3] = float2_t(0.0f, 0.0f);
+                            break;
+                        case VoxelFace::FT:
+                            uvs[0] = float2_t(uv.x, 0.0f);
+                            uvs[1] = float2_t(uv.x, uv.y);
+                            uvs[2] = float2_t(0.0f, uv.y);
+                            uvs[3] = float2_t(0.0f, 0.0f);
+                            break;
+                        case VoxelFace::BK:
+                            uvs[0] = float2_t(0.0f, 0.0f);
+                            uvs[1] = float2_t(uv.x, 0.0f);
+                            uvs[2] = float2_t(uv.x, uv.y);
+                            uvs[3] = float2_t(0.0f, uv.y);
+                            break;
+                        case VoxelFace::UP:
+                            uvs[0] = float2_t(0.0f, uv.x);
+                            uvs[1] = float2_t(0.0f, 0.0f);
+                            uvs[2] = float2_t(uv.y, 0.0f);
+                            uvs[3] = float2_t(uv.y, uv.x);
+                            break;
+                        case VoxelFace::DN:
+                            uvs[0] = float2_t(uv.y, uv.x);
+                            uvs[1] = float2_t(0.0f, uv.x);
+                            uvs[2] = float2_t(0.0f, 0.0f);
+                            uvs[3] = float2_t(uv.y, 0.0f);
+                            break;
                     }
 
                     VoxelVertex verts[4];
-                    if(is_back_face) {
+                    if(isBackVoxelFace(face)) {
                         verts[0] = VoxelVertex(pos, uvs[0], node->index);
                         verts[1] = VoxelVertex(pos + dv, uvs[1], node->index);
                         verts[2] = VoxelVertex(pos + du + dv, uvs[2], node->index);
@@ -219,11 +212,11 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
 
                     i += qw;
                     maskpos += qw;
-                    continue;
                 }
-
-                i++;
-                maskpos++;
+                else {
+                    i++;
+                    maskpos++;
+                }
             }
         }
     }
@@ -232,159 +225,25 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
 // HACK: when shutting down we need
 // to cancel all the meshing tasks
 static bool cancel_meshing = false;
-static thread_pool mesher_pool(8);
+static thread_pool mesher_pool(16);
 
 static void greedyMesh(ChunkMeshBuilder *builder, const chunkpos_t &cp)
 {
     uint16_t base = 0;
-    std::vector<voxel_face_t> unwrap;
     for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
         if(it->second.type == VoxelType::SOLID) {
             for(const VoxelFaceInfo &face : it->second.faces) {
-                unwrapVoxelFaces(face.mask, unwrap);
                 if(const AtlasNode *node = globals::solid_textures.getNode(face.texture)) {
-                    for(const voxel_face_t &uface : unwrap) {
-                        greedyFace(builder, cp, it->second, node, it->first, uface, base);
-                        if(cancel_meshing) {
-                            builder->clear();
-                            return;
-                        }
+                    greedyFace(builder, cp, it->second, node, it->first, face.face, base);
+                    if(cancel_meshing) {
+                        builder->clear();
+                        return;
                     }
                 }
             }
         }
     }
 }
-
-// SAVED: thais code will be used for
-// SOLID_FLORA voxels when I will implement 'em.
-#if 0
-static void pushFace(ChunkMeshBuilder *builder, const AtlasNode *node, const localpos_t &lp, voxel_face_t face, uint16_t &base)
-{
-    const float3_t lpf = float3_t(lp);
-
-    if(face & VOXEL_FACE_LF) {
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 1.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 1.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 0.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
-        builder->index(base + 0);
-        builder->index(base + 1);
-        builder->index(base + 2);
-        builder->index(base + 2);
-        builder->index(base + 3);
-        builder->index(base + 0);
-        base += 4;
-    }
-
-    if(face & VOXEL_FACE_RT) {
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 0.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 1.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 1.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
-        builder->index(base + 0);
-        builder->index(base + 1);
-        builder->index(base + 2);
-        builder->index(base + 2);
-        builder->index(base + 3);
-        builder->index(base + 0);
-        base += 4;
-    }
-
-    if(face & VOXEL_FACE_BK) {
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 1.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 1.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 1.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 1.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
-        builder->index(base + 0);
-        builder->index(base + 1);
-        builder->index(base + 2);
-        builder->index(base + 2);
-        builder->index(base + 3);
-        builder->index(base + 0);
-        base += 4;
-    }
-
-    if(face & VOXEL_FACE_FT) {
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 0.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 0.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
-        builder->index(base + 0);
-        builder->index(base + 1);
-        builder->index(base + 2);
-        builder->index(base + 2);
-        builder->index(base + 3);
-        builder->index(base + 0);
-        base += 4;
-    }
-
-    if(face & VOXEL_FACE_UP) {
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 0.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 1.0f, 1.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 1.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 1.0f, 0.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
-        builder->index(base + 0);
-        builder->index(base + 1);
-        builder->index(base + 2);
-        builder->index(base + 2);
-        builder->index(base + 3);
-        builder->index(base + 0);
-        base += 4;
-    }
-
-    if(face & VOXEL_FACE_DN) {
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 0.0f), float2_t(0.0f, 0.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 0.0f), float2_t(1.0f, 0.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(1.0f, 0.0f, 1.0f), float2_t(1.0f, 1.0f) * node->max_uv, node->index));
-        builder->vertex(VoxelVertex(lpf + float3_t(0.0f, 0.0f, 1.0f), float2_t(0.0f, 1.0f) * node->max_uv, node->index));
-        builder->index(base + 0);
-        builder->index(base + 1);
-        builder->index(base + 2);
-        builder->index(base + 2);
-        builder->index(base + 3);
-        builder->index(base + 0);
-        base += 4;
-    }
-}
-
-static void genMesh(ChunkMeshBuilder *builder, const chunkpos_t &cp)
-{
-    uint16_t base = 0;
-    if(const voxel_array_t *chunk = globals::chunks.find(cp)) {
-        for(voxelidx_t i = 0; i < CHUNK_VOLUME; i++) {
-            const voxel_t voxel = chunk->at(i);
-            const VoxelInfo *info = globals::voxels.tryGet(voxel);
-            if(info && info->type == VoxelType::SOLID) {
-                for(const VoxelFaceInfo &face : info->faces) {
-                    if(const AtlasNode *node = globals::solid_textures.getNode(face.texture)) {
-                        const localpos_t lp = toLocalPos(i);
-                        voxel_face_t mask = face.mask;
-                        if((mask & VOXEL_FACE_LF) && isOccupied(cp, lp - localpos_t(1, 0, 0), voxel, *info, VOXEL_FACE_RT))
-                            mask &= ~VOXEL_FACE_LF;
-                        if((mask & VOXEL_FACE_RT) && isOccupied(cp, lp + localpos_t(1, 0, 0), voxel, *info, VOXEL_FACE_LF))
-                            mask &= ~VOXEL_FACE_RT;
-                        if((mask & VOXEL_FACE_BK) && isOccupied(cp, lp + localpos_t(0, 0, 1), voxel, *info, VOXEL_FACE_FT))
-                            mask &= ~VOXEL_FACE_BK;
-                        if((mask & VOXEL_FACE_FT) && isOccupied(cp, lp - localpos_t(0, 0, 1), voxel, *info, VOXEL_FACE_BK))
-                            mask &= ~VOXEL_FACE_FT;
-                        if((mask & VOXEL_FACE_UP) && isOccupied(cp, lp + localpos_t(0, 1, 0), voxel, *info, VOXEL_FACE_DN))
-                            mask &= ~VOXEL_FACE_UP;
-                        if((mask & VOXEL_FACE_DN) && isOccupied(cp, lp - localpos_t(0, 1, 0), voxel, *info, VOXEL_FACE_UP))
-                            mask &= ~VOXEL_FACE_DN;
-                        pushFace(builder, node, lp, mask, base);
-                    }
-                }
-            }
-
-            if(cancel_meshing) {
-                builder->clear();
-                return;
-            }
-        }
-    }
-}
-#endif
 
 struct ThreadedVoxelMesherComponent final {
     ChunkMeshBuilder *builder { nullptr };

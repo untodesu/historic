@@ -15,6 +15,8 @@
 #include <client/gl/pipeline.hpp>
 #include <client/gl/sampler.hpp>
 #include <client/gl/shader.hpp>
+#include <client/atlas.hpp>
+#include <shared/world.hpp>
 
 constexpr static const char *VERT_NAME = "shaders/voxel.vert.glsl";
 constexpr static const char *FRAG_NAME = "shaders/voxel.frag.glsl";
@@ -98,7 +100,7 @@ void voxel_renderer::update()
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     UBufferData ubuffer_data = {};
     ubuffer_data.projview = proj_view::matrix();
