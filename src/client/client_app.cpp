@@ -57,9 +57,9 @@ static void generate()
                 int64_t h1 = ((solidity - 0.4f) * 32.0f);
                 int64_t h2 = (hmod * 8.0f);
                 for(int64_t vy = 1; vy < h1; vy++)
-                    cl_globals::chunks.set(voxelpos_t(vx, -vy, vz), 0xFF, true);
+                    cl_globals::chunks.set(voxelpos_t(vx, -vy, vz), 0x01, true);
                 for(int64_t vy = 0; h1 && vy < h2; vy++)
-                    cl_globals::chunks.set(voxelpos_t(vx, vy, vz), 0xFF, true);
+                    cl_globals::chunks.set(voxelpos_t(vx, vy, vz), (vy == h2 - 1) ? 0x03 : 0x02, true);
             }
         }
     }
@@ -94,17 +94,43 @@ void client_app::run()
 
     cl_globals::registry.clear();
 
-    // A test voxel #1
+    // Stone
     {
         VoxelInfo vinfo = {};
         vinfo.type = VoxelType::SOLID;
-        vinfo.faces.push_back({ VoxelFace::LF, "textures/vox_1.png" });
-        vinfo.faces.push_back({ VoxelFace::RT, "textures/vox_1.png" });
-        vinfo.faces.push_back({ VoxelFace::FT, "textures/vox_1.png" });
-        vinfo.faces.push_back({ VoxelFace::BK, "textures/vox_1.png" });
-        vinfo.faces.push_back({ VoxelFace::UP, "textures/vox_2.png" });
-        vinfo.faces.push_back({ VoxelFace::DN, "textures/vox_0.png" });
-        cl_globals::voxels.set(0xFF, vinfo);
+        vinfo.faces.push_back({ VoxelFace::LF, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::RT, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::FT, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::BK, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::UP, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::DN, "textures/stone.png" });
+        cl_globals::voxels.set(0x01, vinfo);
+    }
+
+    // Dirt
+    {
+        VoxelInfo vinfo = {};
+        vinfo.type = VoxelType::SOLID;
+        vinfo.faces.push_back({ VoxelFace::LF, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::RT, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::FT, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::BK, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::UP, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::DN, "textures/dirt.png" });
+        cl_globals::voxels.set(0x02, vinfo);
+    }
+
+    // Grass
+    {
+        VoxelInfo vinfo = {};
+        vinfo.type = VoxelType::SOLID;
+        vinfo.faces.push_back({ VoxelFace::LF, "textures/grass_side.png" });
+        vinfo.faces.push_back({ VoxelFace::RT, "textures/grass_side.png" });
+        vinfo.faces.push_back({ VoxelFace::FT, "textures/grass_side.png" });
+        vinfo.faces.push_back({ VoxelFace::BK, "textures/grass_side.png" });
+        vinfo.faces.push_back({ VoxelFace::UP, "textures/grass.png" });
+        vinfo.faces.push_back({ VoxelFace::DN, "textures/dirt.png" });
+        cl_globals::voxels.set(0x03, vinfo);
     }
 
     // Player entity >_<
@@ -124,9 +150,10 @@ void client_app::run()
 
     generate();
 
-    cl_globals::solid_textures.create(16, 16, MAX_VOXELS);
+    cl_globals::solid_textures.create(32, 32, MAX_VOXELS);
     for(VoxelDef::const_iterator it = cl_globals::voxels.cbegin(); it != cl_globals::voxels.cend(); it++) {
         for(const VoxelFaceInfo &face : it->second.faces) {
+            spdlog::info(face.texture);
             cl_globals::solid_textures.push(face.texture);
         }
     }

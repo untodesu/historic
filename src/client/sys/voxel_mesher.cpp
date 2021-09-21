@@ -103,7 +103,7 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
             for(x[u] = 0; x[u] < CHUNK_SIZE_I16; x[u]++) {
                 // NOTE: the neighbouring voxel's face
                 // is "inverted" (means LF becomes RT etc.)
-                mask[maskpos++] = isOccupied(cp, x, voxel, info, face) && !isOccupied(cp, x + q, voxel, info, back_face);
+                mask[maskpos++] = cl_globals::chunks.get(cp, x) == voxel && isOccupied(cp, x, voxel, info, face) && !isOccupied(cp, x + q, voxel, info, back_face);
             }
         }
 
@@ -187,20 +187,18 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
                     float3 dv = FLOAT3_ZERO;
                     dv[v] = static_cast<float>(qh);
 
-                    const float3 normal = float3(q.x, q.y, q.z);
-
                     PackedVertex verts[4];
                     if(isBackVoxelFace(face)) {
-                        verts[0] = PackedVertex(position, normal, texcoords[0], node->index);
-                        verts[1] = PackedVertex(position + dv, normal, texcoords[1], node->index);
-                        verts[2] = PackedVertex(position + du + dv, normal, texcoords[2], node->index);
-                        verts[3] = PackedVertex(position + du, normal, texcoords[3], node->index);
+                        verts[0] = PackedVertex(position, texcoords[0], node->index);
+                        verts[1] = PackedVertex(position + dv, texcoords[1], node->index);
+                        verts[2] = PackedVertex(position + du + dv, texcoords[2], node->index);
+                        verts[3] = PackedVertex(position + du, texcoords[3], node->index);
                     }
                     else {
-                        verts[0] = PackedVertex(position, normal, texcoords[0], node->index);
-                        verts[1] = PackedVertex(position + du, normal, texcoords[1], node->index);
-                        verts[2] = PackedVertex(position + du + dv, normal, texcoords[2], node->index);
-                        verts[3] = PackedVertex(position + dv, normal, texcoords[3], node->index);
+                        verts[0] = PackedVertex(position, texcoords[0], node->index);
+                        verts[1] = PackedVertex(position + du, texcoords[1], node->index);
+                        verts[2] = PackedVertex(position + du + dv, texcoords[2], node->index);
+                        verts[3] = PackedVertex(position + dv, texcoords[3], node->index);
                     }
 
                     pushQuad(builder, base, verts);
@@ -284,7 +282,7 @@ void voxel_mesher::update()
                     mesh->vao.setIndexBuffer(mesh->ibo);
                     mesh->vao.setVertexBuffer(0, mesh->vbo, sizeof(PackedVertex));
                     mesh->vao.enableAttribute(0, true);
-                    mesh->vao.setAttributeFormat(0, GL_UNSIGNED_INT, 3, offsetof(PackedVertex, pack), false);
+                    mesh->vao.setAttributeFormat(0, GL_UNSIGNED_INT, 2, offsetof(PackedVertex, pack), false);
                     mesh->vao.setAttributeBinding(0, 0);
                 }
 

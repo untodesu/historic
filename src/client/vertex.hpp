@@ -16,9 +16,9 @@ struct BasicVertex final {
 };
 
 struct PackedVertex final {
-    uint32_t pack[3];
+    uint32_t pack[2];
     PackedVertex() = default;
-    PackedVertex(const float3 &position, const float3 &normal, const float2 &texcoord, uint16_t atlas_id);
+    PackedVertex(const float3 &position, const float2 &texcoord, uint16_t atlas_id);
 };
 
 inline BasicVertex::BasicVertex(const float3 &position, const float2 &texcoord)
@@ -27,11 +27,10 @@ inline BasicVertex::BasicVertex(const float3 &position, const float2 &texcoord)
 
 }
 
-inline PackedVertex::PackedVertex(const float3 &position, const float3 &normal, const float2 &texcoord, uint16_t atlas_id)
+inline PackedVertex::PackedVertex(const float3 &position, const float2 &texcoord, uint16_t atlas_id)
     : pack { 0, 0 }
 {
     pack[0] |= glm::packUnorm4x8(float4(position.x, position.y, position.z, 0.0f) / 16.0f);
-    pack[1] |= glm::packSnorm4x8(float4(normal.x, normal.y, normal.z, 0.0f));
-    pack[2] |= glm::packUnorm4x8(float4(texcoord.x, texcoord.y, 0.0f, 0.0f) / 16.0f) & 0x0000FFFF;
-    pack[2] |= static_cast<uint32_t>(atlas_id) << 16;
+    pack[1] |= glm::packUnorm4x8(float4(texcoord.x, texcoord.y, 0.0f, 0.0f) / 16.0f) & 0x0000FFFF;
+    pack[1] |= (static_cast<uint32_t>(atlas_id) << 16) & 0xFFFF0000;
 }
