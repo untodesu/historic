@@ -23,16 +23,16 @@ void proj_view::update()
     pv_position = FLOAT3_ZERO;
     pv_matrix = FLOAT4X4_IDENTITY;
 
-    const auto cg = globals::registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
+    const auto cg = cl_globals::registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
     for(const auto [entity, camera] : cg.each()) {
         pv_matrix *= glm::perspective(camera.fov, screen::getAspectRatio(), camera.z_near, camera.z_far);
         break;
     }
 
-    const auto hg = globals::registry.group(entt::get<LocalPlayerComponent, HeadComponent, PlayerComponent>);
+    const auto hg = cl_globals::registry.group(entt::get<LocalPlayerComponent, HeadComponent, PlayerComponent>);
     for(const auto [entity, head] : hg.each()) {
         pv_position = head.offset;
-        if(CreatureComponent *creature = globals::registry.try_get<CreatureComponent>(entity))
+        if(CreatureComponent *creature = cl_globals::registry.try_get<CreatureComponent>(entity))
             pv_position += creature->position;
         pv_matrix *= glm::lookAt(pv_position, pv_position + floatquat_t(head.angles) * FLOAT3_FORWARD, FLOAT3_UP);
         break;

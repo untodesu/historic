@@ -109,12 +109,12 @@ void voxel_renderer::update()
     pipeline.bind();
     sampler.bind(0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubuffer.get());
-    globals::solid_textures.getTexture().bind(0);
+    cl_globals::solid_textures.getTexture().bind(0);
 
     const float3_t &view = proj_view::position();
     const Frustum &frustum = proj_view::frustum();
 
-    auto group = globals::registry.group(entt::get<VoxelMeshComponent, chunkpos_t>);
+    auto group = cl_globals::registry.group(entt::get<VoxelMeshComponent, chunkpos_t>);
     for(const auto [entity, mesh, chunkpos] : group.each()) {
         if(isInFrustum(frustum, view, chunkpos)) {
             ubuffer_data.chunkpos = toWorldPos(chunkpos);

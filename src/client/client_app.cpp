@@ -26,7 +26,7 @@
 #include <ctime>
 #include <client/gl/context.hpp>
 #include <glm/gtc/noise.hpp>
-#include <client/client_chunks.hpp>
+#include <client/chunks.hpp>
 #include <shared/voxels.hpp>
 #include <client/atlas.hpp>
 
@@ -52,11 +52,15 @@ static void generate()
         for(int64_t vz = START; vz < END; vz++) {
             const float2_t vxz = float2_t(vx, vz);
             const float solidity = octanoise(vxz / 160.0f, 3);
-            if(solidity > 0.5f) {
-                int64_t height = ((solidity - 0.5f) * 32.0f);
-                for(int64_t vy = 2; vy < height; vy++) {
-                    globals::chunks.set(voxelpos_t(vx, -vy, vz), 0xFF, true);
-                }
+            const float hmod = octanoise(vxz / 320.0f, 3);
+            if(solidity > 0.4f) {
+                int64_t h1 = ((solidity - 0.4f) * 32.0f);
+                int64_t h2 = (hmod * 8.0f);
+                for(int64_t vy = 1; vy < h1; vy++)
+                    cl_globals::chunks.set(voxelpos_t(vx, -vy, vz), 0xFF, true);
+                for(int64_t vy = 0; vy < h2; vy++)
+                    cl_globals::chunks.set(voxelpos_t(vx, vy, vz), 0xFF, true);
+                spdlog::trace("{} {}", vx, vz);
             }
         }
     }
@@ -89,7 +93,7 @@ void client_app::run()
 
     voxel_renderer::init();
 
-    globals::registry.clear();
+    cl_globals::registry.clear();
 
     // A test voxel #1
     {
@@ -101,33 +105,33 @@ void client_app::run()
         vinfo.faces.push_back({ VoxelFace::BK, "textures/vox_1.png" });
         vinfo.faces.push_back({ VoxelFace::UP, "textures/vox_2.png" });
         vinfo.faces.push_back({ VoxelFace::DN, "textures/vox_0.png" });
-        globals::voxels.set(0xFF, vinfo);
+        cl_globals::voxels.set(0xFF, vinfo);
     }
 
     // Player entity >_<
     {
-        entt::entity player = globals::registry.create();
-        globals::registry.emplace<ActiveCameraComponent>(player);
-        globals::registry.emplace<LocalPlayerComponent>(player);
-        globals::registry.emplace<CreatureComponent>(player);
-        globals::registry.emplace<HeadComponent>(player);
-        globals::registry.emplace<PlayerComponent>(player);
+        entt::entity player = cl_globals::registry.create();
+        cl_globals::registry.emplace<ActiveCameraComponent>(player);
+        cl_globals::registry.emplace<LocalPlayerComponent>(player);
+        cl_globals::registry.emplace<CreatureComponent>(player);
+        cl_globals::registry.emplace<HeadComponent>(player);
+        cl_globals::registry.emplace<PlayerComponent>(player);
 
-        CameraComponent &camera = globals::registry.emplace<CameraComponent>(player);
+        CameraComponent &camera = cl_globals::registry.emplace<CameraComponent>(player);
         camera.fov = glm::radians(90.0f);
-        camera.z_far = static_cast<float>(CHUNK_SIZE) * 64.0f;
+        camera.z_far = static_cast<float>(CHUNK_SIZE) * 32.0f;
         camera.z_near = 0.01f;
     }
 
     generate();
 
-    globals::solid_textures.create(16, 16, MAX_VOXELS);
-    for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
+    cl_globals::solid_textures.create(16, 16, MAX_VOXELS);
+    for(VoxelDef::const_iterator it = cl_globals::voxels.cbegin(); it != cl_globals::voxels.cend(); it++) {
         for(const VoxelFaceInfo &face : it->second.faces) {
-            globals::solid_textures.push(face.texture);
+            cl_globals::solid_textures.push(face.texture);
         }
     }
-    globals::solid_textures.submit();
+    cl_globals::solid_textures.submit();
 
     glfwSwapInterval(0);
 
@@ -135,11 +139,11 @@ void client_app::run()
 
     Clock fps_clock, print_clock;
     float avg_frametime = 0.0f;
-    globals::frame_count = 0;
+    cl_globals::frame_count = 0;
     while(!glfwWindowShouldClose(window)) {
-        globals::curtime = static_cast<float>(glfwGetTime());
-        globals::frametime = fps_clock.restart();
-        avg_frametime += globals::frametime;
+        cl_globals::curtime = static_cast<float>(glfwGetTime());
+        cl_globals::frametime = fps_clock.restart();
+        avg_frametime += cl_globals::frametime;
         avg_frametime *= 0.5f;
 
         if(print_clock.elapsed() >= 1.0f) {
@@ -168,18 +172,18 @@ void client_app::run()
         input::update();
 
         glfwPollEvents();
-        globals::frame_count++;
+        cl_globals::frame_count++;
     }
 
-    spdlog::info("Client shutdown after {} frames, avg. dt: {}", globals::frame_count, avg_frametime);
+    spdlog::info("Client shutdown after {} frames, avg. dt: {}", cl_globals::frame_count, avg_frametime);
 
     voxel_mesher::shutdown();
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-    globals::solid_textures.destroy();
+    cl_globals::solid_textures.destroy();
 
-    globals::registry.clear();
+    cl_globals::registry.clear();
 
     voxel_renderer::shutdown();
 

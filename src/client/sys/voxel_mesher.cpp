@@ -9,7 +9,7 @@
 #include <client/globals.hpp>
 #include <client/vertex.hpp>
 #include <client/atlas.hpp>
-#include <client/client_chunks.hpp>
+#include <client/chunks.hpp>
 #include <client/util/mesh_builder.hpp>
 #include <shared/voxels.hpp>
 #include <spdlog/spdlog.h>
@@ -24,7 +24,7 @@ struct MesherData final {
 
     void trySetChunk(const chunkpos_t &cp)
     {
-        ClientChunk *chunk = globals::chunks.find(cp);
+        ClientChunk *chunk = cl_globals::chunks.find(cp);
         if(!chunk)
             return;
         data[cp] = *chunk;
@@ -49,9 +49,9 @@ static inline void pushQuad(ChunkMeshBuilder *builder, uint16_t &base, const Vox
 static inline bool isOccupied(const chunkpos_t &cp, const localpos_t &lp, voxel_t current, const VoxelInfo &current_info, VoxelFace face)
 {
     const voxelpos_t vp = toVoxelPos(cp, lp);
-    if(voxel_t compare = globals::chunks.get(vp)) {
+    if(voxel_t compare = cl_globals::chunks.get(vp)) {
         if(compare != current) {
-            if(const VoxelInfo *info = globals::voxels.tryGet(compare))
+            if(const VoxelInfo *info = cl_globals::voxels.tryGet(compare))
                 return (info->transparency.find(face) == info->transparency.cend());
             return false;
         }
@@ -230,10 +230,10 @@ static thread_pool mesher_pool(16);
 static void greedyMesh(ChunkMeshBuilder *builder, const chunkpos_t &cp)
 {
     uint16_t base = 0;
-    for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
+    for(VoxelDef::const_iterator it = cl_globals::voxels.cbegin(); it != cl_globals::voxels.cend(); it++) {
         if(it->second.type == VoxelType::SOLID) {
             for(const VoxelFaceInfo &face : it->second.faces) {
-                if(const AtlasNode *node = globals::solid_textures.getNode(face.texture)) {
+                if(const AtlasNode *node = cl_globals::solid_textures.getNode(face.texture)) {
                     greedyFace(builder, cp, it->second, node, it->first, face.face, base);
                     if(cancel_meshing) {
                         builder->clear();
@@ -259,22 +259,22 @@ void voxel_mesher::shutdown()
 void voxel_mesher::update()
 {
     // Firstly we go through things that require meshing.
-    const auto pending_group = globals::registry.group<NeedsVoxelMeshComponent>(entt::get<chunkpos_t>);
+    const auto pending_group = cl_globals::registry.group<NeedsVoxelMeshComponent>(entt::get<chunkpos_t>);
     for(const auto [entity, chunkpos] : pending_group.each()) {
-        globals::registry.remove<NeedsVoxelMeshComponent>(entity);
-        ThreadedVoxelMesherComponent &mesher = globals::registry.emplace_or_replace<ThreadedVoxelMesherComponent>(entity);
+        cl_globals::registry.remove<NeedsVoxelMeshComponent>(entity);
+        ThreadedVoxelMesherComponent &mesher = cl_globals::registry.emplace_or_replace<ThreadedVoxelMesherComponent>(entity);
         mesher.builder = new ChunkMeshBuilder();
         mesher.future = mesher_pool.submit(greedyMesh, mesher.builder, chunkpos);
     }
 
     // Secondly we go through finished tasks
-    const auto finished_view = globals::registry.view<ThreadedVoxelMesherComponent>();
+    const auto finished_view = cl_globals::registry.view<ThreadedVoxelMesherComponent>();
     for(const auto [entity, mesher] : finished_view.each()) {
         if(mesher.future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
             if(!mesher.builder->empty()) {       
-                VoxelMeshComponent *mesh = globals::registry.try_get<VoxelMeshComponent>(entity);
+                VoxelMeshComponent *mesh = cl_globals::registry.try_get<VoxelMeshComponent>(entity);
                 if(!mesh) {
-                    mesh = &globals::registry.emplace<VoxelMeshComponent>(entity);
+                    mesh = &cl_globals::registry.emplace<VoxelMeshComponent>(entity);
                     mesh->ibo.create();
                     mesh->vbo.create();
                     mesh->vao.create();
@@ -292,7 +292,7 @@ void voxel_mesher::update()
             }
 
             delete mesher.builder;
-            globals::registry.remove<ThreadedVoxelMesherComponent>(entity);
+            cl_globals::registry.remove<ThreadedVoxelMesherComponent>(entity);
         }
     }
 }

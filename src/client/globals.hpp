@@ -12,7 +12,7 @@ class ClientChunkManager;
 class VoxelDef;
 class Atlas;
 
-namespace globals
+namespace cl_globals
 {
 extern float curtime;
 extern float frametime;
@@ -21,4 +21,4 @@ extern entt::registry registry;
 extern ClientChunkManager chunks;
 extern VoxelDef voxels;
 extern Atlas solid_textures;
-} // namespace globals
+} // namespace cl_globals

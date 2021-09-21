@@ -5,27 +5,27 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <client/comp/voxel_mesh.hpp>
-#include <client/client_chunks.hpp>
+#include <client/chunks.hpp>
 #include <client/globals.hpp>
 
 void ClientChunkManager::implOnClear()
 {
-    const auto view = globals::registry.view<chunkpos_t>();
+    const auto view = cl_globals::registry.view<chunkpos_t>();
     for(const auto [entity, cp] : view.each())
-        globals::registry.destroy(entity);
+        cl_globals::registry.destroy(entity);
 }
 
 void ClientChunkManager::implOnRemove(const chunkpos_t &cp, const ClientChunk &data)
 {
-    globals::registry.destroy(data.entity);
+    cl_globals::registry.destroy(data.entity);
 }
 
 ClientChunk ClientChunkManager::implOnCreate(const chunkpos_t &cp)
 {
     ClientChunk data;
-    data.entity = globals::registry.create();
-    globals::registry.emplace<chunkpos_t>(data.entity, cp);
-    globals::registry.emplace<NeedsVoxelMeshComponent>(data.entity);
+    data.entity = cl_globals::registry.create();
+    cl_globals::registry.emplace<chunkpos_t>(data.entity, cp);
+    cl_globals::registry.emplace<NeedsVoxelMeshComponent>(data.entity);
     data.data.fill(NULL_VOXEL);
     return std::move(data);
 }

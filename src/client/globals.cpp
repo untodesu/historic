@@ -5,14 +5,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <client/atlas.hpp>
-#include <client/client_chunks.hpp>
+#include <client/chunks.hpp>
 #include <client/globals.hpp>
 #include <shared/voxels.hpp>
 
-float globals::curtime = 0.0f;
-float globals::frametime = 0.0f;
-uint64_t globals::frame_count = 0;
-entt::registry globals::registry = entt::registry();
-ClientChunkManager globals::chunks = ClientChunkManager();
-VoxelDef globals::voxels = VoxelDef();
-Atlas globals::solid_textures = Atlas();
+float cl_globals::curtime = 0.0f;
+float cl_globals::frametime = 0.0f;
+uint64_t cl_globals::frame_count = 0;
+entt::registry cl_globals::registry = entt::registry();
+ClientChunkManager cl_globals::chunks = ClientChunkManager();
+VoxelDef cl_globals::voxels = VoxelDef();
+Atlas cl_globals::solid_textures = Atlas();
