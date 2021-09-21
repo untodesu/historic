@@ -11,7 +11,7 @@
 
 struct AtlasNode final {
     uint16_t index;
-    float2_t max_uv;
+    float2 max_uv;
 };
 
 class Atlas final {

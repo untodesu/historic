@@ -12,7 +12,7 @@ struct GLFWwindow;
 namespace screen
 {
 void init(GLFWwindow *window);
-const float2_t &getSize();
+const float2 &getSize();
 float getAspectRatio();
 } // namespace screen
 

@@ -14,12 +14,12 @@ constexpr static const plane_t PLANE_BK = 3;
 constexpr static const plane_t PLANE_UP = 4;
 constexpr static const plane_t PLANE_DN = 5;
 
-float Frustum::Plane::point(const float3_t &v) const
+float Frustum::Plane::point(const float3 &v) const
 {
     return glm::dot(v, n) + d;
 }
 
-void Frustum::update(const float4x4_t &projview)
+void Frustum::update(const float4x4 &projview)
 {
     planes[PLANE_LF].n.x = projview[0][3] + projview[0][0];
     planes[PLANE_LF].n.y = projview[1][3] + projview[1][0];
@@ -59,7 +59,7 @@ void Frustum::update(const float4x4_t &projview)
     }
 }
 
-bool Frustum::point(const float3_t &v) const
+bool Frustum::point(const float3 &v) const
 {
     for(const Frustum::Plane &plane : planes) {
         if(plane.point(v) >= 0.0f)

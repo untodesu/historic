@@ -35,7 +35,7 @@ static void glfwOnError(int code, const char *message)
     spdlog::error("GLFW ({}): {}", code, message);
 }
 
-static inline float octanoise(const float2_t &v, unsigned int oct)
+static inline float octanoise(const float2 &v, unsigned int oct)
 {
     float result = 1.0;
     for(unsigned int i = 1; i <= oct; i++)
@@ -45,22 +45,21 @@ static inline float octanoise(const float2_t &v, unsigned int oct)
 
 static void generate()
 {
-    constexpr const int64_t START = -512;
-    constexpr const int64_t END = 512;
+    constexpr const int64_t START = -256;
+    constexpr const int64_t END = 256;
 
     for(int64_t vx = START; vx < END; vx++) {
         for(int64_t vz = START; vz < END; vz++) {
-            const float2_t vxz = float2_t(vx, vz);
+            const float2 vxz = float2(vx, vz);
             const float solidity = octanoise(vxz / 160.0f, 3);
-            const float hmod = octanoise(vxz / 320.0f, 3);
+            const float hmod = octanoise(vxz / 160.0f, 8);
             if(solidity > 0.4f) {
                 int64_t h1 = ((solidity - 0.4f) * 32.0f);
                 int64_t h2 = (hmod * 8.0f);
                 for(int64_t vy = 1; vy < h1; vy++)
                     cl_globals::chunks.set(voxelpos_t(vx, -vy, vz), 0xFF, true);
-                for(int64_t vy = 0; vy < h2; vy++)
+                for(int64_t vy = 0; h1 && vy < h2; vy++)
                     cl_globals::chunks.set(voxelpos_t(vx, vy, vz), 0xFF, true);
-                spdlog::trace("{} {}", vx, vz);
             }
         }
     }
@@ -119,7 +118,7 @@ void client_app::run()
 
         CameraComponent &camera = cl_globals::registry.emplace<CameraComponent>(player);
         camera.fov = glm::radians(90.0f);
-        camera.z_far = static_cast<float>(CHUNK_SIZE) * 32.0f;
+        camera.z_far = 1024.0f;
         camera.z_near = 0.01f;
     }
 

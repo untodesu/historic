@@ -8,6 +8,6 @@
 #include <math/types.hpp>
 
 struct CreatureComponent final {
-    floatquat_t orientation { FLOATQUAT_IDENTITY };
-    float3_t position { FLOAT3_ZERO };
+    floatquat orientation { FLOATQUAT_IDENTITY };
+    float3 position { FLOAT3_ZERO };
 };

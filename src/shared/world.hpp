@@ -35,7 +35,7 @@ struct std::hash<chunkpos_t> final {
     }
 };
 
-constexpr static inline const chunkpos_t toChunkPos(const float3_t &wp)
+constexpr static inline const chunkpos_t toChunkPos(const float3 &wp)
 {
     return chunkpos_t(static_cast<int32_t>(wp.x) >> CHUNK_BITSHIFT, static_cast<int32_t>(wp.y) >> CHUNK_BITSHIFT, static_cast<int32_t>(wp.z) >> CHUNK_BITSHIFT);
 }
@@ -45,7 +45,7 @@ constexpr static inline const chunkpos_t toChunkPos(const voxelpos_t &vp)
     return chunkpos_t(vp.x >> CHUNK_BITSHIFT, vp.y >> CHUNK_BITSHIFT, vp.z >> CHUNK_BITSHIFT);
 }
 
-constexpr static inline const voxelpos_t toVoxelPos(const float3_t &wp)
+constexpr static inline const voxelpos_t toVoxelPos(const float3 &wp)
 {
     return voxelpos_t(wp.x, wp.y, wp.z);
 }
@@ -70,9 +70,9 @@ constexpr static inline const voxelidx_t toVoxelIdx(const localpos_t &lp)
     return static_cast<voxelidx_t>((lp.x * CHUNK_SIZE + lp.z) * CHUNK_SIZE + lp.y);
 }
 
-constexpr static inline const float3_t toWorldPos(const chunkpos_t &cp)
+constexpr static inline const float3 toWorldPos(const chunkpos_t &cp)
 {
-    return float3_t(cp.x << CHUNK_BITSHIFT, cp.y << CHUNK_BITSHIFT, cp.z << CHUNK_BITSHIFT);
+    return float3(cp.x << CHUNK_BITSHIFT, cp.y << CHUNK_BITSHIFT, cp.z << CHUNK_BITSHIFT);
 }
 
 constexpr static inline const bool isLocalPosInRange(const localpos_t &lp)

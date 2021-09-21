@@ -22,8 +22,8 @@ constexpr static const char *VERT_NAME = "shaders/voxel.vert.glsl";
 constexpr static const char *FRAG_NAME = "shaders/voxel.frag.glsl";
 
 struct alignas(16) UBufferData final {
-    float4x4_t projview;
-    float3_t chunkpos;
+    float4x4 projview;
+    float3 chunkpos;
 };
 
 static gl::Shader shaders[2];
@@ -67,26 +67,26 @@ void voxel_renderer::shutdown()
 }
 
 // UNDONE: move this somewhere else
-static inline bool isInFrustum(const Frustum &frustum, const float3_t &view, const chunkpos_t &cp)
+static inline bool isInFrustum(const Frustum &frustum, const float3 &view, const chunkpos_t &cp)
 {
-    const float3_t wp = toWorldPos(cp);
-    if(math::isInBB(view, wp, wp + float3_t(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
+    const float3 wp = toWorldPos(cp);
+    if(math::isInBB(view, wp, wp + float3(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
         return true;
-    if(frustum.point(wp + float3_t(0.0f, 0.0f, 0.0f)))
+    if(frustum.point(wp + float3(0.0f, 0.0f, 0.0f)))
         return true;
-    if(frustum.point(wp + float3_t(0.0f, 0.0f, CHUNK_SIZE)))
+    if(frustum.point(wp + float3(0.0f, 0.0f, CHUNK_SIZE)))
         return true;
-    if(frustum.point(wp + float3_t(0.0f, CHUNK_SIZE, 0.0f)))
+    if(frustum.point(wp + float3(0.0f, CHUNK_SIZE, 0.0f)))
         return true;
-    if(frustum.point(wp + float3_t(0.0f, CHUNK_SIZE, CHUNK_SIZE)))
+    if(frustum.point(wp + float3(0.0f, CHUNK_SIZE, CHUNK_SIZE)))
         return true;
-    if(frustum.point(wp + float3_t(CHUNK_SIZE, 0.0f, 0.0f)))
+    if(frustum.point(wp + float3(CHUNK_SIZE, 0.0f, 0.0f)))
         return true;
-    if(frustum.point(wp + float3_t(CHUNK_SIZE, 0.0f, CHUNK_SIZE)))
+    if(frustum.point(wp + float3(CHUNK_SIZE, 0.0f, CHUNK_SIZE)))
         return true;
-    if(frustum.point(wp + float3_t(CHUNK_SIZE, CHUNK_SIZE, 0.0f)))
+    if(frustum.point(wp + float3(CHUNK_SIZE, CHUNK_SIZE, 0.0f)))
         return true;
-    if(frustum.point(wp + float3_t(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
+    if(frustum.point(wp + float3(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
         return true;
     return false;
 }
@@ -111,7 +111,7 @@ void voxel_renderer::update()
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubuffer.get());
     cl_globals::solid_textures.getTexture().bind(0);
 
-    const float3_t &view = proj_view::position();
+    const float3 &view = proj_view::position();
     const Frustum &frustum = proj_view::frustum();
 
     auto group = cl_globals::registry.group(entt::get<VoxelMeshComponent, chunkpos_t>);

@@ -20,8 +20,8 @@ bool isMouseButtonPressed(unsigned int button);
 bool isMouseButtonJustPressed(unsigned int button);
 bool isMouseButtonJustReleased(unsigned int button);
 
-const float2_t &getCursor();
-const float2_t &getCursorDelta();
+const float2 &getCursor();
+const float2 &getCursorDelta();
 
-const float2_t &getScrollDelta();
+const float2 &getScrollDelta();
 } // namespace input

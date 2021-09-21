@@ -20,10 +20,10 @@ static bool mouse_buttons[NUM_MOUSE_BUTTONS] = { 0 };
 static unsigned int last_mouse_button_press = UNKNOWN_VALUE;
 static unsigned int last_mouse_button_release = UNKNOWN_VALUE;
 
-static float2_t cursor = FLOAT2_ZERO;
-static float2_t cursor_delta = FLOAT2_ZERO;
+static float2 cursor = FLOAT2_ZERO;
+static float2 cursor_delta = FLOAT2_ZERO;
 
-static float2_t scroll_delta = FLOAT2_ZERO;
+static float2 scroll_delta = FLOAT2_ZERO;
 
 static void onKey(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
@@ -131,17 +131,17 @@ bool input::isMouseButtonJustReleased(unsigned int button)
     return button == last_mouse_button_release;
 }
 
-const float2_t &input::getCursor()
+const float2 &input::getCursor()
 {
     return cursor;
 }
 
-const float2_t &input::getCursorDelta()
+const float2 &input::getCursorDelta()
 {
     return cursor_delta;
 }
 
-const float2_t &input::getScrollDelta()
+const float2 &input::getScrollDelta()
 {
     return scroll_delta;
 }

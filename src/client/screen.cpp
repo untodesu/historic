@@ -9,13 +9,13 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
-static float2_t screen_size = FLOAT2_IDENTITY;
+static float2 screen_size = FLOAT2_IDENTITY;
 static float aspect_ratio = 1.0f;
 
 static void onFramebufferSize(GLFWwindow *, int width, int height)
 {
     glViewport(0, 0, width, height);
-    screen_size = float2_t(width, height);
+    screen_size = float2(width, height);
     aspect_ratio = (screen_size.x > screen_size.y) ? (screen_size.x / screen_size.y) : (screen_size.y / screen_size.x);
 }
 
@@ -29,7 +29,7 @@ void screen::init(GLFWwindow *window)
     onFramebufferSize(window, width, height);
 }
 
-const float2_t &screen::getSize()
+const float2 &screen::getSize()
 {
     return screen_size;
 }

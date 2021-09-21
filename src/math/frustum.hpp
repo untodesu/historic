@@ -12,13 +12,13 @@ class Frustum final {
 public:
     struct Plane final {
         float d;
-        float3_t n;
-        float point(const float3_t &v) const;
+        float3 n;
+        float point(const float3 &v) const;
     };
 
 public:
-    void update(const float4x4_t &projview);
-    bool point(const float3_t &v) const;
+    void update(const float4x4 &projview);
+    bool point(const float3 &v) const;
 
 private:
     std::array<Plane, 6> planes;

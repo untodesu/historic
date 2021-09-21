@@ -15,7 +15,7 @@
 
 void player_move::update()
 {
-    float3_t direction = FLOAT3_ZERO;
+    float3 direction = FLOAT3_ZERO;
 
     if(input::isKeyPressed(GLFW_KEY_W))
         direction += FLOAT3_FORWARD;
@@ -33,7 +33,7 @@ void player_move::update()
 
     auto pg = cl_globals::registry.group(entt::get<LocalPlayerComponent, CreatureComponent, HeadComponent, PlayerComponent>);
     for(auto [entity, creature, head] : pg.each()) {
-        creature.position += floatquat_t(math::fixAngle180(head.angles)) * direction * 32.0f * cl_globals::frametime;
+        creature.position += floatquat(math::fixAngle180(head.angles)) * direction * 32.0f * cl_globals::frametime;
         return;
     }
 }

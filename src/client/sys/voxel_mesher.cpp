@@ -136,69 +136,69 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
                     x[u] = i;
                     x[v] = j;
 
-                    float2_t uv = float2_t(qw, qh) * node->max_uv;
-                    float3_t pos = float3_t(x.x, x.y, x.z);
-                    float3_t du = FLOAT3_ZERO;
-                    float3_t dv = FLOAT3_ZERO;
-                    du[u] = static_cast<float>(qw);
-                    dv[v] = static_cast<float>(qh);
-
-                    // HACK
+                    float3 position = float3(x.x, x.y, x.z);
                     if(isBackVoxelFace(face))
-                        pos[d] += q[d];
+                        position[d] += q[d];
 
-                    float2_t uvs[4];
+                    float2 texcoords[4];
+                    float2 tc = float2(qw, qh) * node->max_uv;
                     switch(face) {
                         case VoxelFace::LF:
-                            uvs[0] = float2_t(0.0f, 0.0f);
-                            uvs[1] = float2_t(uv.y, 0.0f);
-                            uvs[2] = float2_t(uv.y, uv.x);
-                            uvs[3] = float2_t(0.0f, uv.x);
+                            texcoords[0] = float2(0.0f, 0.0f);
+                            texcoords[1] = float2(tc.y, 0.0f);
+                            texcoords[2] = float2(tc.y, tc.x);
+                            texcoords[3] = float2(0.0f, tc.x);
                             break;
                         case VoxelFace::RT:
-                            uvs[0] = float2_t(uv.y, 0.0f);
-                            uvs[1] = float2_t(uv.y, uv.x);
-                            uvs[2] = float2_t(0.0f, uv.x);
-                            uvs[3] = float2_t(0.0f, 0.0f);
+                            texcoords[0] = float2(tc.y, 0.0f);
+                            texcoords[1] = float2(tc.y, tc.x);
+                            texcoords[2] = float2(0.0f, tc.x);
+                            texcoords[3] = float2(0.0f, 0.0f);
                             break;
                         case VoxelFace::FT:
-                            uvs[0] = float2_t(uv.x, 0.0f);
-                            uvs[1] = float2_t(uv.x, uv.y);
-                            uvs[2] = float2_t(0.0f, uv.y);
-                            uvs[3] = float2_t(0.0f, 0.0f);
+                            texcoords[0] = float2(tc.x, 0.0f);
+                            texcoords[1] = float2(tc.x, tc.y);
+                            texcoords[2] = float2(0.0f, tc.y);
+                            texcoords[3] = float2(0.0f, 0.0f);
                             break;
                         case VoxelFace::BK:
-                            uvs[0] = float2_t(0.0f, 0.0f);
-                            uvs[1] = float2_t(uv.x, 0.0f);
-                            uvs[2] = float2_t(uv.x, uv.y);
-                            uvs[3] = float2_t(0.0f, uv.y);
+                            texcoords[0] = float2(0.0f, 0.0f);
+                            texcoords[1] = float2(tc.x, 0.0f);
+                            texcoords[2] = float2(tc.x, tc.y);
+                            texcoords[3] = float2(0.0f, tc.y);
                             break;
                         case VoxelFace::UP:
-                            uvs[0] = float2_t(0.0f, uv.x);
-                            uvs[1] = float2_t(0.0f, 0.0f);
-                            uvs[2] = float2_t(uv.y, 0.0f);
-                            uvs[3] = float2_t(uv.y, uv.x);
+                            texcoords[0] = float2(0.0f, tc.x);
+                            texcoords[1] = float2(0.0f, 0.0f);
+                            texcoords[2] = float2(tc.y, 0.0f);
+                            texcoords[3] = float2(tc.y, tc.x);
                             break;
                         case VoxelFace::DN:
-                            uvs[0] = float2_t(uv.y, uv.x);
-                            uvs[1] = float2_t(0.0f, uv.x);
-                            uvs[2] = float2_t(0.0f, 0.0f);
-                            uvs[3] = float2_t(uv.y, 0.0f);
+                            texcoords[0] = float2(tc.y, tc.x);
+                            texcoords[1] = float2(0.0f, tc.x);
+                            texcoords[2] = float2(0.0f, 0.0f);
+                            texcoords[3] = float2(tc.y, 0.0f);
                             break;
                     }
+
+                    float3 du = FLOAT3_ZERO;
+                    du[u] = static_cast<float>(qw);
+
+                    float3 dv = FLOAT3_ZERO;
+                    dv[v] = static_cast<float>(qh);
 
                     VoxelVertex verts[4];
                     if(isBackVoxelFace(face)) {
-                        verts[0] = VoxelVertex(pos, uvs[0], node->index);
-                        verts[1] = VoxelVertex(pos + dv, uvs[1], node->index);
-                        verts[2] = VoxelVertex(pos + du + dv, uvs[2], node->index);
-                        verts[3] = VoxelVertex(pos + du, uvs[3], node->index);
+                        verts[0] = VoxelVertex(position, texcoords[0], node->index);
+                        verts[1] = VoxelVertex(position + dv, texcoords[1], node->index);
+                        verts[2] = VoxelVertex(position + du + dv, texcoords[2], node->index);
+                        verts[3] = VoxelVertex(position + du, texcoords[3], node->index);
                     }
                     else {
-                        verts[0] = VoxelVertex(pos, uvs[0], node->index);
-                        verts[1] = VoxelVertex(pos + du, uvs[1], node->index);
-                        verts[2] = VoxelVertex(pos + du + dv, uvs[2], node->index);
-                        verts[3] = VoxelVertex(pos + dv, uvs[3], node->index);
+                        verts[0] = VoxelVertex(position, texcoords[0], node->index);
+                        verts[1] = VoxelVertex(position + du, texcoords[1], node->index);
+                        verts[2] = VoxelVertex(position + du + dv, texcoords[2], node->index);
+                        verts[3] = VoxelVertex(position + dv, texcoords[3], node->index);
                     }
 
                     pushQuad(builder, base, verts);
@@ -282,8 +282,11 @@ void voxel_mesher::update()
                     mesh->vao.setIndexBuffer(mesh->ibo);
                     mesh->vao.setVertexBuffer(0, mesh->vbo, sizeof(VoxelVertex));
                     mesh->vao.enableAttribute(0, true);
-                    mesh->vao.setAttributeFormat(0, GL_UNSIGNED_INT, 2, offsetof(VoxelVertex, pack), false);
+                    mesh->vao.enableAttribute(1, true);
+                    mesh->vao.setAttributeFormat(0, GL_UNSIGNED_INT, 1, offsetof(VoxelVertex, pack[0]), false);
+                    mesh->vao.setAttributeFormat(1, GL_UNSIGNED_INT, 1, offsetof(VoxelVertex, pack[1]), false);
                     mesh->vao.setAttributeBinding(0, 0);
+                    mesh->vao.setAttributeBinding(1, 0);
                 }
 
                 mesh->ibo.resize(mesher.builder->isize(), mesher.builder->idata(), GL_STATIC_DRAW);

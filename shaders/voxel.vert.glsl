@@ -4,21 +4,24 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#version 460 core
+#version 460
 
-layout(location = 0) in uvec2 pack;
-layout(location = 0) out vec3 out_uv;
+layout(location = 0) in uint pack_0;
+layout(location = 1) in uint pack_1;
 
 out gl_PerVertex { vec4 gl_Position; };
 
-layout(std140, binding = 0) uniform UBO {
-    mat4x4 projview;
+layout(location = 0) out vec2 texcoord;
+layout(location = 1) out float atlas_id;
+
+layout(std140, binding = 0) uniform ubo {
+    mat4 projview;
     vec3 chunkpos;
 };
 
 void main()
 {
-    gl_Position = projview * vec4(floor((unpackUnorm4x8(pack.x & 0x00FFFFFF).xyz * 16.0) + 0.5) + chunkpos, 1.0);
-    out_uv.xy = unpackUnorm4x8(pack.y & 0x0000FFFF).xy * 16.0;
-    out_uv.z = max(0.0, floor(float((pack.y >> 16) & 0xFFFF) + 0.5));
+    gl_Position = projview * vec4(chunkpos + (unpackUnorm4x8(pack_0).xyz * 16.0), 1.0);
+    texcoord = unpackUnorm4x8(pack_1).xy * 16.0;
+    atlas_id = max(0.0, floor(float(pack_1 >> 16) + 0.5));
 }

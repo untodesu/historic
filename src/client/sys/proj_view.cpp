@@ -14,8 +14,8 @@
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
 
-static float3_t pv_position = FLOAT3_ZERO;
-static float4x4_t pv_matrix = FLOAT4X4_IDENTITY;
+static float3 pv_position = FLOAT3_ZERO;
+static float4x4 pv_matrix = FLOAT4X4_IDENTITY;
 static Frustum pv_frustum;
 
 void proj_view::update()
@@ -34,19 +34,19 @@ void proj_view::update()
         pv_position = head.offset;
         if(CreatureComponent *creature = cl_globals::registry.try_get<CreatureComponent>(entity))
             pv_position += creature->position;
-        pv_matrix *= glm::lookAt(pv_position, pv_position + floatquat_t(head.angles) * FLOAT3_FORWARD, FLOAT3_UP);
+        pv_matrix *= glm::lookAt(pv_position, pv_position + floatquat(head.angles) * FLOAT3_FORWARD, FLOAT3_UP);
         break;
     }
 
     pv_frustum.update(pv_matrix);
 }
 
-const float3_t &proj_view::position()
+const float3 &proj_view::position()
 {
     return pv_position;
 }
 
-const float4x4_t &proj_view::matrix()
+const float4x4 &proj_view::matrix()
 {
     return pv_matrix;
 }

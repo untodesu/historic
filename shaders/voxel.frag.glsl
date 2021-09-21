@@ -6,13 +6,14 @@
  */
 #version 460 core
 
-layout(location = 0) in vec3 texcoord;
+layout(location = 0) in vec2 texcoord;
+layout(location = 1) in float atlas_id;
 
-layout(location = 0) out vec4 color_0;
+layout(location = 0) out vec4 color;
 
-layout(binding = 0) uniform sampler2DArray sampler_0;
+layout(binding = 0) uniform sampler2DArray atlas;
 
 void main()
 {
-    color_0 = texture(sampler_0, vec3(texcoord.xy, texcoord.z));
+    color = texture(atlas, vec3(texcoord, atlas_id));
 }
