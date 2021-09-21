@@ -6,14 +6,24 @@
  */
 #version 460 core
 
-layout(location = 0) in vec2 texcoord;
-layout(location = 1) in float atlas_id;
+layout(location = 0) in vec3 model;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 texcoord;
+layout(location = 3) in float atlas_id;
 
 layout(location = 0) out vec4 color;
 
 layout(binding = 0) uniform sampler2DArray atlas;
+layout(std140, binding = 1) uniform ubo {
+    vec3 playerpos;
+};
 
 void main()
 {
-    color = texture(atlas, vec3(texcoord, atlas_id));
+    vec3 norm = normalize(normal);
+    vec3 dir = normalize(playerpos - model);
+    float diff = max(dot(norm, dir), 0.1) / sqrt(length(playerpos - model)) * 2.0;
+    vec4 r = texture(atlas, vec3(texcoord, atlas_id));
+    r.xyz *= diff;
+    color = r;
 }

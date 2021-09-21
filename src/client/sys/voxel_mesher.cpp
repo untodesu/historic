@@ -31,9 +31,9 @@ struct MesherData final {
     }
 };
 
-using ChunkMeshBuilder = MeshBuilder<uint16_t, VoxelVertex>;
+using ChunkMeshBuilder = MeshBuilder<uint16_t, PackedVertex>;
 
-static inline void pushQuad(ChunkMeshBuilder *builder, uint16_t &base, const VoxelVertex data[4])
+static inline void pushQuad(ChunkMeshBuilder *builder, uint16_t &base, const PackedVertex data[4])
 {
     for(int i = 0; i < 4; i++)
         builder->vertex(data[i]);
@@ -187,18 +187,20 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
                     float3 dv = FLOAT3_ZERO;
                     dv[v] = static_cast<float>(qh);
 
-                    VoxelVertex verts[4];
+                    const float3 normal = float3(q.x, q.y, q.z);
+
+                    PackedVertex verts[4];
                     if(isBackVoxelFace(face)) {
-                        verts[0] = VoxelVertex(position, texcoords[0], node->index);
-                        verts[1] = VoxelVertex(position + dv, texcoords[1], node->index);
-                        verts[2] = VoxelVertex(position + du + dv, texcoords[2], node->index);
-                        verts[3] = VoxelVertex(position + du, texcoords[3], node->index);
+                        verts[0] = PackedVertex(position, normal, texcoords[0], node->index);
+                        verts[1] = PackedVertex(position + dv, normal, texcoords[1], node->index);
+                        verts[2] = PackedVertex(position + du + dv, normal, texcoords[2], node->index);
+                        verts[3] = PackedVertex(position + du, normal, texcoords[3], node->index);
                     }
                     else {
-                        verts[0] = VoxelVertex(position, texcoords[0], node->index);
-                        verts[1] = VoxelVertex(position + du, texcoords[1], node->index);
-                        verts[2] = VoxelVertex(position + du + dv, texcoords[2], node->index);
-                        verts[3] = VoxelVertex(position + dv, texcoords[3], node->index);
+                        verts[0] = PackedVertex(position, normal, texcoords[0], node->index);
+                        verts[1] = PackedVertex(position + du, normal, texcoords[1], node->index);
+                        verts[2] = PackedVertex(position + du + dv, normal, texcoords[2], node->index);
+                        verts[3] = PackedVertex(position + dv, normal, texcoords[3], node->index);
                     }
 
                     pushQuad(builder, base, verts);
@@ -280,13 +282,10 @@ void voxel_mesher::update()
                     mesh->vao.create();
                     mesh->cmd.create();
                     mesh->vao.setIndexBuffer(mesh->ibo);
-                    mesh->vao.setVertexBuffer(0, mesh->vbo, sizeof(VoxelVertex));
+                    mesh->vao.setVertexBuffer(0, mesh->vbo, sizeof(PackedVertex));
                     mesh->vao.enableAttribute(0, true);
-                    mesh->vao.enableAttribute(1, true);
-                    mesh->vao.setAttributeFormat(0, GL_UNSIGNED_INT, 1, offsetof(VoxelVertex, pack[0]), false);
-                    mesh->vao.setAttributeFormat(1, GL_UNSIGNED_INT, 1, offsetof(VoxelVertex, pack[1]), false);
+                    mesh->vao.setAttributeFormat(0, GL_UNSIGNED_INT, 3, offsetof(PackedVertex, pack), false);
                     mesh->vao.setAttributeBinding(0, 0);
-                    mesh->vao.setAttributeBinding(1, 0);
                 }
 
                 mesh->ibo.resize(mesher.builder->isize(), mesher.builder->idata(), GL_STATIC_DRAW);

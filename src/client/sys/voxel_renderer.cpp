@@ -29,7 +29,7 @@ struct alignas(16) UBufferData final {
 static gl::Shader shaders[2];
 static gl::Pipeline pipeline;
 static gl::Sampler sampler;
-static gl::Buffer ubuffer;
+static gl::Buffer ubuffer, ubo2;
 
 void voxel_renderer::init()
 {
@@ -54,7 +54,10 @@ void voxel_renderer::init()
     sampler.parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     ubuffer.create();
-    ubuffer.resize(sizeof(UBufferData), nullptr, GL_DYNAMIC_DRAW);
+    ubuffer.storage(sizeof(UBufferData), nullptr, GL_DYNAMIC_STORAGE_BIT);
+
+    ubo2.create();
+    ubo2.storage(sizeof(float3), nullptr, GL_DYNAMIC_STORAGE_BIT);
 }
 
 void voxel_renderer::shutdown()
@@ -109,10 +112,12 @@ void voxel_renderer::update()
     pipeline.bind();
     sampler.bind(0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubuffer.get());
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo2.get());
     cl_globals::solid_textures.getTexture().bind(0);
 
     const float3 &view = proj_view::position();
     const Frustum &frustum = proj_view::frustum();
+    ubo2.write(0, sizeof(float3), &view);
 
     auto group = cl_globals::registry.group(entt::get<VoxelMeshComponent, chunkpos_t>);
     for(const auto [entity, mesh, chunkpos] : group.each()) {

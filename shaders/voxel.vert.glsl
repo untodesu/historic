@@ -6,13 +6,14 @@
  */
 #version 460
 
-layout(location = 0) in uint pack_0;
-layout(location = 1) in uint pack_1;
+layout(location = 0) in uvec3 pack;
 
 out gl_PerVertex { vec4 gl_Position; };
 
-layout(location = 0) out vec2 texcoord;
-layout(location = 1) out float atlas_id;
+layout(location = 0) out vec3 model;
+layout(location = 1) out vec3 normal;
+layout(location = 2) out vec2 texcoord;
+layout(location = 3) out float atlas_id;
 
 layout(std140, binding = 0) uniform ubo {
     mat4 projview;
@@ -21,7 +22,9 @@ layout(std140, binding = 0) uniform ubo {
 
 void main()
 {
-    gl_Position = projview * vec4(chunkpos + (unpackUnorm4x8(pack_0).xyz * 16.0), 1.0);
-    texcoord = unpackUnorm4x8(pack_1).xy * 16.0;
-    atlas_id = max(0.0, floor(float(pack_1 >> 16) + 0.5));
+    model = chunkpos + (unpackUnorm4x8(pack.x).xyz * 16.0);
+    normal = unpackSnorm4x8(pack.y).xyz;
+    texcoord = unpackUnorm4x8(pack.z).xy * 16.0;
+    atlas_id = max(0.0, floor(float(pack.z >> 16) + 0.5));
+    gl_Position = projview * vec4(model, 1.0);
 }

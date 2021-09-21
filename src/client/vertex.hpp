@@ -15,11 +15,10 @@ struct BasicVertex final {
     BasicVertex(const float3 &position, const float2 &texcoord);
 };
 
-struct VoxelVertex final {
-    constexpr static const float PACK_EPSILON = 1.0f / 16.0f;
-    uint32_t pack[2];
-    VoxelVertex() = default;
-    VoxelVertex(const float3 &position, const float2 &texcoord, uint16_t atlas_id);
+struct PackedVertex final {
+    uint32_t pack[3];
+    PackedVertex() = default;
+    PackedVertex(const float3 &position, const float3 &normal, const float2 &texcoord, uint16_t atlas_id);
 };
 
 inline BasicVertex::BasicVertex(const float3 &position, const float2 &texcoord)
@@ -28,10 +27,11 @@ inline BasicVertex::BasicVertex(const float3 &position, const float2 &texcoord)
 
 }
 
-inline VoxelVertex::VoxelVertex(const float3 &position, const float2 &texcoord, uint16_t atlas_id)
+inline PackedVertex::PackedVertex(const float3 &position, const float3 &normal, const float2 &texcoord, uint16_t atlas_id)
     : pack { 0, 0 }
 {
-    pack[0] |= glm::packUnorm4x8(float4(position.x, position.y, position.z, 0.0f) * PACK_EPSILON);
-    pack[1] |= glm::packUnorm4x8(float4(texcoord.x, texcoord.y, 0.0f, 0.0f) * PACK_EPSILON) & 0x0000FFFF;
-    pack[1] |= static_cast<uint32_t>(atlas_id) << 16;
+    pack[0] |= glm::packUnorm4x8(float4(position.x, position.y, position.z, 0.0f) / 16.0f);
+    pack[1] |= glm::packSnorm4x8(float4(normal.x, normal.y, normal.z, 0.0f));
+    pack[2] |= glm::packUnorm4x8(float4(texcoord.x, texcoord.y, 0.0f, 0.0f) / 16.0f) & 0x0000FFFF;
+    pack[2] |= static_cast<uint32_t>(atlas_id) << 16;
 }
