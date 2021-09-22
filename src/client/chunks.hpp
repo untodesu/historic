@@ -19,5 +19,5 @@ public:
     void implOnRemove(const chunkpos_t &cp, const ClientChunk &data);
     ClientChunk implOnCreate(const chunkpos_t &cp);
     voxel_t implGetVoxel(const ClientChunk &data, const localpos_t &lp) const;
-    void implSetVoxel(ClientChunk *data, const localpos_t &lp, voxel_t voxel);
+    void implSetVoxel(ClientChunk *data, const chunkpos_t &cp, const localpos_t &lp, voxel_t voxel);
 };

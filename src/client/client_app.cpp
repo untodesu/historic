@@ -53,8 +53,8 @@ static void generate()
             const float2 vxz = float2(vx, vz);
             const float solidity = octanoise(vxz / 160.0f, 3);
             const float hmod = octanoise(vxz / 160.0f, 8);
-            if(solidity > 0.4f) {
-                int64_t h1 = ((solidity - 0.4f) * 32.0f);
+            if(solidity > 0.1f) {
+                int64_t h1 = ((solidity - 0.1f) * 32.0f);
                 int64_t h2 = (hmod * 8.0f);
                 for(int64_t vy = 1; vy < h1; vy++)
                     cl_globals::chunks.set(voxelpos_t(vx, -vy, vz), 0x01, true);

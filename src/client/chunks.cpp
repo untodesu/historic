@@ -35,7 +35,9 @@ voxel_t ClientChunkManager::implGetVoxel(const ClientChunk &data, const localpos
     return data.data[toVoxelIdx(lp)];
 }
 
-void ClientChunkManager::implSetVoxel(ClientChunk *data, const localpos_t &lp, voxel_t voxel)
+void ClientChunkManager::implSetVoxel(ClientChunk *data, const chunkpos_t &cp, const localpos_t &lp, voxel_t voxel)
 {
+    // TODO: we need to update neighbouring chunks too!!!
+    cl_globals::registry.emplace_or_replace<NeedsVoxelMeshComponent>(data->entity);
     data->data[toVoxelIdx(lp)] = voxel;
 }

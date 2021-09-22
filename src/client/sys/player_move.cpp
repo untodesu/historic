@@ -12,6 +12,7 @@
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
 #include <math/util.hpp>
+#include <client/chunks.hpp>
 
 void player_move::update()
 {
@@ -34,6 +35,8 @@ void player_move::update()
     auto pg = cl_globals::registry.group(entt::get<LocalPlayerComponent, CreatureComponent, HeadComponent, PlayerComponent>);
     for(auto [entity, creature, head] : pg.each()) {
         creature.position += floatquat(math::fixAngle180(head.angles)) * direction * 32.0f * cl_globals::frametime;
+        if(input::isMouseButtonJustPressed(GLFW_MOUSE_BUTTON_LEFT))
+            cl_globals::chunks.set(toVoxelPos(creature.position), NULL_VOXEL, false);
         return;
     }
 }

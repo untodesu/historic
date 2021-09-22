@@ -28,7 +28,7 @@ public:
     //  void implOnRemove(const chunkpos_t &, const chunk_type &);
     //  chunk_type implOnCreate(const chunkpos_t &);
     //  voxel_t implGetVoxel(const chunk_type &, const localpos_t &) const;
-    //  void implSetVoxel(chunk_type *, const localpos_t &, voxel_t);
+    //  void implSetVoxel(chunk_type *, const chunkpos_t &, const localpos_t &, voxel_t);
 
 protected:
     std::unordered_map<chunkpos_t, chunk_type> chunks;
@@ -97,7 +97,7 @@ inline bool ChunkManager<chunk_type, T>::set(const voxelpos_t &vp, voxel_t voxel
         chunk = create(cp);
     }
 
-    static_cast<T *>(this)->implSetVoxel(chunk, lp, voxel);
+    static_cast<T *>(this)->implSetVoxel(chunk, cp, lp, voxel);
     return true;
 }
 

@@ -46,17 +46,12 @@ static inline void pushQuad(ChunkMeshBuilder *builder, uint16_t &base, const Pac
     base += 4;
 }
 
-static inline bool isOccupied(const chunkpos_t &cp, const localpos_t &lp, voxel_t current, const VoxelInfo &current_info, VoxelFace face)
+static inline bool isOccupied(const chunkpos_t &cp, const localpos_t &lp, VoxelFace face)
 {
-    const voxelpos_t vp = toVoxelPos(cp, lp);
-    if(voxel_t compare = cl_globals::chunks.get(vp)) {
-        if(compare != current) {
-            if(const VoxelInfo *info = cl_globals::voxels.tryGet(compare))
-                return (info->transparency.find(face) == info->transparency.cend());
-            return false;
-        }
-
-        return (current_info.transparency.find(face) == current_info.transparency.cend());
+    if(voxel_t voxel = cl_globals::chunks.get(toVoxelPos(cp, lp))) {
+        if(const VoxelInfo *info = cl_globals::voxels.tryGet(voxel))
+            return info->transparency.find(face) == info->transparency.cend();
+        return false;
     }
 
     return false;
@@ -101,9 +96,9 @@ static void greedyFace(ChunkMeshBuilder *builder, const chunkpos_t &cp, const Vo
         maskpos = 0;
         for(x[v] = 0; x[v] < CHUNK_SIZE_I16; x[v]++) {
             for(x[u] = 0; x[u] < CHUNK_SIZE_I16; x[u]++) {
-                // NOTE: the neighbouring voxel's face
-                // is "inverted" (means LF becomes RT etc.)
-                mask[maskpos++] = cl_globals::chunks.get(cp, x) == voxel && isOccupied(cp, x, voxel, info, face) && !isOccupied(cp, x + q, voxel, info, back_face);
+                // We set the mask only if the current voxel is the one
+                // and if the next present (by direction) has a solid face.
+                mask[maskpos++] = (cl_globals::chunks.get(cp, x) == voxel) && !isOccupied(cp, x + q, back_face);
             }
         }
 
