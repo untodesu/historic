@@ -11,7 +11,7 @@
 
 enum class VoxelType {
     GAS,            // Kind of a liquid voxel, but in reverse. Reserved.
-    SOLID,          // A solid voxel. Rendered through voxel_renderer.
+    SOLID,          // A solid voxel. Rendered through chunk_renderer.
     SOLID_ENTITY,   // A solid voxel entity. Reserved.
     SOLID_FLORA,    // A solid voxel flora. Reserved.
     LIQUID,         // A liquid voxel. Reserved.

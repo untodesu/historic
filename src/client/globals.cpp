@@ -11,7 +11,8 @@
 
 float cl_globals::curtime = 0.0f;
 float cl_globals::frametime = 0.0f;
-uint64_t cl_globals::frame_count = 0;
+size_t cl_globals::frame_count = 0;
+size_t cl_globals::vertices_drawn = 0;
 entt::registry cl_globals::registry = entt::registry();
 ClientChunkManager cl_globals::chunks = ClientChunkManager();
 VoxelDef cl_globals::voxels = VoxelDef();

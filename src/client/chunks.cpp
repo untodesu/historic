@@ -4,13 +4,14 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <client/comp/voxel_mesh.hpp>
+#include <client/comp/chunk_mesh.hpp>
 #include <client/chunks.hpp>
 #include <client/globals.hpp>
+#include <shared/comp/chunk.hpp>
 
 void ClientChunkManager::implOnClear()
 {
-    const auto view = cl_globals::registry.view<chunkpos_t>();
+    const auto view = cl_globals::registry.view<ChunkComponent>();
     for(const auto [entity, cp] : view.each())
         cl_globals::registry.destroy(entity);
 }
@@ -24,8 +25,8 @@ ClientChunk ClientChunkManager::implOnCreate(const chunkpos_t &cp)
 {
     ClientChunk data;
     data.entity = cl_globals::registry.create();
-    cl_globals::registry.emplace<chunkpos_t>(data.entity, cp);
-    cl_globals::registry.emplace<NeedsVoxelMeshComponent>(data.entity);
+    cl_globals::registry.emplace<ChunkComponent>(data.entity, ChunkComponent(cp));
+    cl_globals::registry.emplace<ChunkFlaggedForMeshingComponent>(data.entity);
     data.data.fill(NULL_VOXEL);
     return std::move(data);
 }
@@ -35,9 +36,22 @@ voxel_t ClientChunkManager::implGetVoxel(const ClientChunk &data, const localpos
     return data.data[toVoxelIdx(lp)];
 }
 
-void ClientChunkManager::implSetVoxel(ClientChunk *data, const chunkpos_t &cp, const localpos_t &lp, voxel_t voxel)
+void ClientChunkManager::implSetVoxel(ClientChunk *data, const chunkpos_t &cp, const localpos_t &lp, voxel_t voxel, VoxelSetFlags flags)
 {
-    // TODO: we need to update neighbouring chunks too!!!
-    cl_globals::registry.emplace_or_replace<NeedsVoxelMeshComponent>(data->entity);
     data->data[toVoxelIdx(lp)] = voxel;
+    cl_globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(data->entity);
+    if(flags & VOXEL_SET_UPDATE_NEIGHBOURS) {
+        if(ClientChunk *nc = find(cp + chunkpos_t(0, 0, 1)))
+            cl_globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp - chunkpos_t(0, 0, 1)))
+            cl_globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp + chunkpos_t(0, 1, 0)))
+            cl_globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp - chunkpos_t(0, 1, 0)))
+            cl_globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp + chunkpos_t(1, 0, 0)))
+            cl_globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp - chunkpos_t(1, 0, 0)))
+            cl_globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+    }
 }

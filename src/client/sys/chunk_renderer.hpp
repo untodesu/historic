@@ -7,8 +7,9 @@
 #pragma once
 #include <entt/entt.hpp>
 
-namespace voxel_mesher
+namespace chunk_renderer
 {
+void init();
 void shutdown();
 void update();
-} // namespace voxel_mesher
+} // namespace chunk_renderer

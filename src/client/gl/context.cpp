@@ -37,4 +37,8 @@ void gl::init()
 
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(debugCallback, nullptr);
+
+    // Annoying!
+    const GLuint nvidia_131185 = 131185;
+    glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_OTHER, GL_DONT_CARE, 1, &nvidia_131185, GL_FALSE);
 }

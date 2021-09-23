@@ -16,7 +16,8 @@ namespace cl_globals
 {
 extern float curtime;
 extern float frametime;
-extern uint64_t frame_count;
+extern size_t frame_count;
+extern size_t vertices_drawn;
 extern entt::registry registry;
 extern ClientChunkManager chunks;
 extern VoxelDef voxels;

@@ -5,9 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <filesystem.hpp>
-#include <client/comp/voxel_mesh.hpp>
+#include <client/comp/chunk_mesh.hpp>
 #include <client/sys/proj_view.hpp>
-#include <client/sys/voxel_renderer.hpp>
+#include <client/sys/chunk_renderer.hpp>
 #include <client/globals.hpp>
 #include <spdlog/spdlog.h>
 #include <client/vertex.hpp>
@@ -16,6 +16,7 @@
 #include <client/gl/sampler.hpp>
 #include <client/gl/shader.hpp>
 #include <client/atlas.hpp>
+#include <shared/comp/chunk.hpp>
 #include <shared/world.hpp>
 
 constexpr static const char *VERT_NAME = "shaders/voxel.vert.glsl";
@@ -31,7 +32,7 @@ static gl::Pipeline pipeline;
 static gl::Sampler sampler;
 static gl::Buffer ubuffer, ubo2;
 
-void voxel_renderer::init()
+void chunk_renderer::init()
 {
     std::string vsrc, fsrc;
     if(!fs::readText(VERT_NAME, vsrc) || !fs::readText(FRAG_NAME, fsrc))
@@ -60,7 +61,7 @@ void voxel_renderer::init()
     ubo2.storage(sizeof(float3), nullptr, GL_DYNAMIC_STORAGE_BIT);
 }
 
-void voxel_renderer::shutdown()
+void chunk_renderer::shutdown()
 {
     ubuffer.destroy();
     sampler.destroy();
@@ -94,7 +95,7 @@ static inline bool isInFrustum(const Frustum &frustum, const float3 &view, const
     return false;
 }
 
-void voxel_renderer::update()
+void chunk_renderer::update()
 {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -119,10 +120,10 @@ void voxel_renderer::update()
     const Frustum &frustum = proj_view::frustum();
     ubo2.write(0, sizeof(float3), &view);
 
-    auto group = cl_globals::registry.group(entt::get<VoxelMeshComponent, chunkpos_t>);
-    for(const auto [entity, mesh, chunkpos] : group.each()) {
-        if(isInFrustum(frustum, view, chunkpos)) {
-            ubuffer_data.chunkpos = toWorldPos(chunkpos);
+    auto group = cl_globals::registry.group(entt::get<ChunkMeshComponent, ChunkComponent>);
+    for(const auto [entity, mesh, chunk] : group.each()) {
+        if(isInFrustum(frustum, view, chunk.position)) {
+            ubuffer_data.chunkpos = toWorldPos(chunk.position);
             ubuffer.write(offsetof(UBufferData, chunkpos), sizeof(UBufferData::chunkpos), &ubuffer_data.chunkpos);
             mesh.vao.bind();
             mesh.cmd.invoke();

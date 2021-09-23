@@ -74,9 +74,10 @@ const AtlasNode *Atlas::push(const std::string &path)
         img_h = math::clamp<int>(img_h, 0, w);
 
         AtlasNode node = {};
-        node.index = static_cast<uint16_t>(head++);
+        node.index = head++;
         node.max_uv.x = static_cast<float>(img_w) / static_cast<float>(w);
         node.max_uv.y = static_cast<float>(img_h) / static_cast<float>(h);
+        spdlog::info("Image: {}. max_uv = ({}, {})", path, node.max_uv.x, node.max_uv.y);
 
         texture.write(static_cast<int>(node.index), 0, 0, img_w, img_h, Image::FORMAT, image.data());
         return &(list[path] = node);

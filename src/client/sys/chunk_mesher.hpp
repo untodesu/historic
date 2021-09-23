@@ -5,13 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <client/gl/drawcmd.hpp>
-#include <client/gl/vertexarray.hpp>
-#include <vector>
+#include <entt/entt.hpp>
 
-struct NeedsVoxelMeshComponent final {};
-struct VoxelMeshComponent final {
-    gl::Buffer ibo, vbo;
-    gl::VertexArray vao;
-    gl::DrawCommand cmd;
-};
+namespace chunk_mesher
+{
+void shutdown();
+void update();
+} // namespace chunk_mesher

@@ -10,7 +10,7 @@
 #include <unordered_map>
 
 struct AtlasNode final {
-    uint16_t index;
+    uint32_t index;
     float2 max_uv;
 };
 

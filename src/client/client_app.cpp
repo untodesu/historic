@@ -7,12 +7,12 @@
 #include <client/comp/camera.hpp>
 #include <client/comp/local_player.hpp>
 #include <client/util/clock.hpp>
-#include <client/comp/voxel_mesh.hpp>
+#include <client/comp/chunk_mesh.hpp>
 #include <client/sys/player_look.hpp>
 #include <client/sys/player_move.hpp>
 #include <client/sys/proj_view.hpp>
-#include <client/sys/voxel_mesher.hpp>
-#include <client/sys/voxel_renderer.hpp>
+#include <client/sys/chunk_mesher.hpp>
+#include <client/sys/chunk_renderer.hpp>
 #include <client/client_app.hpp>
 #include <client/globals.hpp>
 #include <client/input.hpp>
@@ -29,13 +29,14 @@
 #include <client/chunks.hpp>
 #include <shared/voxels.hpp>
 #include <client/atlas.hpp>
+#include <random>
 
 static void glfwOnError(int code, const char *message)
 {
     spdlog::error("GLFW ({}): {}", code, message);
 }
 
-static inline float octanoise(const float2 &v, unsigned int oct)
+static inline float octanoise(const float3 &v, unsigned int oct)
 {
     float result = 1.0;
     for(unsigned int i = 1; i <= oct; i++)
@@ -43,23 +44,23 @@ static inline float octanoise(const float2 &v, unsigned int oct)
     return result / static_cast<float>(oct);
 }
 
-static void generate()
+static void generate(uint64_t seed = 0)
 {
-    constexpr const int64_t START = -256;
-    constexpr const int64_t END = 256;
-
+    constexpr const int64_t START = -512;
+    constexpr const int64_t END = 512;
+    const float seed_f = std::uniform_real_distribution<float>()(std::mt19937_64(seed));
     for(int64_t vx = START; vx < END; vx++) {
         for(int64_t vz = START; vz < END; vz++) {
-            const float2 vxz = float2(vx, vz);
+            const float3 vxz = float3(vx, vz, seed_f * 5120.0f);
             const float solidity = octanoise(vxz / 160.0f, 3);
             const float hmod = octanoise(vxz / 160.0f, 8);
-            if(solidity > 0.1f) {
-                int64_t h1 = ((solidity - 0.1f) * 32.0f);
+            if(solidity > 0.5f) {
+                int64_t h1 = ((solidity - 0.5f) * 32.0f);
                 int64_t h2 = (hmod * 8.0f);
                 for(int64_t vy = 1; vy < h1; vy++)
                     cl_globals::chunks.set(voxelpos_t(vx, -vy, vz), 0x01, true);
                 for(int64_t vy = 0; h1 && vy < h2; vy++)
-                    cl_globals::chunks.set(voxelpos_t(vx, vy, vz), (vy == h2 - 1) ? 0x03 : 0x02, true);
+                    cl_globals::chunks.set(voxelpos_t(vx, vy, vz), (vy == h2 - 1) ? 0x03 : 0x02, VOXEL_SET_FORCE);
             }
         }
     }
@@ -90,7 +91,7 @@ void client_app::run()
     input::init(window);
     screen::init(window);
 
-    voxel_renderer::init();
+    chunk_renderer::init();
 
     cl_globals::registry.clear();
 
@@ -139,8 +140,10 @@ void client_app::run()
         cl_globals::registry.emplace<ActiveCameraComponent>(player);
         cl_globals::registry.emplace<LocalPlayerComponent>(player);
         cl_globals::registry.emplace<CreatureComponent>(player);
-        cl_globals::registry.emplace<HeadComponent>(player);
         cl_globals::registry.emplace<PlayerComponent>(player);
+
+        HeadComponent &head = cl_globals::registry.emplace<HeadComponent>(player);
+        head.offset = FLOAT3_ZERO;
 
         CameraComponent &camera = cl_globals::registry.emplace<CameraComponent>(player);
         camera.fov = glm::radians(90.0f);
@@ -148,12 +151,13 @@ void client_app::run()
         camera.z_near = 0.01f;
     }
 
-    generate();
+    uint64_t seed = static_cast<uint64_t>(std::time(nullptr));
+    spdlog::info("Generating ({})...", seed);
+    generate(seed);
 
     cl_globals::solid_textures.create(32, 32, MAX_VOXELS);
     for(VoxelDef::const_iterator it = cl_globals::voxels.cbegin(); it != cl_globals::voxels.cend(); it++) {
         for(const VoxelFaceInfo &face : it->second.faces) {
-            spdlog::info(face.texture);
             cl_globals::solid_textures.push(face.texture);
         }
     }
@@ -186,12 +190,12 @@ void client_app::run()
         player_move::update();
         proj_view::update();
 
-        voxel_mesher::update();
+        chunk_mesher::update();
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        voxel_renderer::update();
+        chunk_renderer::update();
 
         glfwSwapBuffers(window);
 
@@ -201,9 +205,7 @@ void client_app::run()
         cl_globals::frame_count++;
     }
 
-    spdlog::info("Client shutdown after {} frames, avg. dt: {}", cl_globals::frame_count, avg_frametime);
-
-    voxel_mesher::shutdown();
+    chunk_mesher::shutdown();
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
@@ -211,7 +213,9 @@ void client_app::run()
 
     cl_globals::registry.clear();
 
-    voxel_renderer::shutdown();
+    chunk_renderer::shutdown();
+
+    spdlog::info("Client shutdown after {} frames, avg. dt: {}", cl_globals::frame_count, avg_frametime);
 
     glfwDestroyWindow(window);
     glfwTerminate();

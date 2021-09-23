@@ -5,11 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <entt/entt.hpp>
+#include <client/gl/drawcmd.hpp>
+#include <client/gl/vertexarray.hpp>
 
-namespace voxel_renderer
-{
-void init();
-void shutdown();
-void update();
-} // namespace voxel_renderer
+struct ChunkFlaggedForMeshingComponent final {};
+struct ChunkMeshComponent final {
+    gl::Buffer ibo, vbo;
+    gl::VertexArray vao;
+    gl::DrawCommand cmd;
+};

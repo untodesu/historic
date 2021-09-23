@@ -6,7 +6,8 @@
  */
 #version 460 core
 
-layout(location = 0) in vec3 texcoord;
+layout(location = 0) in vec2 texcoord;
+layout(location = 1) in float atlas_id;
 
 layout(location = 0) out vec4 color;
 
@@ -17,5 +18,5 @@ layout(std140, binding = 1) uniform ubo {
 
 void main()
 {
-    color = texture(atlas, vec3(texcoord.xy, texcoord.z));
+    color = texture(atlas, vec3(texcoord.xy, atlas_id));
 }

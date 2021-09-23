@@ -6,11 +6,14 @@
  */
 #version 460
 
-layout(location = 0) in uvec2 pack;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texcoord;
+layout(location = 2) in uint altas_id;
 
 out gl_PerVertex { vec4 gl_Position; };
 
-layout(location = 0) out vec3 texcoord;
+layout(location = 0) out vec2 frag_texcoord;
+layout(location = 1) out float frag_atlas_id;
 
 layout(std140, binding = 0) uniform ubo {
     mat4 projview;
@@ -19,7 +22,7 @@ layout(std140, binding = 0) uniform ubo {
 
 void main()
 {
-    gl_Position = projview * vec4(chunkpos + (unpackUnorm4x8(pack.x).xyz * 16.0), 1.0);
-    texcoord.xy = unpackUnorm4x8(pack.y).xy * 16.0;
-    texcoord.z = float(pack.y >> 16);
+    gl_Position = projview * vec4(chunkpos + position, 1.0);
+    frag_texcoord = texcoord;
+    frag_atlas_id = max(0.0, floor(float(altas_id) + 0.5));
 }

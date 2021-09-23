@@ -8,6 +8,10 @@
 #include <shared/world.hpp>
 #include <unordered_map>
 
+using VoxelSetFlags = uint16_t;
+constexpr const VoxelSetFlags VOXEL_SET_FORCE = (1 << 0);
+constexpr const VoxelSetFlags VOXEL_SET_UPDATE_NEIGHBOURS = (1 << 1);
+
 template<typename chunk_type, typename T>
 class ChunkManager {
 public:
@@ -21,14 +25,14 @@ public:
 
     voxel_t get(const voxelpos_t &vp) const;
     voxel_t get(const chunkpos_t &cp, const localpos_t &lp) const;
-    bool set(const voxelpos_t &vp, voxel_t voxel, bool force);
+    bool set(const voxelpos_t &vp, voxel_t voxel, VoxelSetFlags flags);
 
     // Implementations define:
     //  void implOnClear();
     //  void implOnRemove(const chunkpos_t &, const chunk_type &);
     //  chunk_type implOnCreate(const chunkpos_t &);
     //  voxel_t implGetVoxel(const chunk_type &, const localpos_t &) const;
-    //  void implSetVoxel(chunk_type *, const chunkpos_t &, const localpos_t &, voxel_t);
+    //  void implSetVoxel(chunk_type *, const chunkpos_t &, const localpos_t &, voxel_t, VoxelSetFlags);
 
 protected:
     std::unordered_map<chunkpos_t, chunk_type> chunks;
@@ -86,18 +90,18 @@ inline voxel_t ChunkManager<chunk_type, T>::get(const chunkpos_t &cp, const loca
 }
 
 template<typename chunk_type, typename T>
-inline bool ChunkManager<chunk_type, T>::set(const voxelpos_t &vp, voxel_t voxel, bool force)
+inline bool ChunkManager<chunk_type, T>::set(const voxelpos_t &vp, voxel_t voxel, VoxelSetFlags flags)
 {
     const chunkpos_t cp = toChunkPos(vp);
     const localpos_t lp = toLocalPos(vp);
     chunk_type *chunk = find(cp);
     if(!chunk) {
-        if(!force)
+        if(!(flags & VOXEL_SET_FORCE))
             return false;
         chunk = create(cp);
     }
 
-    static_cast<T *>(this)->implSetVoxel(chunk, cp, lp, voxel);
+    static_cast<T *>(this)->implSetVoxel(chunk, cp, lp, voxel, flags);
     return true;
 }
 
