@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <client/gl/framebuffer.hpp>
 #include <entt/entt.hpp>
 #include <math/types.hpp>
 
@@ -22,4 +23,6 @@ extern entt::registry registry;
 extern ClientChunkManager chunks;
 extern VoxelDef voxels;
 extern Atlas solid_textures;
+extern gl::Framebuffer shadowmap;
+extern gl::Texture2D shadowmap_depth;
 } // namespace cl_globals

@@ -8,21 +8,16 @@
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texcoord;
-layout(location = 2) in uint altas_id;
 
 out gl_PerVertex { vec4 gl_Position; };
 
-layout(location = 0) out vec2 frag_texcoord;
-layout(location = 1) out float frag_atlas_id;
-
 layout(std140, binding = 0) uniform ubo {
     mat4 projview;
+    mat4 projview_shadow;
     vec3 chunkpos;
 };
 
 void main()
 {
-    gl_Position = projview * vec4(chunkpos + position, 1.0);
-    frag_texcoord = texcoord;
-    frag_atlas_id = max(0.0, floor(float(altas_id) + 0.5));
+    gl_Position = projview_shadow * vec4(chunkpos + position, 1.0);
 }

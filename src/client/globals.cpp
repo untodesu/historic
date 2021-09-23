@@ -17,3 +17,5 @@ entt::registry cl_globals::registry = entt::registry();
 ClientChunkManager cl_globals::chunks = ClientChunkManager();
 VoxelDef cl_globals::voxels = VoxelDef();
 Atlas cl_globals::solid_textures = Atlas();
+gl::Framebuffer cl_globals::shadowmap = gl::Framebuffer();
+gl::Texture2D cl_globals::shadowmap_depth = gl::Texture2D();

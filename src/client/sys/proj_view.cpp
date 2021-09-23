@@ -13,15 +13,18 @@
 #include <shared/comp/creature.hpp>
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
+#include <shared/world.hpp>
 
 static float3 pv_position = FLOAT3_ZERO;
 static float4x4 pv_matrix = FLOAT4X4_IDENTITY;
-static Frustum pv_frustum;
+static float4x4 pv_matrix_shadow = FLOAT4X4_IDENTITY;
+static Frustum pv_frustum, pv_frustum_shadow;
 
 void proj_view::update()
 {
     pv_position = FLOAT3_ZERO;
     pv_matrix = FLOAT4X4_IDENTITY;
+    pv_matrix_shadow = FLOAT4X4_IDENTITY;
 
     const auto cg = cl_globals::registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
     for(const auto [entity, camera] : cg.each()) {
@@ -38,7 +41,11 @@ void proj_view::update()
         break;
     }
 
+    pv_matrix_shadow *= glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, 0.0f, static_cast<float>(CHUNK_SIZE * 16));
+    pv_matrix_shadow *= glm::lookAt(pv_position + float3(-32.0f, 32.0f, -16.0f), pv_position, FLOAT3_UP);
+
     pv_frustum.update(pv_matrix);
+    pv_frustum_shadow.update(pv_matrix_shadow);
 }
 
 const float3 &proj_view::position()
@@ -51,7 +58,17 @@ const float4x4 &proj_view::matrix()
     return pv_matrix;
 }
 
+const float4x4 &proj_view::matrixShadow()
+{
+    return pv_matrix_shadow;
+}
+
 const Frustum &proj_view::frustum()
 {
     return pv_frustum;
+}
+
+const Frustum &proj_view::frustumShadow()
+{
+    return pv_frustum_shadow;
 }

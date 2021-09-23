@@ -10,12 +10,16 @@
 #include <spdlog/spdlog.h>
 
 static float2 screen_size = FLOAT2_IDENTITY;
+static int screen_width = 1;
+static int screen_height = 1;
 static float aspect_ratio = 1.0f;
 
 static void onFramebufferSize(GLFWwindow *, int width, int height)
 {
     glViewport(0, 0, width, height);
     screen_size = float2(width, height);
+    screen_width = width;
+    screen_height = height;
     aspect_ratio = (screen_size.x > screen_size.y) ? (screen_size.x / screen_size.y) : (screen_size.y / screen_size.x);
 }
 
@@ -29,12 +33,18 @@ void screen::init(GLFWwindow *window)
     onFramebufferSize(window, width, height);
 }
 
+float screen::getAspectRatio()
+{
+    return aspect_ratio;
+}
+
 const float2 &screen::getSize()
 {
     return screen_size;
 }
 
-float screen::getAspectRatio()
+void screen::getSize(int &width, int &height)
 {
-    return aspect_ratio;
+    width = screen_width;
+    height = screen_height;
 }

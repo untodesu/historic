@@ -46,9 +46,11 @@ static inline float octanoise(const float3 &v, unsigned int oct)
 
 static void generate(uint64_t seed = 0)
 {
-    constexpr const int64_t START = -512;
-    constexpr const int64_t END = 512;
-    const float seed_f = std::uniform_real_distribution<float>()(std::mt19937_64(seed));
+    constexpr const int64_t START = -32;
+    constexpr const int64_t END = 32;
+
+    std::mt19937_64 mtgen = std::mt19937_64(seed);
+    const float seed_f = std::uniform_real_distribution<float>()(mtgen);
     for(int64_t vx = START; vx < END; vx++) {
         for(int64_t vz = START; vz < END; vz++) {
             const float3 vxz = float3(vx, vz, seed_f * 5120.0f);
@@ -163,7 +165,12 @@ void client_app::run()
     }
     cl_globals::solid_textures.submit();
 
-    glfwSwapInterval(0);
+    cl_globals::shadowmap_depth.create();
+    cl_globals::shadowmap_depth.storage(2048, 2048, gl::PixelFormat::D16_UNORM);
+    cl_globals::shadowmap.create();
+    cl_globals::shadowmap.depth(cl_globals::shadowmap_depth);
+
+    glfwSwapInterval(1);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -208,6 +215,9 @@ void client_app::run()
     chunk_mesher::shutdown();
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    cl_globals::shadowmap.destroy();
+    cl_globals::shadowmap_depth.destroy();
 
     cl_globals::solid_textures.destroy();
 
