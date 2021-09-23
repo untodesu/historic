@@ -19,26 +19,34 @@
 #include <shared/comp/chunk.hpp>
 #include <shared/world.hpp>
 #include <client/screen.hpp>
+#include <client/gbuffer.hpp>
+#include <client/shadowmap.hpp>
 
-struct alignas(16) UBufferData final {
+struct alignas(16) UBOData_Shadow final {
+    float4x4 projview;
+    float3 chunkpos;
+};
+
+struct alignas(16) UBOData_GBuffer final {
     float4x4 projview;
     float4x4 projview_shadow;
     float3 chunkpos;
 };
 
-
-
+static gl::Buffer shadow_ubo;
 static gl::Shader shadow_shaders[2];
 static gl::Pipeline shadow_pipeline;
-static gl::Shader shaders[2];
-static gl::Pipeline pipeline;
-static gl::Sampler sampler;
-static gl::Sampler shadowmap_sampler;
-static gl::Buffer ubuffer;
+static gl::Buffer gbuffer_ubo;
+static gl::Shader gbuffer_shaders[2];
+static gl::Pipeline gbuffer_pipeline;
+static gl::Sampler gbuffer_samplers[2];
 
 void chunk_renderer::init()
 {
     std::string source;
+
+    shadow_ubo.create();
+    shadow_ubo.storage(sizeof(UBOData_Shadow), nullptr, GL_DYNAMIC_STORAGE_BIT);
 
     shadow_shaders[0].create();
     if(!fs::readText("shaders/chunk_shadow.vert.glsl", source) || !shadow_shaders[0].glsl(GL_VERTEX_SHADER, source))
@@ -52,48 +60,50 @@ void chunk_renderer::init()
     shadow_pipeline.stage(shadow_shaders[0]);
     shadow_pipeline.stage(shadow_shaders[1]);
 
-    shaders[0].create();
-    if(!fs::readText("shaders/chunk.vert.glsl", source) || !shaders[0].glsl(GL_VERTEX_SHADER, source))
+    gbuffer_ubo.create();
+    gbuffer_ubo.storage(sizeof(UBOData_GBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT);
+
+    gbuffer_shaders[0].create();
+    if(!fs::readText("shaders/chunk_gbuffer.vert.glsl", source) || !gbuffer_shaders[0].glsl(GL_VERTEX_SHADER, source))
         std::terminate();
 
-    shaders[1].create();
-    if(!fs::readText("shaders/chunk.frag.glsl", source) || !shaders[1].glsl(GL_FRAGMENT_SHADER, source))
+    gbuffer_shaders[1].create();
+    if(!fs::readText("shaders/chunk_gbuffer.frag.glsl", source) || !gbuffer_shaders[1].glsl(GL_FRAGMENT_SHADER, source))
         std::terminate();
 
-    pipeline.create();
-    pipeline.stage(shaders[0]);
-    pipeline.stage(shaders[1]);
+    gbuffer_pipeline.create();
+    gbuffer_pipeline.stage(gbuffer_shaders[0]);
+    gbuffer_pipeline.stage(gbuffer_shaders[1]);
 
-    sampler.create();
-    sampler.parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    sampler.parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    gbuffer_samplers[0].create();
+    gbuffer_samplers[0].parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    gbuffer_samplers[0].parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    shadowmap_sampler.create();
-    shadowmap_sampler.parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    shadowmap_sampler.parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    ubuffer.create();
-    ubuffer.storage(sizeof(UBufferData), nullptr, GL_DYNAMIC_STORAGE_BIT);
+    gbuffer_samplers[1].create();
+    gbuffer_samplers[1].parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    gbuffer_samplers[1].parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 void chunk_renderer::shutdown()
 {
-    ubuffer.destroy();
-    shadowmap_sampler.destroy();
-    sampler.destroy();
-    pipeline.destroy();
-    shaders[1].destroy();
-    shaders[0].destroy();
+    gbuffer_samplers[1].destroy();
+    gbuffer_samplers[0].destroy();
+    gbuffer_pipeline.destroy();
+    gbuffer_shaders[1].destroy();
+    gbuffer_shaders[0].destroy();
+    gbuffer_ubo.destroy();
+
     shadow_pipeline.destroy();
     shadow_shaders[1].destroy();
     shadow_shaders[0].destroy();
+    shadow_ubo.destroy();
 }
 
 // UNDONE: move this somewhere else
-static inline bool isInFrustum(const Frustum &frustum, const float3 &view, const chunkpos_t &cp)
+static inline bool isInFrustum(const Frustum &frustum, const float3 &position, const chunkpos_t &cp)
 {
     const float3 wp = toWorldPos(cp);
-    if(math::isInBB(view, wp, wp + float3(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
+    if(math::isInBB(position, wp, wp + float3(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
         return true;
     if(frustum.point(wp + float3(0.0f, 0.0f, 0.0f)))
         return true;
@@ -114,105 +124,79 @@ static inline bool isInFrustum(const Frustum &frustum, const float3 &view, const
     return false;
 }
 
-void chunk_renderer::update()
+void chunk_renderer::draw()
 {
+    int width, height;
     const auto group = cl_globals::registry.group(entt::get<ChunkMeshComponent, ChunkComponent>);
     if(group.empty())
         return;
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubuffer.get());
-
-    UBufferData ubuffer_data = {};
-    const float3 &view = proj_view::position();
-    const Frustum &frustum = proj_view::frustum();
-    const Frustum &frustum_shadow = proj_view::frustumShadow();
-
-    ubuffer_data.projview = proj_view::matrix();
-    ubuffer_data.projview_shadow = proj_view::matrixShadow();
-    ubuffer.write(0, sizeof(UBufferData), &ubuffer_data);
-
+    //
     // SHADOW PASS
+    //
+    UBOData_Shadow shadow_ubo_data = {};
+    shadow_ubo_data.projview = proj_view::matrixShadow();
+    shadow_ubo.write(0, sizeof(UBOData_Shadow), &shadow_ubo_data);
+
+    const Frustum &shadow_frustum = proj_view::frustumShadow();
+
     shadow_pipeline.bind();
-    cl_globals::shadowmap.bind();
-    glClear(GL_DEPTH_BUFFER_BIT);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, shadow_ubo.get());
+    cl_globals::shadowmap_0.getFBO().bind();
 
     glDisable(GL_CULL_FACE);
-    glViewport(0, 0, 2048, 2048);
+
+    cl_globals::shadowmap_0.getSize(width, height);
+    glViewport(0, 0, width, height);
+
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     for(const auto [entity, mesh, chunk] : group.each()) {
-        if(isInFrustum(frustum_shadow, view, chunk.position)) {
-            ubuffer_data.chunkpos = toWorldPos(chunk.position);
-            ubuffer.write(offsetof(UBufferData, chunkpos), sizeof(float3), &ubuffer_data.chunkpos);
+        if(isInFrustum(shadow_frustum, FLOAT3_ZERO, chunk.position)) {
+            shadow_ubo_data.chunkpos = toWorldPos(chunk.position);
+            shadow_ubo.write(offsetof(UBOData_Shadow, chunkpos), sizeof(float3), &shadow_ubo_data.chunkpos);
             mesh.vao.bind();
             mesh.cmd.invoke();
         }
     }
 
-    cl_globals::shadowmap.unbind();
+    //
+    // GBUFFER PASS
+    //
+    UBOData_GBuffer gbuffer_ubo_data = {};
+    gbuffer_ubo_data.projview = proj_view::matrix();
+    gbuffer_ubo_data.projview_shadow = proj_view::matrixShadow();
+    gbuffer_ubo.write(0, sizeof(UBOData_GBuffer), &gbuffer_ubo_data);
 
-    // COLOR PASS
-    pipeline.bind();
-    sampler.bind(0);
-    shadowmap_sampler.bind(1);
-    cl_globals::shadowmap.unbind();
+    const float3 &gbuffer_position = proj_view::position();
+    const Frustum &gbuffer_frustum = proj_view::frustum();
+
+    gbuffer_pipeline.bind();
+    gbuffer_samplers[0].bind(0);
+    gbuffer_samplers[1].bind(1);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, gbuffer_ubo.get());
+    cl_globals::chunk_gbuffer_0.getFBO().bind();
     cl_globals::solid_textures.getTexture().bind(0);
-    cl_globals::shadowmap_depth.bind(1);
-
-
-    int w, h;
-    screen::getSize(w, h);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
-    glViewport(0, 0, w, h);
-
-    for(const auto [entity, mesh, chunk] : group.each()) {
-        if(isInFrustum(frustum, view, chunk.position)) {
-            ubuffer_data.chunkpos = toWorldPos(chunk.position);
-            ubuffer.write(offsetof(UBufferData, chunkpos), sizeof(float3), &ubuffer_data.chunkpos);
-            mesh.vao.bind();
-            mesh.cmd.invoke();
-        }
-    }
-
-#if 0
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+    cl_globals::shadowmap_0.getShadow().bind(1);
 
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    screen::getSize(width, height);
+    glViewport(0, 0, width, height);
 
-    UBufferData ubuffer_data = {};
-    ubuffer_data.projview = proj_view::matrix();
-    ubuffer.write(offsetof(UBufferData, projview), sizeof(UBufferData::projview), &ubuffer_data.projview);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    pipeline.bind();
-    sampler.bind(0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubuffer.get());
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo2.get());
-    cl_globals::solid_textures.getTexture().bind(0);
-
-    const float3 &view = proj_view::position();
-    const Frustum &frustum = proj_view::frustum();
-    ubo2.write(0, sizeof(float3), &view);
-
-    auto group = cl_globals::registry.group(entt::get<ChunkMeshComponent, ChunkComponent>);
     for(const auto [entity, mesh, chunk] : group.each()) {
-        if(isInFrustum(frustum, view, chunk.position)) {
-            ubuffer_data.chunkpos = toWorldPos(chunk.position);
-            ubuffer.write(offsetof(UBufferData, chunkpos), sizeof(UBufferData::chunkpos), &ubuffer_data.chunkpos);
+        if(isInFrustum(gbuffer_frustum, gbuffer_position, chunk.position)) {
+            gbuffer_ubo_data.chunkpos = toWorldPos(chunk.position);
+            gbuffer_ubo.write(offsetof(UBOData_GBuffer, chunkpos), sizeof(float3), &gbuffer_ubo_data.chunkpos);
             mesh.vao.bind();
             mesh.cmd.invoke();
         }
     }
-#endif
 }

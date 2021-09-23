@@ -6,16 +6,18 @@
  */
 #include <client/atlas.hpp>
 #include <client/chunks.hpp>
+#include <client/gbuffer.hpp>
 #include <client/globals.hpp>
+#include <client/shadowmap.hpp>
 #include <shared/voxels.hpp>
 
 float cl_globals::curtime = 0.0f;
 float cl_globals::frametime = 0.0f;
 size_t cl_globals::frame_count = 0;
 size_t cl_globals::vertices_drawn = 0;
-entt::registry cl_globals::registry = entt::registry();
-ClientChunkManager cl_globals::chunks = ClientChunkManager();
-VoxelDef cl_globals::voxels = VoxelDef();
-Atlas cl_globals::solid_textures = Atlas();
-gl::Framebuffer cl_globals::shadowmap = gl::Framebuffer();
-gl::Texture2D cl_globals::shadowmap_depth = gl::Texture2D();
+entt::registry cl_globals::registry;
+ClientChunkManager cl_globals::chunks;
+VoxelDef cl_globals::voxels;
+Atlas cl_globals::solid_textures;
+GBuffer cl_globals::chunk_gbuffer_0;
+ShadowMap cl_globals::shadowmap_0;

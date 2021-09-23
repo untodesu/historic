@@ -4,18 +4,24 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#version 460 core
+#version 460
 
-layout(location = 0) in vec2 texcoord;
-layout(location = 1) in float atlas_id;
-layout(location = 2) in vec4 shadow_coord;
+in VS_OUTPUT {
+    vec2 texcoord;
+} vso;
 
-layout(location = 0) out vec4 color;
+layout(location = 0) out vec4 target;
 
-layout(binding = 0) uniform sampler2DArray atlas;
-layout(binding = 1) uniform sampler2D shadowmap;
+layout(binding = 0) uniform sampler2D albedo;
+layout(binding = 1) uniform sampler2D normal;
+layout(binding = 2) uniform sampler2D position;
+layout(binding = 3) uniform sampler2D shadowmap;
 
-float calcShadow()
+layout(std140, binding = 0) uniform UBO_Composite {
+    mat4 projview_shadow;
+};
+
+float calcShadow(vec4 shadow_coord)
 {
     const vec2 texel = 1.0 / vec2(2048.0, 2048.0);
     vec3 projcoord = (shadow_coord.xyz / shadow_coord.w) * 0.5 + 0.5;
@@ -32,5 +38,8 @@ float calcShadow()
 
 void main()
 {
-    color = texture(atlas, vec3(texcoord.xy, atlas_id)) * (0.25 + calcShadow());
+    vec4 shadow_coord = projview_shadow * texture(position, vso.texcoord);
+    vec4 result = texture(albedo, vso.texcoord);
+    result.xyz *= calcShadow(shadow_coord) + 0.25;
+    target = result;
 }

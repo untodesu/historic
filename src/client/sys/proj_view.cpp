@@ -41,8 +41,11 @@ void proj_view::update()
         break;
     }
 
-    pv_matrix_shadow *= glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, 0.0f, static_cast<float>(CHUNK_SIZE * 16));
-    pv_matrix_shadow *= glm::lookAt(pv_position + float3(-32.0f, 32.0f, -16.0f), pv_position, FLOAT3_UP);
+    // This should actually move the shadowmap
+    // to the player's view and not draw it for
+    // the places that are invisible.
+    pv_matrix_shadow *= glm::ortho(-64.0f, 64.0f, -64.0f, 64.0f, -64.0f, static_cast<float>(CHUNK_SIZE * 16));
+    pv_matrix_shadow *= glm::lookAt(pv_position + float3(-4.0f, 4.0f, -2.0f), pv_position, FLOAT3_UP);
 
     pv_frustum.update(pv_matrix);
     pv_frustum_shadow.update(pv_matrix_shadow);

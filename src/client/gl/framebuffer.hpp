@@ -6,6 +6,8 @@
  */
 #pragma once
 #include <client/gl/texture.hpp>
+#include <client/gl/renderbuffer.hpp>
+#include <math/util.hpp>
 
 namespace gl
 {
@@ -16,11 +18,12 @@ public:
     Framebuffer &operator=(Framebuffer &&rhs);
     void create();
     void destroy();
-    void color(uint32_t id, const Texture2D &texture);
-    void depth(const Texture2D &texture);
-    void stencil(const Texture2D &texture);
+    void attach(uint32_t attachment, const Texture2D &texture);
+    void attach(uint32_t attachment, const RenderBuffer &rbo);
     bool complete() const;
     void bind() const;
+    template<typename... VA>
+    void setFragmentTargets(VA &&... args);
     static void unbind();
 };
 } // namespace gl
@@ -52,19 +55,14 @@ inline void gl::Framebuffer::destroy()
     }
 }
 
-inline void gl::Framebuffer::color(uint32_t id, const gl::Texture2D &texture)
+inline void gl::Framebuffer::attach(uint32_t attachment, const gl::Texture2D &texture)
 {
-    glNamedFramebufferTexture(handle, GL_COLOR_ATTACHMENT0 + id, texture.get(), 0);
+    glNamedFramebufferTexture(handle, attachment, texture.get(), 0);
 }
 
-inline void gl::Framebuffer::depth(const gl::Texture2D &texture)
+inline void gl::Framebuffer::attach(uint32_t attachment, const gl::RenderBuffer &rbo)
 {
-    glNamedFramebufferTexture(handle, GL_DEPTH_ATTACHMENT, texture.get(), 0);
-}
-
-inline void gl::Framebuffer::stencil(const gl::Texture2D &texture)
-{
-    glNamedFramebufferTexture(handle, GL_STENCIL_ATTACHMENT, texture.get(), 0);
+    glNamedFramebufferRenderbuffer(handle, attachment, GL_RENDERBUFFER, rbo.get());
 }
 
 inline bool gl::Framebuffer::complete() const
@@ -75,6 +73,13 @@ inline bool gl::Framebuffer::complete() const
 inline void gl::Framebuffer::bind() const
 {
     glBindFramebuffer(GL_FRAMEBUFFER, handle);
+}
+
+template<typename... VA>
+inline void gl::Framebuffer::setFragmentTargets(VA &&... args)
+{
+    const uint32_t attachments[] = { static_cast<uint32_t>(args)... };
+    glNamedFramebufferDrawBuffers(handle, static_cast<GLsizei>(math::arraySize(attachments)), attachments);
 }
 
 inline void gl::Framebuffer::unbind()

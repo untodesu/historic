@@ -11,5 +11,5 @@ namespace chunk_renderer
 {
 void init();
 void shutdown();
-void update();
+void draw();
 } // namespace chunk_renderer

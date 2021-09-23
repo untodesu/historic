@@ -197,18 +197,21 @@ static void greedyFace(ChunkMeshBuilder *builder, ChunkMesherData *data, const c
                     float3 dv = FLOAT3_ZERO;
                     dv[v] = static_cast<float>(qh);
 
+                    float3 normal = FLOAT3_ZERO;
+                    normal[d] = voxelFaceNormal(face);
+
                     Vertex verts[4];
                     if(isBackVoxelFace(face)) {
-                        verts[0] = Vertex(position, texcoords[0], node->index);
-                        verts[1] = Vertex(position + dv, texcoords[1], node->index);
-                        verts[2] = Vertex(position + du + dv, texcoords[2], node->index);
-                        verts[3] = Vertex(position + du, texcoords[3], node->index);
+                        verts[0] = Vertex(position, normal, texcoords[0], node->index);
+                        verts[1] = Vertex(position + dv, normal, texcoords[1], node->index);
+                        verts[2] = Vertex(position + du + dv, normal, texcoords[2], node->index);
+                        verts[3] = Vertex(position + du, normal, texcoords[3], node->index);
                     }
                     else {
-                        verts[0] = Vertex(position, texcoords[0], node->index);
-                        verts[1] = Vertex(position + du, texcoords[1], node->index);
-                        verts[2] = Vertex(position + du + dv, texcoords[2], node->index);
-                        verts[3] = Vertex(position + dv, texcoords[3], node->index);
+                        verts[0] = Vertex(position, normal, texcoords[0], node->index);
+                        verts[1] = Vertex(position + du, normal, texcoords[1], node->index);
+                        verts[2] = Vertex(position + du + dv, normal, texcoords[2], node->index);
+                        verts[3] = Vertex(position + dv, normal, texcoords[3], node->index);
                     }
 
                     pushQuad(builder, base, verts);
@@ -321,15 +324,20 @@ void chunk_mesher::update()
                     mesh->vao.setAttributeFormat(0, GL_FLOAT, 3, offsetof(Vertex, position), false);
                     mesh->vao.setAttributeBinding(0, 0);
 
-                    // Texcoord
+                    // Normal
                     mesh->vao.enableAttribute(1, true);
-                    mesh->vao.setAttributeFormat(1, GL_FLOAT, 2, offsetof(Vertex, texcoord), false);
+                    mesh->vao.setAttributeFormat(1, GL_FLOAT, 3, offsetof(Vertex, normal), false);
                     mesh->vao.setAttributeBinding(1, 0);
 
-                    // Atlas ID
+                    // Texcoord
                     mesh->vao.enableAttribute(2, true);
-                    mesh->vao.setAttributeFormat(2, GL_UNSIGNED_INT, 1, offsetof(Vertex, atlas_id), false);
+                    mesh->vao.setAttributeFormat(2, GL_FLOAT, 2, offsetof(Vertex, texcoord), false);
                     mesh->vao.setAttributeBinding(2, 0);
+
+                    // Atlas ID
+                    mesh->vao.enableAttribute(3, true);
+                    mesh->vao.setAttributeFormat(3, GL_UNSIGNED_INT, 1, offsetof(Vertex, atlas_id), false);
+                    mesh->vao.setAttributeBinding(3, 0);
                 }
 
                 mesh->ibo.resize(mesher.builder->isize(), mesher.builder->idata(), GL_STATIC_DRAW);

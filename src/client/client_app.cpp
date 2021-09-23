@@ -29,6 +29,9 @@
 #include <client/chunks.hpp>
 #include <shared/voxels.hpp>
 #include <client/atlas.hpp>
+#include <client/gbuffer.hpp>
+#include <client/shadowmap.hpp>
+#include <client/composite.hpp>
 #include <random>
 
 static void glfwOnError(int code, const char *message)
@@ -56,8 +59,8 @@ static void generate(uint64_t seed = 0)
             const float3 vxz = float3(vx, vz, seed_f * 5120.0f);
             const float solidity = octanoise(vxz / 160.0f, 3);
             const float hmod = octanoise(vxz / 160.0f, 8);
-            if(solidity > 0.5f) {
-                int64_t h1 = ((solidity - 0.5f) * 32.0f);
+            if(solidity > 0.1f) {
+                int64_t h1 = ((solidity - 0.1f) * 32.0f);
                 int64_t h2 = (hmod * 8.0f);
                 for(int64_t vy = 1; vy < h1; vy++)
                     cl_globals::chunks.set(voxelpos_t(vx, -vy, vz), 0x01, true);
@@ -165,12 +168,12 @@ void client_app::run()
     }
     cl_globals::solid_textures.submit();
 
-    cl_globals::shadowmap_depth.create();
-    cl_globals::shadowmap_depth.storage(2048, 2048, gl::PixelFormat::D16_UNORM);
-    cl_globals::shadowmap.create();
-    cl_globals::shadowmap.depth(cl_globals::shadowmap_depth);
+    // Shadow map
+    cl_globals::shadowmap_0.init(2048, 2048, gl::PixelFormat::D16_UNORM);
 
-    glfwSwapInterval(1);
+    composite::init();
+
+    glfwSwapInterval(0);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -199,10 +202,9 @@ void client_app::run()
 
         chunk_mesher::update();
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        chunk_renderer::update();
+        chunk_renderer::draw();
+
+        composite::draw();
 
         glfwSwapBuffers(window);
 
@@ -212,12 +214,17 @@ void client_app::run()
         cl_globals::frame_count++;
     }
 
+    composite::shutdown();
+
     chunk_mesher::shutdown();
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-    cl_globals::shadowmap.destroy();
-    cl_globals::shadowmap_depth.destroy();
+    cl_globals::shadowmap_0.shutdown();
+
+    // We don't create it in main()
+    // but we do destroy it here.
+    cl_globals::chunk_gbuffer_0.shutdown();
 
     cl_globals::solid_textures.destroy();
 

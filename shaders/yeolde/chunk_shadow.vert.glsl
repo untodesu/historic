@@ -7,17 +7,17 @@
 #version 460
 
 layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texcoord;
 
-out gl_PerVertex {
-    vec4 gl_Position;
-};
+out gl_PerVertex { vec4 gl_Position; };
 
-layout(std140, binding = 0) uniform UBO_Shadow {
+layout(std140, binding = 0) uniform ubo {
     mat4 projview;
+    mat4 projview_shadow;
     vec3 chunkpos;
 };
 
 void main()
 {
-    gl_Position = projview * vec4(chunkpos + position, 1.0);
+    gl_Position = projview_shadow * vec4(chunkpos + position, 1.0);
 }

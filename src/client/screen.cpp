@@ -5,6 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <glad/gl.h>
+#include <client/gbuffer.hpp>
+#include <client/globals.hpp>
 #include <client/screen.hpp>
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
@@ -16,7 +18,8 @@ static float aspect_ratio = 1.0f;
 
 static void onFramebufferSize(GLFWwindow *, int width, int height)
 {
-    glViewport(0, 0, width, height);
+    cl_globals::chunk_gbuffer_0.init(width, height);
+
     screen_size = float2(width, height);
     screen_width = width;
     screen_height = height;

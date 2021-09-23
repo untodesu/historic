@@ -6,7 +6,9 @@
  */
 #pragma once
 
-void main()
+namespace composite
 {
-    
-}
+void init();
+void shutdown();
+void draw();
+} // namespace composite
