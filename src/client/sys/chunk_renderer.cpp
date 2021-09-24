@@ -22,15 +22,15 @@
 #include <client/gbuffer.hpp>
 #include <client/shadowmap.hpp>
 
-struct alignas(16) UBOData_Shadow final {
+struct UBOData_Shadow final {
     float4x4 projview;
-    float3 chunkpos;
+    float4 chunkpos;
 };
 
-struct alignas(16) UBOData_GBuffer final {
+struct UBOData_GBuffer final {
     float4x4 projview;
     float4x4 projview_shadow;
-    float3 chunkpos;
+    float4 chunkpos;
 };
 
 static gl::Buffer shadow_ubo;
@@ -147,7 +147,8 @@ void chunk_renderer::draw()
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, shadow_ubo.get());
     cl_globals::shadowmap_0.getFBO().bind();
 
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
 
     cl_globals::shadowmap_0.getSize(width, height);
     glViewport(0, 0, width, height);
@@ -156,7 +157,7 @@ void chunk_renderer::draw()
 
     for(const auto [entity, mesh, chunk] : group.each()) {
         if(isInFrustum(shadow_frustum, FLOAT3_ZERO, chunk.position)) {
-            shadow_ubo_data.chunkpos = toWorldPos(chunk.position);
+            shadow_ubo_data.chunkpos = float4(toWorldPos(chunk.position), 0.0f);
             shadow_ubo.write(offsetof(UBOData_Shadow, chunkpos), sizeof(float3), &shadow_ubo_data.chunkpos);
             mesh.vao.bind();
             mesh.cmd.invoke();
@@ -193,7 +194,7 @@ void chunk_renderer::draw()
 
     for(const auto [entity, mesh, chunk] : group.each()) {
         if(isInFrustum(gbuffer_frustum, gbuffer_position, chunk.position)) {
-            gbuffer_ubo_data.chunkpos = toWorldPos(chunk.position);
+            gbuffer_ubo_data.chunkpos = float4(toWorldPos(chunk.position), 0.0f);
             gbuffer_ubo.write(offsetof(UBOData_GBuffer, chunkpos), sizeof(float3), &gbuffer_ubo_data.chunkpos);
             mesh.vao.bind();
             mesh.cmd.invoke();

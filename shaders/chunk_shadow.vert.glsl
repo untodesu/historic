@@ -14,10 +14,10 @@ out gl_PerVertex {
 
 layout(std140, binding = 0) uniform UBO_Shadow {
     mat4 projview;
-    vec3 chunkpos;
+    vec4 chunkpos;
 };
 
 void main()
 {
-    gl_Position = projview * vec4(chunkpos + position, 1.0);
+    gl_Position = projview * vec4(chunkpos.xyz + position, 1.0);
 }

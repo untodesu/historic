@@ -49,11 +49,11 @@ static inline float octanoise(const float3 &v, unsigned int oct)
 
 static void generate(uint64_t seed = 0)
 {
-    constexpr const int64_t START = -32;
-    constexpr const int64_t END = 32;
+    constexpr const int64_t START = -128;
+    constexpr const int64_t END = 128;
 
     std::mt19937_64 mtgen = std::mt19937_64(seed);
-    const float seed_f = std::uniform_real_distribution<float>()(mtgen);
+    const float seed_f = 0.0f; //std::uniform_real_distribution<float>()(mtgen);
     for(int64_t vx = START; vx < END; vx++) {
         for(int64_t vz = START; vz < END; vz++) {
             const float3 vxz = float3(vx, vz, seed_f * 5120.0f);
@@ -169,7 +169,7 @@ void client_app::run()
     cl_globals::solid_textures.submit();
 
     // Shadow map
-    cl_globals::shadowmap_0.init(2048, 2048, gl::PixelFormat::D16_UNORM);
+    cl_globals::shadowmap_0.init(4096, 4096, gl::PixelFormat::D16_UNORM);
 
     composite::init();
 

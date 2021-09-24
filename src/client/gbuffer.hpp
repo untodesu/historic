@@ -16,7 +16,7 @@ public:
     const gl::Texture2D &getAlbedo() const;
     const gl::Texture2D &getNormal() const;
     const gl::Texture2D &getPosition() const;
-    const gl::Texture2D &getShadowMask() const;
+    const gl::Texture2D &getShadowProjCoord() const;
 
 private:
     gl::Framebuffer fbo;
@@ -24,7 +24,7 @@ private:
     gl::Texture2D albedo;
     gl::Texture2D normal;
     gl::Texture2D position;
-    gl::Texture2D shadow_mask;
+    gl::Texture2D shadow_projcoord;
 };
 
 inline const gl::Framebuffer &GBuffer::getFBO() const
@@ -47,7 +47,7 @@ inline const gl::Texture2D &GBuffer::getPosition() const
     return position;
 }
 
-inline const gl::Texture2D &GBuffer::getShadowMask() const
+inline const gl::Texture2D &GBuffer::getShadowProjCoord() const
 {
-    return shadow_mask;
+    return shadow_projcoord;
 }

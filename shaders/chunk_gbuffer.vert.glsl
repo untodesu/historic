@@ -12,9 +12,10 @@ layout(location = 2) in vec2 texcoord;
 layout(location = 3) in uint atlas_id;
 
 out VS_OUTPUT {
-    vec3 model;
-    vec3 normal;
     vec3 texcoord;
+    vec3 normal;
+    vec3 position;
+    vec4 shadow_projcoord;
 } vso;
 
 out gl_PerVertex {
@@ -24,13 +25,17 @@ out gl_PerVertex {
 layout(std140, binding = 0) uniform UBO_GBuffer {
     mat4 projview;
     mat4 projview_shadow;
-    vec3 chunkpos;
+    vec4 chunkpos;
 };
 
 void main()
 {
-    vso.model = chunkpos + position;
-    vso.normal = normalize(normal);
     vso.texcoord = vec3(texcoord, max(0.0, floor(float(atlas_id) + 0.5)));
-    gl_Position = projview * vec4(vso.model, 1.0);
+    vso.normal = normalize(normal);
+    vso.position = chunkpos.xyz + position;
+    vso.shadow_projcoord = projview_shadow * vec4(chunkpos.xyz + position, 1.0);
+    vso.shadow_projcoord.xyz /= vso.shadow_projcoord.w;
+    vso.shadow_projcoord.xyz *= 0.5;
+    vso.shadow_projcoord.xyz += 0.5;
+    gl_Position = projview * vec4(vso.position, 1.0);
 }

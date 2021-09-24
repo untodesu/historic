@@ -15,21 +15,23 @@ layout(location = 0) out vec4 target;
 layout(binding = 0) uniform sampler2D albedo;
 layout(binding = 1) uniform sampler2D normal;
 layout(binding = 2) uniform sampler2D position;
-layout(binding = 3) uniform sampler2D shadowmap;
+layout(binding = 3) uniform sampler2D shadow_projcoord;
+layout(binding = 4) uniform sampler2D shadowmap;
 
 layout(std140, binding = 0) uniform UBO_Composite {
-    mat4 projview_shadow;
+    vec4 camera;
+    vec4 light_pos;
+    vec4 ambient;
 };
 
-float calcShadow(vec4 shadow_coord)
+float calcShadow(vec3 projcoord)
 {
-    const vec2 texel = 1.0 / vec2(2048.0, 2048.0);
-    vec3 projcoord = (shadow_coord.xyz / shadow_coord.w) * 0.5 + 0.5;
+    const vec2 texel = 1.0 / vec2(4096.0, 4096.0);
     float shadow = 0.0;
     for(int i = -1; i < 2; i++) {
         for(int j = -1; j < 2; j++) {
             float pcf = texture(shadowmap, projcoord.xy + vec2(i, j) * texel).r;
-            shadow += (projcoord.z - 0.0005) > pcf ? 0.0 : 1.0;
+            shadow += projcoord.z + length(texel) > pcf ? 0.0 : 1.0;
         }
     }
 
@@ -38,8 +40,17 @@ float calcShadow(vec4 shadow_coord)
 
 void main()
 {
-    vec4 shadow_coord = projview_shadow * texture(position, vso.texcoord);
     vec4 result = texture(albedo, vso.texcoord);
-    result.xyz *= calcShadow(shadow_coord) + 0.25;
+    float lighting = 0.0;
+
+    vec3 norm = normalize(texture(normal, vso.texcoord).rgb);
+    vec3 light_dir = normalize(light_pos.xyz - texture(position, vso.texcoord).rgb);
+    lighting += max(dot(norm, light_dir), 0.0);
+
+    lighting += ambient.x;
+
+    lighting += calcShadow(texture(shadow_projcoord, vso.texcoord).rgb);
+
+    result.rgb *= lighting;
     target = result;
 }
