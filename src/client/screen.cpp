@@ -18,7 +18,7 @@ static float aspect_ratio = 1.0f;
 
 static void onFramebufferSize(GLFWwindow *, int width, int height)
 {
-    cl_globals::chunk_gbuffer_0.init(width, height);
+    cl_globals::solid_gbuffer.init(width, height);
 
     screen_size = float2(width, height);
     screen_width = width;

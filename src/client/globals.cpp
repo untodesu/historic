@@ -8,7 +8,6 @@
 #include <client/chunks.hpp>
 #include <client/gbuffer.hpp>
 #include <client/globals.hpp>
-#include <client/shadowmap.hpp>
 #include <shared/voxels.hpp>
 
 float cl_globals::curtime = 0.0f;
@@ -19,5 +18,5 @@ entt::registry cl_globals::registry;
 ClientChunkManager cl_globals::chunks;
 VoxelDef cl_globals::voxels;
 Atlas cl_globals::solid_textures;
-GBuffer cl_globals::chunk_gbuffer_0;
-ShadowMap cl_globals::shadowmap_0;
+GBuffer cl_globals::solid_gbuffer;
+float3 cl_globals::shadow_angles = FLOAT3_ZERO;

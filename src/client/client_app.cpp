@@ -30,7 +30,7 @@
 #include <shared/voxels.hpp>
 #include <client/atlas.hpp>
 #include <client/gbuffer.hpp>
-#include <client/shadowmap.hpp>
+#include <client/shadow_manager.hpp>
 #include <client/composite.hpp>
 #include <random>
 
@@ -53,7 +53,7 @@ static void generate(uint64_t seed = 0)
     constexpr const int64_t END = 128;
 
     std::mt19937_64 mtgen = std::mt19937_64(seed);
-    const float seed_f = 0.0f; //std::uniform_real_distribution<float>()(mtgen);
+    const float seed_f = std::uniform_real_distribution<float>()(mtgen);
     for(int64_t vx = START; vx < END; vx++) {
         for(int64_t vz = START; vz < END; vz++) {
             const float3 vxz = float3(vx, vz, seed_f * 5120.0f);
@@ -168,12 +168,12 @@ void client_app::run()
     }
     cl_globals::solid_textures.submit();
 
-    // Shadow map
-    cl_globals::shadowmap_0.init(4096, 4096, gl::PixelFormat::D16_UNORM);
+    shadow_manager::init(4096);
+    shadow_manager::setAngles(glm::radians(float3(45.0f, 45.0f, 0.0f)));
 
     composite::init();
 
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -220,11 +220,11 @@ void client_app::run()
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-    cl_globals::shadowmap_0.shutdown();
+    shadow_manager::shutdown();
 
     // We don't create it in main()
     // but we do destroy it here.
-    cl_globals::chunk_gbuffer_0.shutdown();
+    cl_globals::solid_gbuffer.shutdown();
 
     cl_globals::solid_textures.destroy();
 

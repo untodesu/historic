@@ -19,38 +19,41 @@ layout(binding = 3) uniform sampler2D shadow_projcoord;
 layout(binding = 4) uniform sampler2D shadowmap;
 
 layout(std140, binding = 0) uniform UBO_Composite {
-    vec4 camera;
-    vec4 light_pos;
-    vec4 ambient;
+    vec4 camera_position;
+    vec4 light_direction;
+    vec4 light_color;
+    vec4 ambient_color;
 };
 
-float calcShadow(vec3 projcoord)
+vec3 calcShadow(vec3 projcoord, float diffuse, float bias)
 {
-    const vec2 texel = 1.0 / vec2(4096.0, 4096.0);
-    float shadow = 0.0;
-    for(int i = -1; i < 2; i++) {
-        for(int j = -1; j < 2; j++) {
-            float pcf = texture(shadowmap, projcoord.xy + vec2(i, j) * texel).r;
-            shadow += projcoord.z + length(texel) > pcf ? 0.0 : 1.0;
-        }
+    const vec2 poisson[4] = {
+        vec2(-0.94201624, -0.39906216),
+        vec2( 0.94558609, -0.76890725),
+        vec2(-0.09418410, -0.92938870),
+        vec2( 0.34495938,  0.29387760),
+    };
+
+    vec3 result = vec3(1.0);
+    for(int i = 0; i < 4; i++) {
+        if(texture(shadowmap, projcoord.xy + poisson[i] / 700.0).r >= projcoord.z - 0.00006)
+            continue;
+        result -= 0.2;
     }
 
-    return shadow / 9.0;
+    return diffuse * result;
 }
 
 void main()
 {
-    vec4 result = texture(albedo, vso.texcoord);
-    float lighting = 0.0;
-
+    vec4 color = texture(albedo, vso.texcoord);
+    vec3 lighting = vec3(0.0, 0.0, 0.0);
     vec3 norm = normalize(texture(normal, vso.texcoord).rgb);
-    vec3 light_dir = normalize(light_pos.xyz - texture(position, vso.texcoord).rgb);
-    lighting += max(dot(norm, light_dir), 0.0);
+    vec3 projcoord = texture(shadow_projcoord, vso.texcoord).rgb;
 
-    lighting += ambient.x;
+    lighting += ambient_color.rgb;
+    lighting += calcShadow(projcoord, max(dot(norm, light_direction.xyz), 0.0), 0);
 
-    lighting += calcShadow(texture(shadow_projcoord, vso.texcoord).rgb);
-
-    result.rgb *= lighting;
-    target = result;
+    color.xyz *= lighting;
+    target = color;
 }

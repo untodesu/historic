@@ -20,7 +20,7 @@
 #include <shared/world.hpp>
 #include <client/screen.hpp>
 #include <client/gbuffer.hpp>
-#include <client/shadowmap.hpp>
+#include <client/shadow_manager.hpp>
 
 struct UBOData_Shadow final {
     float4x4 projview;
@@ -134,6 +134,10 @@ void chunk_renderer::draw()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
     //
     // SHADOW PASS
     //
@@ -145,14 +149,12 @@ void chunk_renderer::draw()
 
     shadow_pipeline.bind();
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, shadow_ubo.get());
-    cl_globals::shadowmap_0.getFBO().bind();
+    shadow_manager::shadowmap().getFBO().bind();
 
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
-
-    cl_globals::shadowmap_0.getSize(width, height);
+    shadow_manager::shadowmap().getSize(width, height);
     glViewport(0, 0, width, height);
 
+    glClearDepthf(1.0f);
     glClear(GL_DEPTH_BUFFER_BIT);
 
     for(const auto [entity, mesh, chunk] : group.each()) {
@@ -179,17 +181,14 @@ void chunk_renderer::draw()
     gbuffer_samplers[0].bind(0);
     gbuffer_samplers[1].bind(1);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, gbuffer_ubo.get());
-    cl_globals::chunk_gbuffer_0.getFBO().bind();
+    cl_globals::solid_gbuffer.getFBO().bind();
     cl_globals::solid_textures.getTexture().bind(0);
-    cl_globals::shadowmap_0.getShadow().bind(1);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
+    shadow_manager::shadowmap().getShadow().bind(1);
 
     screen::getSize(width, height);
     glViewport(0, 0, width, height);
 
+    glClearColor(0.01f, 0.01f, 0.01f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     for(const auto [entity, mesh, chunk] : group.each()) {

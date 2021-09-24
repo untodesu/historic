@@ -9,6 +9,7 @@
 #include <client/sys/proj_view.hpp>
 #include <client/globals.hpp>
 #include <client/input.hpp>
+#include <client/shadow_manager.hpp>
 #include <client/screen.hpp>
 #include <shared/comp/creature.hpp>
 #include <shared/comp/head.hpp>
@@ -24,7 +25,6 @@ void proj_view::update()
 {
     pv_position = FLOAT3_ZERO;
     pv_matrix = FLOAT4X4_IDENTITY;
-    pv_matrix_shadow = FLOAT4X4_IDENTITY;
 
     const auto cg = cl_globals::registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
     for(const auto [entity, camera] : cg.each()) {
@@ -41,13 +41,9 @@ void proj_view::update()
         break;
     }
 
-    // This should actually move the shadowmap
-    // to the player's view and not draw it for
-    // the places that are invisible.
-    pv_matrix_shadow *= glm::ortho(-32.0f, 32.0f, -32.0f, 32.0f, 0.0f, 512.0f);
-    pv_matrix_shadow *= glm::lookAt(pv_position + float3(-2.0f, 4.0f, -1.0f), pv_position, FLOAT3_UP);
-
     pv_frustum.update(pv_matrix);
+
+    pv_matrix_shadow = shadow_manager::matrix(pv_position);
     pv_frustum_shadow.update(pv_matrix_shadow);
 }
 

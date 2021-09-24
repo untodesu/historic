@@ -13,15 +13,16 @@
 #include <client/gbuffer.hpp>
 #include <client/globals.hpp>
 #include <client/screen.hpp>
-#include <client/shadowmap.hpp>
+#include <client/shadow_manager.hpp>
 #include <exception>
 #include <filesystem.hpp>
 #include <math/util.hpp>
 
 struct alignas(16) UBufferData_Composite final {
-    float4 camera;
-    float4 light_pos;
-    float4 ambient;
+    float4 camera_position;
+    float4 light_direction;
+    float4 light_color;
+    float4 ambient_color;
 };
 
 constexpr const size_t ss = sizeof(UBufferData_Composite);
@@ -98,6 +99,7 @@ void composite::shutdown()
     composite_pipeline.destroy();
     composite_shaders[1].destroy();
     composite_shaders[0].destroy();
+    composite_ubuffer.destroy();
     composite_drawcmd.destroy();
     composite_vao.destroy();
     composite_vbo.destroy();
@@ -118,18 +120,17 @@ void composite::draw()
     glClear(GL_COLOR_BUFFER_BIT);
 
     UBufferData_Composite composite_ubuffer_data = {};
-    composite_ubuffer_data.camera = float4(proj_view::position(), 0.0);
-    composite_ubuffer_data.light_pos = float4(float3(-2.0f, 4.0f, -1.0f), 0.0);
-    composite_ubuffer_data.ambient = float4(float3(0.25f, 0.25f, 0.25f), 0.0f);
+    composite_ubuffer_data.camera_position = float4(proj_view::position(), 0.0);
+    composite_ubuffer_data.light_direction = float4(shadow_manager::lightDirection(), 0.0f);
+    composite_ubuffer_data.light_color = float4(shadow_manager::lightColor(), 0.0f);
+    composite_ubuffer_data.ambient_color = float4(0.25f, 0.25f, 0.25f, 0.0f);
     composite_ubuffer.write(0, sizeof(UBufferData_Composite), &composite_ubuffer_data);
 
-    constexpr const size_t o = offsetof(UBufferData_Composite, ambient);
-
-    cl_globals::chunk_gbuffer_0.getAlbedo().bind(0);
-    cl_globals::chunk_gbuffer_0.getNormal().bind(1);
-    cl_globals::chunk_gbuffer_0.getPosition().bind(2);
-    cl_globals::chunk_gbuffer_0.getShadowProjCoord().bind(3);
-    cl_globals::shadowmap_0.getShadow().bind(4);
+    cl_globals::solid_gbuffer.getAlbedo().bind(0);
+    cl_globals::solid_gbuffer.getNormal().bind(1);
+    cl_globals::solid_gbuffer.getPosition().bind(2);
+    cl_globals::solid_gbuffer.getShadowProjCoord().bind(3);
+    shadow_manager::shadowmap().getShadow().bind(4);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, composite_ubuffer.get());
     composite_sampler.bind(0);
     composite_sampler.bind(1);

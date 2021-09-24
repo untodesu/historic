@@ -11,7 +11,6 @@
 class Atlas;
 class ClientChunkManager;
 class GBuffer;
-class ShadowMap;
 class VoxelDef;
 
 namespace cl_globals
@@ -24,6 +23,6 @@ extern entt::registry registry;
 extern ClientChunkManager chunks;
 extern VoxelDef voxels;
 extern Atlas solid_textures;
-extern GBuffer chunk_gbuffer_0;
-extern ShadowMap shadowmap_0;
+extern GBuffer solid_gbuffer;
+extern float3 shadow_angles;
 } // namespace cl_globals
