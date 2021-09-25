@@ -12,10 +12,10 @@ namespace shadow_manager
 {
 void init(int size = 2048);
 void shutdown();
-void setAngles(const float3 &angles);
+void setAngles(const float2 &angles);
 void setLightColor(const float3 &color);
 void setPolygonOffset(const float2 &offset);
-const float3 &angles();
+const float2 &angles();
 const float3 &lightDirection();
 const float3 &lightColor();
 const float2 &polygonOffset();

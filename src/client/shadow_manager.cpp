@@ -7,7 +7,7 @@
 #include <client/shadow_manager.hpp>
 #include <spdlog/spdlog.h>
 
-static float3 shadow_angles = FLOAT3_ZERO;
+static float2 shadow_angles = FLOAT2_ZERO;
 static float3 shadow_light_direction = -FLOAT3_UP;
 static float3 shadow_light_color = FLOAT3_IDENTITY;
 static float2 shadow_polygon_offset = FLOAT2_ZERO;
@@ -16,12 +16,11 @@ static ShadowMap shadow_shadowmap;
 
 static inline void recalculateDirection()
 {
-    const float p = shadow_angles.x;
-    const float y = shadow_angles.y;
-    const float r = shadow_angles.z;
-    shadow_light_direction.x = -glm::cos(r) * glm::sin(p) * glm::sin(y) - glm::sin(r) * glm::cos(y);
-    shadow_light_direction.y = -glm::sin(r) * glm::sin(p) * glm::sin(y) - glm::cos(r) * glm::cos(y);
-    shadow_light_direction.z =  glm::cos(p) * glm::sin(y);
+    const float az = math::fixAngle360(shadow_angles.x); // azimuth
+    const float ev = math::fixAngle180(shadow_angles.y); // elevation
+    shadow_light_direction.x = glm::cos(az) * glm::cos(ev);
+    shadow_light_direction.y = glm::sin(ev) * glm::cos(ev) * -1.0f;
+    shadow_light_direction.z = glm::sin(az) * glm::cos(ev) * -1.0f;
 }
 
 void shadow_manager::init(int size)
@@ -39,7 +38,7 @@ void shadow_manager::shutdown()
     shadow_shadowmap.shutdown();
 }
 
-void shadow_manager::setAngles(const float3 &angles)
+void shadow_manager::setAngles(const float2 &angles)
 {
     shadow_angles = angles;
     recalculateDirection();
@@ -55,7 +54,7 @@ void shadow_manager::setPolygonOffset(const float2 &offset)
     shadow_polygon_offset = offset;
 }
 
-const float3 &shadow_manager::angles()
+const float2 &shadow_manager::angles()
 {
     return shadow_angles;
 }
