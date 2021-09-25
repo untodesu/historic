@@ -5,89 +5,88 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <client/shadow_manager.hpp>
+#include <math/const.hpp>
 #include <spdlog/spdlog.h>
 
-static float2 shadow_angles = FLOAT2_ZERO;
-static float3 shadow_light_direction = -FLOAT3_UP;
-static float3 shadow_light_color = FLOAT3_IDENTITY;
-static float2 shadow_polygon_offset = FLOAT2_ZERO;
-static float2 shadow_size = FLOAT2_ZERO;
-static ShadowMap shadow_shadowmap;
+static floatquat light_orientation = FLOATQUAT_IDENTITY;
+static float3 light_direction = FLOAT3_ZERO;
+static float3 light_color = FLOAT3_IDENTITY;
+static float2 polygon_offset = FLOAT2_ZERO;
+static ShadowMap shadowmap;
 
-static inline void recalculateDirection()
+static inline void calculateDirection()
 {
-    const float az = math::fixAngle360(shadow_angles.x); // azimuth
-    const float ev = math::fixAngle180(shadow_angles.y); // elevation
-    shadow_light_direction.x = glm::cos(az) * glm::cos(ev);
-    shadow_light_direction.y = glm::sin(ev) * glm::cos(ev) * -1.0f;
-    shadow_light_direction.z = glm::sin(az) * glm::cos(ev) * -1.0f;
+    // The light_orientation quaternion "looks"
+    // at the "sun" thus the direction is
+    // inverse from FLOAT3_FORWARD applied to it.
+    light_direction = light_orientation * FLOAT3_FORWARD * -1.0f;
 }
 
-void shadow_manager::init(int size)
+void shadow_manager::init(int width, int height)
 {
-    shadow_angles = FLOAT3_ZERO;
-    shadow_light_color = FLOAT3_IDENTITY;
-    shadow_polygon_offset = FLOAT2_ZERO;
-    shadow_size = float2(size, size);
-    recalculateDirection();
-    shadow_shadowmap.init(size, size, gl::PixelFormat::D32_FLOAT);
+    light_orientation = FLOATQUAT_IDENTITY;
+    light_color = FLOAT3_IDENTITY;
+    polygon_offset = FLOAT2_ZERO;
+    shadowmap.init(width, height, gl::PixelFormat::D32_FLOAT);
+    calculateDirection();
 }
 
 void shadow_manager::shutdown()
 {
-    shadow_shadowmap.shutdown();
+    shadowmap.shutdown();
 }
 
-void shadow_manager::setAngles(const float2 &angles)
+void shadow_manager::rotateLight(float angle, const float3 &axis)
 {
-    shadow_angles = angles;
-    recalculateDirection();
+    light_orientation = glm::rotate(light_orientation, angle, axis);
+    calculateDirection();
+}
+
+void shadow_manager::setLightOrientation(const floatquat &orientation)
+{
+    light_orientation = orientation;
+    calculateDirection();
 }
 
 void shadow_manager::setLightColor(const float3 &color)
 {
-    shadow_light_color = color;
+    light_color = color;
 }
 
 void shadow_manager::setPolygonOffset(const float2 &offset)
 {
-    shadow_polygon_offset = offset;
+    polygon_offset = offset;
 }
 
-const float2 &shadow_manager::angles()
+const floatquat &shadow_manager::getLightOrientation()
 {
-    return shadow_angles;
+    return light_orientation;
 }
 
-const float3 &shadow_manager::lightDirection()
+const float3 &shadow_manager::getLightDirection()
 {
-    return shadow_light_direction;
+    return light_direction;
 }
 
-const float3 &shadow_manager::lightColor()
+const float3 &shadow_manager::getLightColor()
 {
-    return shadow_light_color;
+    return light_color;
 }
 
-const float2 &shadow_manager::polygonOffset()
+const float2 &shadow_manager::getPolygonOffset()
 {
-    return shadow_polygon_offset;
+    return polygon_offset;
 }
 
-const float2 &shadow_manager::size()
+const ShadowMap &shadow_manager::getShadowMap()
 {
-    return shadow_size;
+    return shadowmap;
 }
 
-const ShadowMap &shadow_manager::shadowmap()
-{
-    return shadow_shadowmap;
-}
-
-const float4x4 shadow_manager::matrix(const float3 &position)
+const float4x4 shadow_manager::getProjView(const float3 &position)
 {
     float4x4 projview = FLOAT4X4_IDENTITY;
     projview *= glm::ortho(-128.0f, 128.0f, -128.0f, 128.0f, -512.0f, 512.0f);
-    projview *= glm::lookAt(position - shadow_light_direction, position, FLOAT3_UP);
+    projview *= glm::lookAt(position - light_direction, position, FLOAT3_UP);
     return projview;
 }

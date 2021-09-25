@@ -6,8 +6,7 @@
  */
 #pragma once
 #include <array>
-#include <math/types.hpp>
-#include <math/util.hpp>
+#include <math/math.hpp>
 #include <string>
 #include <utility>
 #include <vector>

@@ -7,7 +7,7 @@
 #pragma once
 #include <client/gl/texture.hpp>
 #include <client/gl/renderbuffer.hpp>
-#include <math/util.hpp>
+#include <math/math.hpp>
 
 namespace gl
 {

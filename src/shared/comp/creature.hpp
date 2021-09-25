@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <math/types.hpp>
+#include <math/const.hpp>
 
 struct CreatureComponent final {
     floatquat orientation { FLOATQUAT_IDENTITY };

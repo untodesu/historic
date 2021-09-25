@@ -43,7 +43,7 @@ void proj_view::update()
 
     pv_frustum.update(pv_matrix);
 
-    pv_matrix_shadow = shadow_manager::matrix(pv_position);
+    pv_matrix_shadow = shadow_manager::getProjView(pv_position);
     pv_frustum_shadow.update(pv_matrix_shadow);
 }
 

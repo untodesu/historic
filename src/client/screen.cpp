@@ -9,6 +9,7 @@
 #include <client/globals.hpp>
 #include <client/screen.hpp>
 #include <GLFW/glfw3.h>
+#include <math/const.hpp>
 #include <spdlog/spdlog.h>
 
 static float2 screen_size = FLOAT2_IDENTITY;

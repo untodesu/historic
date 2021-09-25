@@ -6,7 +6,8 @@
  */
 #pragma once
 #include <glad/gl.h>
-#include <math/types.hpp>
+#include <stddef.h>
+#include <stdint.h>
 #include <utility>
 
 namespace gl

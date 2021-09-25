@@ -11,7 +11,7 @@ layout(location = 1) in vec2 texcoord;
 
 out VS_OUTPUT {
     vec2 texcoord;
-} vso;
+} vert;
 
 out gl_PerVertex {
     vec4 gl_Position;
@@ -19,6 +19,6 @@ out gl_PerVertex {
 
 void main()
 {
-    vso.texcoord = texcoord;
+    vert.texcoord = texcoord;
     gl_Position = vec4(position, 0.0, 1.0);
 }

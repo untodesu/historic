@@ -11,7 +11,8 @@
 #include <client/screen.hpp>
 #include <shared/comp/head.hpp>
 #include <shared/comp/player.hpp>
-#include <math/util.hpp>
+#include <math/const.hpp>
+#include <math/math.hpp>
 
 void player_look::update()
 {
@@ -22,7 +23,7 @@ void player_look::update()
     for(auto [entity, head] : hg.each()) {
         head.angles.x -= delta.y;
         head.angles.y -= delta.x;
-        head.angles.x = math::clamp(head.angles.x, glm::radians(-89.0f), glm::radians(89.0f));
+        head.angles.x = math::clamp(head.angles.x, -ANGLE_89D, ANGLE_89D);
         return;
     }
 }

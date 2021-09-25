@@ -8,6 +8,7 @@
 #include <client/chunks.hpp>
 #include <client/gbuffer.hpp>
 #include <client/globals.hpp>
+#include <math/const.hpp>
 #include <shared/voxels.hpp>
 
 float cl_globals::curtime = 0.0f;

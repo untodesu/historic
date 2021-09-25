@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <glm/trigonometric.hpp>
+#include <math/const.hpp>
 #include <type_traits>
 
 namespace math
@@ -22,7 +22,7 @@ template<typename T, typename F>
 constexpr static inline const T ceil(const F x)
 {
     static_assert(std::is_floating_point<F>::value);
-    T ival = static_cast<T>(x);
+    const T ival = static_cast<T>(x);
     if(ival == static_cast<F>(ival))
         return ival;
     return ival + ((x > 0) ? 1 : 0);
@@ -38,41 +38,38 @@ constexpr static inline const T clamp(const T x, const T min, const T max)
     return x;
 }
 
-template<typename F>
-static inline const F fixAngle180(const F angle)
+static inline const float wrapAngle180N(const float angle)
 {
-    static_assert(std::is_floating_point<F>::value);
-    constexpr const F na_180 = glm::radians<F>(180.0f);
-    constexpr const F na_360 = glm::radians<F>(360.0f);
-    const F norm = std::fmod(angle + na_180, na_360);
-    return ((norm < 0.0f) ? (norm + na_360) : norm) - na_180;
+    const float wrap = glm::mod(angle + ANGLE_180D, ANGLE_360D);
+    return ((wrap < 0.0f) ? (wrap + ANGLE_360D) : wrap) - ANGLE_180D;
 }
 
-template<typename F, glm::length_t L, glm::qualifier Q>
-static inline const glm::vec<L, F, Q> fixAngle180(const glm::vec<L, F, Q> &angles)
+static inline const float wrapAngle180P(const float angle)
 {
-    glm::vec<L, F, Q> result;
+    return glm::mod(glm::mod(angle, ANGLE_180D) + ANGLE_180D, ANGLE_180D);
+}
+
+static inline const float wrapAngle360P(const float angle)
+{
+    return glm::mod(glm::mod(angle, ANGLE_360D) + ANGLE_360D, ANGLE_360D);
+}
+
+template<glm::length_t L, glm::qualifier Q>
+static inline const glm::vec<L, float, Q> wrapAngle180N(const glm::vec<L, float, Q> &angles)
+{
+    glm::vec<L, float, Q> wrap;
     for(glm::length_t i = 0; i < L; i++)
-        result[i] = math::fixAngle180<F>(angles[i]);
-    return result;
+        wrap[i] = math::wrapAngle180N(angles[i]);
+    return wrap;
 }
 
-template<typename F>
-static inline const F fixAngle360(const F angle)
+template<glm::length_t L, glm::qualifier Q>
+static inline const glm::vec<L, float, Q> wrapAngle360P(const glm::vec<L, float, Q> &angles)
 {
-    static_assert(std::is_floating_point<F>::value);
-    constexpr const F na_360 = glm::radians<F>(360.0f);
-    const F norm = std::fmod(angle, na_360);
-    return (norm < 0.0f) ? (norm + na_360) : norm;
-}
-
-template<typename F, glm::length_t L, glm::qualifier Q>
-static inline const glm::vec<L, F, Q> fixAngle360(const glm::vec<L, F, Q> &angles)
-{
-    glm::vec<L, F, Q> result;
+    glm::vec<L, float, Q> wrap;
     for(glm::length_t i = 0; i < L; i++)
-        result[i] = math::fixAngle360<F>(angles[i]);
-    return result;
+        wrap[i] = math::wrapAngle360P(angles[i]);
+    return wrap;
 }
 
 template<typename T, size_t L>

@@ -58,10 +58,10 @@ static void generate(uint64_t seed = 0)
         for(int64_t vz = START; vz < END; vz++) {
             const float3 vxz = float3(vx, vz, seed_f * 5120.0f);
             const float solidity = octanoise(vxz / 160.0f, 3);
-            const float hmod = octanoise(vxz / 160.0f, 8);
+            const float hmod = octanoise((vxz + 1.0f) / 160.0f, 8);
             if(solidity > 0.1f) {
                 int64_t h1 = ((solidity - 0.1f) * 32.0f);
-                int64_t h2 = (hmod * 8.0f);
+                int64_t h2 = (hmod * 16.0f);
                 for(int64_t vy = 1; vy < h1; vy++)
                     cl_globals::chunks.set(voxelpos_t(vx, -vy, vz), 0x01, true);
                 for(int64_t vy = 0; h1 && vy < h2; vy++)
@@ -169,8 +169,8 @@ void client_app::run()
     cl_globals::solid_textures.submit();
 
     float sun_time = 0.0f;
-    shadow_manager::init(8192);
-    shadow_manager::setAngles(glm::radians(float2(120.0f, 35.0f)));
+    shadow_manager::init(8192, 8192);
+    shadow_manager::setLightOrientation(floatquat(glm::radians(float3(0.0f, 0.0f, 45.0f))));
     shadow_manager::setPolygonOffset(float2(3.0f, 0.5f));
 
     composite::init();
@@ -192,6 +192,8 @@ void client_app::run()
             spdlog::debug("Perf: {:.03f} ms ({:.02f} FPS)", avg_frametime * 1000.0f, 1.0f / avg_frametime);
             print_clock.restart();
         }
+
+        shadow_manager::rotateLight(glm::radians(cl_globals::frametime * 15.0f), float3(1.0f, 0.0f, 0.0f));
 
         // This should be an easier way to exit
         // than breaking my fingers to do alt+f4

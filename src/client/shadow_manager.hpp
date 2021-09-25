@@ -6,20 +6,21 @@
  */
 #pragma once
 #include <client/shadowmap.hpp>
+#include <math/types.hpp>
 
 // Let me speak to your shadow manager!
 namespace shadow_manager
 {
-void init(int size = 2048);
+void init(int width, int height);
 void shutdown();
-void setAngles(const float2 &angles);
+void rotateLight(float angle, const float3 &axis);
+void setLightOrientation(const floatquat &orientation);
 void setLightColor(const float3 &color);
 void setPolygonOffset(const float2 &offset);
-const float2 &angles();
-const float3 &lightDirection();
-const float3 &lightColor();
-const float2 &polygonOffset();
-const float2 &size();
-const ShadowMap &shadowmap();
-const float4x4 matrix(const float3 &position);
+const floatquat &getLightOrientation();
+const float3 &getLightDirection();
+const float3 &getLightColor();
+const float2 &getPolygonOffset();
+const ShadowMap &getShadowMap();
+const float4x4 getProjView(const float3 &position);
 } // namespace shadow_manager

@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <math/types.hpp>
+#include <math/const.hpp>
 
 struct HeadComponent final {
     float3 angles { FLOAT3_ZERO };

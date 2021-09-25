@@ -6,6 +6,7 @@
  */
 #include <client/input.hpp>
 #include <limits>
+#include <math/const.hpp>
 #include <spdlog/spdlog.h>
 
 static constexpr const size_t NUM_KEYS = GLFW_KEY_LAST + 1;

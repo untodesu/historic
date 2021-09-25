@@ -16,13 +16,13 @@
 #include <client/shadow_manager.hpp>
 #include <exception>
 #include <filesystem.hpp>
-#include <math/util.hpp>
+#include <math/math.hpp>
 
 struct alignas(16) UBufferData_Composite final {
-    float4 camera_position;
+    float4 tweaks;
     float4 light_direction;
     float4 light_color;
-    float4 ambient_color;
+    float4 ambient;
 };
 
 constexpr const size_t ss = sizeof(UBufferData_Composite);
@@ -127,18 +127,21 @@ void composite::draw()
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    int sw, sh;
+    shadow_manager::getShadowMap().getSize(sw, sh);
+
     UBufferData_Composite composite_ubuffer_data = {};
-    composite_ubuffer_data.camera_position = float4(proj_view::position(), 0.0);
-    composite_ubuffer_data.light_direction = float4(shadow_manager::lightDirection(), 0.0f);
-    composite_ubuffer_data.light_color = float4(shadow_manager::lightColor(), 0.0f);
-    composite_ubuffer_data.ambient_color = float4(0.25f, 0.25f, 0.25f, 0.0f);
+    composite_ubuffer_data.tweaks = float4(sw, sh, 0.0f, 0.0f);
+    composite_ubuffer_data.light_direction = float4(shadow_manager::getLightDirection(), 0.0f);
+    composite_ubuffer_data.light_color = float4(shadow_manager::getLightColor(), 0.0f);
+    composite_ubuffer_data.ambient = float4(0.25f, 0.25f, 0.25f, 0.0f);
     composite_ubuffer.write(0, sizeof(UBufferData_Composite), &composite_ubuffer_data);
 
     cl_globals::solid_gbuffer.getAlbedo().bind(0);
     cl_globals::solid_gbuffer.getNormal().bind(1);
     cl_globals::solid_gbuffer.getPosition().bind(2);
     cl_globals::solid_gbuffer.getShadowProjCoord().bind(3);
-    shadow_manager::shadowmap().getShadow().bind(4);
+    shadow_manager::getShadowMap().getShadow().bind(4);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, composite_ubuffer.get());
     composite_samplers[0].bind(0);
     composite_samplers[0].bind(1);

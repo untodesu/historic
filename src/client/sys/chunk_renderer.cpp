@@ -11,7 +11,7 @@
 #include <client/globals.hpp>
 #include <spdlog/spdlog.h>
 #include <client/vertex.hpp>
-#include <math/util.hpp>
+#include <math/math.hpp>
 #include <client/gl/pipeline.hpp>
 #include <client/gl/sampler.hpp>
 #include <client/gl/shader.hpp>
@@ -149,12 +149,12 @@ void chunk_renderer::draw()
 
     shadow_pipeline.bind();
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, shadow_ubo.get());
-    shadow_manager::shadowmap().getFBO().bind();
+    shadow_manager::getShadowMap().getFBO().bind();
 
-    shadow_manager::shadowmap().getSize(width, height);
+    shadow_manager::getShadowMap().getSize(width, height);
     glViewport(0, 0, width, height);
 
-    const float2 &po = shadow_manager::polygonOffset();
+    const float2 &po = shadow_manager::getPolygonOffset();
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(po.x, po.y);
 
@@ -187,7 +187,6 @@ void chunk_renderer::draw()
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, gbuffer_ubo.get());
     cl_globals::solid_gbuffer.getFBO().bind();
     cl_globals::solid_textures.getTexture().bind(0);
-    shadow_manager::shadowmap().getShadow().bind(1);
 
     screen::getSize(width, height);
     glViewport(0, 0, width, height);

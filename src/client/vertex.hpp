@@ -6,8 +6,7 @@
  */
 #pragma once
 #include <glm/gtc/packing.hpp>
-#include <math/types.hpp>
-#include <math/util.hpp>
+#include <math/const.hpp>
 
 struct Vertex final {
     float3 position;
