@@ -95,8 +95,8 @@ void composite::init()
     composite_samplers[1].create();
     composite_samplers[1].parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     composite_samplers[1].parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    composite_samplers[1].parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    composite_samplers[1].parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    composite_samplers[1].parameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
+    composite_samplers[1].parameter(GL_TEXTURE_WRAP_T, GL_REPEAT);
     composite_samplers[1].parameter(GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 }
 

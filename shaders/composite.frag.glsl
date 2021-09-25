@@ -25,10 +25,10 @@ layout(std140, binding = 0) uniform UBO_Composite {
     vec4 ambient_color;
 };
 
-// Shamelessly stolen from Refraction and ported to GLSL by me myself.
 float doShadow(sampler2DShadow s, vec3 p)
 {
-    const float epsilon = 1.0 / 4096.0;
+    // This should not be hardcoded
+    const float epsilon = 1.0 / 8192.0;
 
     vec4 taps;
     taps.x = textureProj(s, vec4(p.xy + vec2( epsilon,  epsilon), p.z, 1.0));

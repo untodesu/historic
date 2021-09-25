@@ -53,7 +53,7 @@ static void generate(uint64_t seed = 0)
     constexpr const int64_t END = 128;
 
     std::mt19937_64 mtgen = std::mt19937_64(seed);
-    const float seed_f = 0.0f;//std::uniform_real_distribution<float>()(mtgen);
+    const float seed_f = std::uniform_real_distribution<float>()(mtgen);
     for(int64_t vx = START; vx < END; vx++) {
         for(int64_t vz = START; vz < END; vz++) {
             const float3 vxz = float3(vx, vz, seed_f * 5120.0f);
@@ -169,7 +169,7 @@ void client_app::run()
     cl_globals::solid_textures.submit();
 
     float sun_time = 0.0f;
-    shadow_manager::init(4096);
+    shadow_manager::init(8192);
     shadow_manager::setAngles(glm::radians(float2(120.0f, 35.0f)));
     shadow_manager::setPolygonOffset(float2(3.0f, 0.5f));
 

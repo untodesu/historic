@@ -87,7 +87,7 @@ const ShadowMap &shadow_manager::shadowmap()
 const float4x4 shadow_manager::matrix(const float3 &position)
 {
     float4x4 projview = FLOAT4X4_IDENTITY;
-    projview *= glm::ortho(-16.0f, 16.0f, -16.0f, 16.0f, -512.0f, 512.0f);
+    projview *= glm::ortho(-128.0f, 128.0f, -128.0f, 128.0f, -512.0f, 512.0f);
     projview *= glm::lookAt(position - shadow_light_direction, position, FLOAT3_UP);
     return projview;
 }
