@@ -10,6 +10,7 @@
 static float3 shadow_angles = FLOAT3_ZERO;
 static float3 shadow_light_direction = -FLOAT3_UP;
 static float3 shadow_light_color = FLOAT3_IDENTITY;
+static float2 shadow_polygon_offset = FLOAT2_ZERO;
 static float2 shadow_size = FLOAT2_ZERO;
 static ShadowMap shadow_shadowmap;
 
@@ -18,16 +19,16 @@ static inline void recalculateDirection()
     const float p = shadow_angles.x;
     const float y = shadow_angles.y;
     const float r = shadow_angles.z;
-    shadow_light_direction.x = -glm::cos(r) * glm::sin(p) * glm::sin(y ) - glm::sin(r) * glm::cos(y );
-    shadow_light_direction.y = -glm::sin(r) * glm::sin(p) * glm::sin(y ) - glm::cos(r) * glm::cos(y );
+    shadow_light_direction.x = -glm::cos(r) * glm::sin(p) * glm::sin(y) - glm::sin(r) * glm::cos(y);
+    shadow_light_direction.y = -glm::sin(r) * glm::sin(p) * glm::sin(y) - glm::cos(r) * glm::cos(y);
     shadow_light_direction.z =  glm::cos(p) * glm::sin(y);
-    spdlog::info("{} {} {}", shadow_light_direction.x, shadow_light_direction.y, shadow_light_direction.z);
 }
 
 void shadow_manager::init(int size)
 {
     shadow_angles = FLOAT3_ZERO;
     shadow_light_color = FLOAT3_IDENTITY;
+    shadow_polygon_offset = FLOAT2_ZERO;
     shadow_size = float2(size, size);
     recalculateDirection();
     shadow_shadowmap.init(size, size, gl::PixelFormat::D32_FLOAT);
@@ -49,6 +50,11 @@ void shadow_manager::setLightColor(const float3 &color)
     shadow_light_color = color;
 }
 
+void shadow_manager::setPolygonOffset(const float2 &offset)
+{
+    shadow_polygon_offset = offset;
+}
+
 const float3 &shadow_manager::angles()
 {
     return shadow_angles;
@@ -62,6 +68,11 @@ const float3 &shadow_manager::lightDirection()
 const float3 &shadow_manager::lightColor()
 {
     return shadow_light_color;
+}
+
+const float2 &shadow_manager::polygonOffset()
+{
+    return shadow_polygon_offset;
 }
 
 const float2 &shadow_manager::size()

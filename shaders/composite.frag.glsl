@@ -16,7 +16,7 @@ layout(binding = 0) uniform sampler2D albedo;
 layout(binding = 1) uniform sampler2D normal;
 layout(binding = 2) uniform sampler2D position;
 layout(binding = 3) uniform sampler2D shadow_projcoord;
-layout(binding = 4) uniform sampler2D shadowmap;
+layout(binding = 4) uniform sampler2DShadow shadowmap;
 
 layout(std140, binding = 0) uniform UBO_Composite {
     vec4 camera_position;
@@ -25,34 +25,30 @@ layout(std140, binding = 0) uniform UBO_Composite {
     vec4 ambient_color;
 };
 
-vec3 calcShadow(vec3 projcoord, float diffuse, float bias)
+// Shamelessly stolen from Refraction and ported to GLSL by me myself.
+float doShadow(sampler2DShadow s, vec3 p)
 {
-    const vec2 poisson[4] = {
-        vec2(-0.94201624, -0.39906216),
-        vec2( 0.94558609, -0.76890725),
-        vec2(-0.09418410, -0.92938870),
-        vec2( 0.34495938,  0.29387760),
-    };
+    const float epsilon = 1.0 / 4096.0;
 
-    vec3 result = vec3(1.0);
-    for(int i = 0; i < 4; i++) {
-        if(texture(shadowmap, projcoord.xy + poisson[i] / 700.0).r >= projcoord.z - 0.00006)
-            continue;
-        result -= 0.2;
-    }
-
-    return diffuse * result;
+    vec4 taps;
+    taps.x = textureProj(s, vec4(p.xy + vec2( epsilon,  epsilon), p.z, 1.0));
+    taps.y = textureProj(s, vec4(p.xy + vec2( epsilon, -epsilon), p.z, 1.0));
+    taps.z = textureProj(s, vec4(p.xy + vec2(-epsilon,  epsilon), p.z, 1.0));
+    taps.w = textureProj(s, vec4(p.xy + vec2(-epsilon, -epsilon), p.z, 1.0));
+    return dot(taps, vec4(0.25));
 }
 
 void main()
 {
     vec4 color = texture(albedo, vso.texcoord);
     vec3 lighting = vec3(0.0, 0.0, 0.0);
-    vec3 norm = normalize(texture(normal, vso.texcoord).rgb);
-    vec3 projcoord = texture(shadow_projcoord, vso.texcoord).rgb;
+    vec3 norm = normalize(texture(normal, vso.texcoord).xyz);
+    vec3 projcoord = texture(shadow_projcoord, vso.texcoord).xyz;
 
     lighting += ambient_color.rgb;
-    lighting += calcShadow(projcoord, max(dot(norm, light_direction.xyz), 0.0), 0);
+    //lighting += calcShadow(projcoord) * max(dot(norm, light_direction.xyz), 0.0);
+    //lighting += textureProj(shadowmap, projcoord) * light_color.xyz * max(dot(norm, light_direction.xyz), 0.0);
+    lighting += doShadow(shadowmap, projcoord) * max(dot(norm, light_direction.xyz), 0.0);
 
     color.xyz *= lighting;
     target = color;

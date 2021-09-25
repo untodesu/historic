@@ -154,6 +154,10 @@ void chunk_renderer::draw()
     shadow_manager::shadowmap().getSize(width, height);
     glViewport(0, 0, width, height);
 
+    const float2 &po = shadow_manager::polygonOffset();
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(po.x, po.y);
+
     glClearDepthf(1.0f);
     glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -188,6 +192,8 @@ void chunk_renderer::draw()
     screen::getSize(width, height);
     glViewport(0, 0, width, height);
 
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    
     glClearColor(0.01f, 0.01f, 0.01f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

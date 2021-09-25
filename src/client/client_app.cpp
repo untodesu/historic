@@ -170,6 +170,7 @@ void client_app::run()
 
     shadow_manager::init(4096);
     shadow_manager::setAngles(glm::radians(float3(45.0f, 45.0f, 0.0f)));
+    shadow_manager::setPolygonOffset(float2(3.0f, 0.5f));
 
     composite::init();
 

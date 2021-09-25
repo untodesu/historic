@@ -38,7 +38,7 @@ static gl::DrawCommand composite_drawcmd;
 static gl::Buffer composite_ubuffer;
 static gl::Shader composite_shaders[2];
 static gl::Pipeline composite_pipeline;
-static gl::Sampler composite_sampler;
+static gl::Sampler composite_samplers[2];
 
 static const uint8_t quad_inds[6] = { 0, 1, 2, 2, 3, 0 };
 static const QuadVertex quad_verts[4] = {
@@ -86,16 +86,24 @@ void composite::init()
     composite_pipeline.stage(composite_shaders[0]);
     composite_pipeline.stage(composite_shaders[1]);
 
-    composite_sampler.create();
-    composite_sampler.parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    composite_sampler.parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    composite_sampler.parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    composite_sampler.parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    composite_samplers[0].create();
+    composite_samplers[0].parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    composite_samplers[0].parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    composite_samplers[0].parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    composite_samplers[0].parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    composite_samplers[1].create();
+    composite_samplers[1].parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    composite_samplers[1].parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    composite_samplers[1].parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    composite_samplers[1].parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    composite_samplers[1].parameter(GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 }
 
 void composite::shutdown()
 {
-    composite_sampler.destroy();
+    composite_samplers[1].destroy();
+    composite_samplers[0].destroy();
     composite_pipeline.destroy();
     composite_shaders[1].destroy();
     composite_shaders[0].destroy();
@@ -132,11 +140,11 @@ void composite::draw()
     cl_globals::solid_gbuffer.getShadowProjCoord().bind(3);
     shadow_manager::shadowmap().getShadow().bind(4);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, composite_ubuffer.get());
-    composite_sampler.bind(0);
-    composite_sampler.bind(1);
-    composite_sampler.bind(2);
-    composite_sampler.bind(3);
-    composite_sampler.bind(4);
+    composite_samplers[0].bind(0);
+    composite_samplers[0].bind(1);
+    composite_samplers[0].bind(2);
+    composite_samplers[0].bind(3);
+    composite_samplers[1].bind(4);
     composite_pipeline.bind();
     composite_vao.bind();
     composite_drawcmd.invoke();
