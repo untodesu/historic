@@ -39,8 +39,9 @@ float doShadowNvidiaCheap(sampler2DShadow s, vec3 p, vec4 t)
 
 void main()
 {
-    const float diffuse = max(dot(normalize(texture(normal, vert.texcoord).xyz), light_direction.xyz), 0.0);
+    const vec3 normal_v = normalize(texture(normal, vert.texcoord).xyz);
+    const float diffuse = max(dot(normal_v, normalize(light_direction.xyz)), 0.25);
     const float shadow = doShadowNvidiaCheap(shadowmap, texture(shadow_projcoord, vert.texcoord).xyz, tweaks);
-    const vec3 lighting = mix(ambient.rgb, light_color.rgb, shadow) * diffuse;
+    const vec3 lighting = ambient.rgb + light_color.rgb * shadow * diffuse;
     target = texture(albedo, vert.texcoord) * vec4(lighting, 1.0);
 }
