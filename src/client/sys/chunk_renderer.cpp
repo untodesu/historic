@@ -167,6 +167,7 @@ void chunk_renderer::draw()
             shadow_ubo.write(offsetof(UBOData_Shadow, chunkpos), sizeof(float3), &shadow_ubo_data.chunkpos);
             mesh.vao.bind();
             mesh.cmd.invoke();
+            cl_globals::vertices_drawn += mesh.cmd.size();
         }
     }
 
@@ -202,6 +203,7 @@ void chunk_renderer::draw()
             gbuffer_ubo.write(offsetof(UBOData_GBuffer, chunkpos), sizeof(float3), &gbuffer_ubo_data.chunkpos);
             mesh.vao.bind();
             mesh.cmd.invoke();
+            cl_globals::vertices_drawn += mesh.cmd.size();
         }
     }
 }

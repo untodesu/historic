@@ -27,14 +27,14 @@ static void onFramebufferSize(GLFWwindow *, int width, int height)
     aspect_ratio = (screen_size.x > screen_size.y) ? (screen_size.x / screen_size.y) : (screen_size.y / screen_size.x);
 }
 
-void screen::init(GLFWwindow *window)
+void screen::init()
 {
     spdlog::debug("Hooking screen events");
     
     int width, height;
-    glfwSetFramebufferSizeCallback(window, onFramebufferSize);
-    glfwGetFramebufferSize(window, &width, &height);
-    onFramebufferSize(window, width, height);
+    glfwSetFramebufferSizeCallback(cl_globals::window, onFramebufferSize);
+    glfwGetFramebufferSize(cl_globals::window, &width, &height);
+    onFramebufferSize(cl_globals::window, width, height);
 }
 
 float screen::getAspectRatio()

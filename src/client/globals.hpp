@@ -12,11 +12,14 @@ class Atlas;
 class ClientChunkManager;
 class GBuffer;
 class VoxelDef;
+struct GLFWwindow;
 
 namespace cl_globals
 {
+extern GLFWwindow *window;
 extern float curtime;
 extern float frametime;
+extern float avg_frametime;
 extern size_t frame_count;
 extern size_t vertices_drawn;
 extern entt::registry registry;
@@ -24,5 +27,4 @@ extern ClientChunkManager chunks;
 extern VoxelDef voxels;
 extern Atlas solid_textures;
 extern GBuffer solid_gbuffer;
-extern float3 shadow_angles;
 } // namespace cl_globals

@@ -10,6 +10,7 @@
 namespace proj_view
 {
 void update();
+const float3 &angles();
 const float3 &position();
 const float4x4 &matrix();
 const float4x4 &matrixShadow();

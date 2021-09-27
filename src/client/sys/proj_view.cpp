@@ -16,6 +16,7 @@
 #include <shared/comp/player.hpp>
 #include <shared/world.hpp>
 
+static float3 pv_angles = FLOAT3_ZERO;
 static float3 pv_position = FLOAT3_ZERO;
 static float4x4 pv_matrix = FLOAT4X4_IDENTITY;
 static float4x4 pv_matrix_shadow = FLOAT4X4_IDENTITY;
@@ -37,7 +38,8 @@ void proj_view::update()
         pv_position = head.offset;
         if(CreatureComponent *creature = cl_globals::registry.try_get<CreatureComponent>(entity))
             pv_position += creature->position;
-        pv_matrix *= glm::lookAt(pv_position, pv_position + floatquat(head.angles) * FLOAT3_FORWARD, FLOAT3_UP);
+        pv_angles = head.angles;
+        pv_matrix *= glm::lookAt(pv_position, pv_position + floatquat(pv_angles) * FLOAT3_FORWARD, FLOAT3_UP);
         break;
     }
 
@@ -45,6 +47,11 @@ void proj_view::update()
 
     pv_matrix_shadow = shadow_manager::getProjView(pv_position);
     pv_frustum_shadow.update(pv_matrix_shadow);
+}
+
+const float3 &proj_view::angles()
+{
+    return pv_angles;
 }
 
 const float3 &proj_view::position()

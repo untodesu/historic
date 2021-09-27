@@ -7,6 +7,7 @@
 #include <client/shadow_manager.hpp>
 #include <math/const.hpp>
 #include <spdlog/spdlog.h>
+#include <client/input.hpp>
 
 static floatquat light_orientation = FLOATQUAT_IDENTITY;
 static float3 light_direction = FLOAT3_ZERO;

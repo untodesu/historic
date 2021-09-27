@@ -303,6 +303,9 @@ void chunk_mesher::update()
             mesher.builder = new ChunkMeshBuilder();
             mesher.data = new ChunkMesherData();
 
+            meshing_memory += sizeof(ChunkMeshBuilder);
+            meshing_memory += sizeof(ChunkMesherData);
+
             meshing_memory += mesher.data->trySetChunk(chunk.position);
             meshing_memory += mesher.data->trySetChunk(chunk.position + chunkpos_t(0, 0, 1));
             meshing_memory += mesher.data->trySetChunk(chunk.position - chunkpos_t(0, 0, 1));
@@ -371,9 +374,18 @@ void chunk_mesher::update()
             }
 
             meshing_memory -= mesher.data->data.size() * CHUNK_VOLUME;
+            meshing_memory -= sizeof(ChunkMesherData);
+            meshing_memory -= sizeof(ChunkMeshBuilder);
+
             delete mesher.data;
             delete mesher.builder;
+
             cl_globals::registry.remove<ThreadedChunkMesherComponent>(entity);
         }
     }
+}
+
+size_t chunk_mesher::memory()
+{
+    return meshing_memory;
 }

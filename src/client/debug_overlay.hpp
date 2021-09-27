@@ -5,12 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <entt/entt.hpp>
-#include <stddef.h>
 
-namespace chunk_mesher
+namespace debug_overlay
 {
-void shutdown();
-void update();
-size_t memory();
-} // namespace chunk_mesher
+void draw();
+} // namespace debug_overlay

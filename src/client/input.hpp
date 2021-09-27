@@ -9,7 +9,7 @@
 
 namespace input
 {
-void init(GLFWwindow *window);
+void init();
 void update();
 
 bool isKeyPressed(unsigned int key);
@@ -19,6 +19,10 @@ bool isKeyJustReleased(unsigned int key);
 bool isMouseButtonPressed(unsigned int button);
 bool isMouseButtonJustPressed(unsigned int button);
 bool isMouseButtonJustReleased(unsigned int button);
+
+void toggleCursor();
+void enableCursor(bool enable);
+bool cursorEnabled();
 
 const float2 &getCursor();
 const float2 &getCursorDelta();

@@ -8,6 +8,7 @@
                 "${workspaceFolder}/deps/glad/include",
                 "${workspaceFolder}/deps/glfw/include",
                 "${workspaceFolder}/deps/glm",
+                "${workspaceFolder}/deps/imgui",
                 "${workspaceFolder}/deps/spdlog/include",
                 "${workspaceFolder}/deps/stb",
                 "${workspaceFolder}/deps/thread_pool",

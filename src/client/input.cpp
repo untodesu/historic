@@ -8,6 +8,8 @@
 #include <limits>
 #include <math/const.hpp>
 #include <spdlog/spdlog.h>
+#include <client/globals.hpp>
+#include <imgui_impl_glfw.h>
 
 static constexpr const size_t NUM_KEYS = GLFW_KEY_LAST + 1;
 static constexpr const size_t NUM_MOUSE_BUTTONS = GLFW_MOUSE_BUTTON_LAST + 1;
@@ -20,6 +22,8 @@ static unsigned int last_key_release = UNKNOWN_VALUE;
 static bool mouse_buttons[NUM_MOUSE_BUTTONS] = { 0 };
 static unsigned int last_mouse_button_press = UNKNOWN_VALUE;
 static unsigned int last_mouse_button_release = UNKNOWN_VALUE;
+
+static bool cursor_enabled = true;
 
 static float2 cursor = FLOAT2_ZERO;
 static float2 cursor_delta = FLOAT2_ZERO;
@@ -43,6 +47,15 @@ static void onKey(GLFWwindow *window, int key, int scancode, int action, int mod
                 break;
         }
     }
+
+    // ImGui passthrough
+    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+}
+
+static void onChar(GLFWwindow *window, unsigned int unicode)
+{
+    // ImGui passthrough
+    ImGui_ImplGlfw_CharCallback(window, unicode);
 }
 
 static void onMouseButton(GLFWwindow *window, int button, int action, int mods)
@@ -57,6 +70,15 @@ static void onMouseButton(GLFWwindow *window, int button, int action, int mods)
             last_mouse_button_release = button;
             break;
     }
+
+    // ImGui passthrough
+    ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+}
+
+static void onCursorEnter(GLFWwindow *window, int state)
+{
+    // ImGui passthrough
+    ImGui_ImplGlfw_CursorEnterCallback(window, state);
 }
 
 static void onCursorPos(GLFWwindow *window, double x, double y)
@@ -75,16 +97,21 @@ static void onScroll(GLFWwindow *window, double dx, double dy)
 {
     scroll_delta.x = static_cast<float>(dx);
     scroll_delta.y = static_cast<float>(dy);
+
+    // ImGui passthrough
+    ImGui_ImplGlfw_ScrollCallback(window, dx, dy);
 }
 
-void input::init(GLFWwindow *window)
+void input::init()
 {
     spdlog::debug("Hooking input events");
 
-    glfwSetKeyCallback(window, onKey);
-    glfwSetMouseButtonCallback(window, onMouseButton);
-    glfwSetCursorPosCallback(window, onCursorPos);
-    glfwSetScrollCallback(window, onScroll);
+    glfwSetKeyCallback(cl_globals::window, onKey);
+    glfwSetCharCallback(cl_globals::window, onChar);
+    glfwSetMouseButtonCallback(cl_globals::window, onMouseButton);
+    glfwSetCursorEnterCallback(cl_globals::window, onCursorEnter);
+    glfwSetCursorPosCallback(cl_globals::window, onCursorPos);
+    glfwSetScrollCallback(cl_globals::window, onScroll);
 
     // Do a pre-update to make sure
     // our last pressed/released fields
@@ -130,6 +157,22 @@ bool input::isMouseButtonJustPressed(unsigned int button)
 bool input::isMouseButtonJustReleased(unsigned int button)
 {
     return button == last_mouse_button_release;
+}
+
+void input::toggleCursor()
+{
+    input::enableCursor(cursor_enabled = !cursor_enabled);
+}
+
+void input::enableCursor(bool enable)
+{
+    cursor_enabled = enable;
+    glfwSetInputMode(cl_globals::window, GLFW_CURSOR, cursor_enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+
+bool input::cursorEnabled()
+{
+    return cursor_enabled;
 }
 
 const float2 &input::getCursor()

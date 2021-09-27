@@ -36,23 +36,25 @@ public:
     void set(uint32_t mode, size_t vertices, size_t instances, size_t base_vertex, size_t base_instance);
     void set(uint32_t mode, uint32_t type, size_t indices, size_t instances, size_t base_index, size_t base_vertex, size_t base_instance);
     void invoke();
+    size_t size() const;
 
 private:
     bool indexed { false };
     uint32_t mode { 0 };
     uint32_t type { 0 };
+    size_t nv { 0 };
 };
 } // namespace gl
 
 inline gl::DrawCommand::DrawCommand(uint32_t mode, size_t vertices, size_t instances, size_t base_vertex, size_t base_instance)
-    : indexed(false), mode(mode), type(0)
+    : indexed(false), mode(mode), type(0), nv(0)
 {
     create();
     set(mode, vertices, instances, base_vertex, base_instance);
 }
 
 inline gl::DrawCommand::DrawCommand(uint32_t mode, uint32_t type, size_t indices, size_t instances, size_t base_index, size_t base_vertex, size_t base_instance)
-    : indexed(true), mode(mode), type(type)
+    : indexed(true), mode(mode), type(type), nv(0)
 {
     create();
     set(mode, type, indices, instances, base_index, base_vertex, base_instance);
@@ -64,10 +66,12 @@ inline gl::DrawCommand::DrawCommand(gl::DrawCommand &&rhs)
     indexed = rhs.indexed;
     mode = rhs.mode;
     type = rhs.type;
+    nv = rhs.nv;
     rhs.handle = 0;
     rhs.indexed = false;
     rhs.mode = 0;
     rhs.type = 0;
+    rhs.nv = 0;
 }
 
 inline gl::DrawCommand &gl::DrawCommand::operator=(gl::DrawCommand &&rhs)
@@ -77,6 +81,7 @@ inline gl::DrawCommand &gl::DrawCommand::operator=(gl::DrawCommand &&rhs)
     std::swap(indexed, rhs.indexed);
     std::swap(mode, rhs.mode);
     std::swap(type, rhs.type);
+    std::swap(nv, rhs.nv);
     return *this;
 }
 
@@ -96,6 +101,7 @@ inline void gl::DrawCommand::destroy()
 
 inline void gl::DrawCommand::set(uint32_t mode, size_t vertices, size_t instances, size_t base_vertex, size_t base_instance)
 {
+    nv = vertices;
     indexed = false;
     this->mode = mode;
     gl::DrawArraysCmd cmd = {};
@@ -108,6 +114,7 @@ inline void gl::DrawCommand::set(uint32_t mode, size_t vertices, size_t instance
 
 inline void gl::DrawCommand::set(uint32_t mode, uint32_t type, size_t indices, size_t instances, size_t base_index, size_t base_vertex, size_t base_instance)
 {
+    nv = indices;
     indexed = true;
     this->mode = mode;
     this->type = type;
@@ -130,4 +137,9 @@ inline void gl::DrawCommand::invoke()
     }
 
     glDrawArraysIndirect(mode, nullptr);
+}
+
+inline size_t gl::DrawCommand::size() const
+{
+    return nv;
 }

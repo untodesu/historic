@@ -24,6 +24,7 @@ add_subdirectory(deps/thread_pool)
 # client-side dependencies
 add_subdirectory(deps/glad)
 add_subdirectory(deps/glfw)
+add_subdirectory(deps/imgui)
 
 set(vgame_target vgame)
 add_executable(${vgame_target} "")
@@ -35,4 +36,7 @@ if(MSVC)
     # C4307 is being thrown EVERY FUCKING TIME the
     # compiler traverses through EnTT headers. Annoying!
     target_compile_options(${vgame_target} PRIVATE /wd4307)
+
+    # warning C4996: This function or variable may be unsafe
+    target_compile_definitions(${vgame_target} PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()

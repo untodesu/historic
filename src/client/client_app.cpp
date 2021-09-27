@@ -33,6 +33,11 @@
 #include <client/shadow_manager.hpp>
 #include <client/composite.hpp>
 #include <random>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <client/debug_overlay.hpp>
+#include <client/util/screenshots.hpp>
 
 static void glfwOnError(int code, const char *message)
 {
@@ -83,18 +88,17 @@ void client_app::run()
     
     gl::setHints();
 
-    // UNDONE: quake-ish CVar functions?
-    GLFWwindow *window = glfwCreateWindow(1152, 648, "Client", nullptr, nullptr);
-    if(!window) {
+    cl_globals::window = glfwCreateWindow(1152, 648, "Client", nullptr, nullptr);
+    if(!cl_globals::window) {
         spdlog::error("glfwCreateWindow() failed.");
         std::terminate();
     }
 
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(cl_globals::window);
     gl::init();
 
-    input::init(window);
-    screen::init(window);
+    input::init();
+    screen::init();
 
     chunk_renderer::init();
 
@@ -177,21 +181,22 @@ void client_app::run()
 
     glfwSwapInterval(1);
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(cl_globals::window, false);
+    ImGui_ImplOpenGL3_Init("#version 460");
 
-    Clock fps_clock, print_clock;
-    float avg_frametime = 0.0f;
+    input::enableCursor(false);
+
+    Clock fps_clock;
     cl_globals::frame_count = 0;
-    while(!glfwWindowShouldClose(window)) {
+    while(!glfwWindowShouldClose(cl_globals::window)) {
+        cl_globals::vertices_drawn = 0;
         cl_globals::curtime = static_cast<float>(glfwGetTime());
         cl_globals::frametime = fps_clock.restart();
-        avg_frametime += cl_globals::frametime;
-        avg_frametime *= 0.5f;
-
-        if(print_clock.elapsed() >= 1.0f) {
-            spdlog::debug("Perf: {:.03f} ms ({:.02f} FPS)", avg_frametime * 1000.0f, 1.0f / avg_frametime);
-            print_clock.restart();
-        }
+        cl_globals::avg_frametime += cl_globals::frametime;
+        cl_globals::avg_frametime *= 0.5f;
 
         shadow_manager::rotateLight(glm::radians(cl_globals::frametime * 15.0f), float3(1.0f, 0.0f, 0.0f));
 
@@ -202,6 +207,7 @@ void client_app::run()
 
         player_look::update();
         player_move::update();
+
         proj_view::update();
 
         chunk_mesher::update();
@@ -210,7 +216,19 @@ void client_app::run()
 
         composite::draw();
 
-        glfwSwapBuffers(window);
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        debug_overlay::draw();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        if(input::isKeyJustPressed(GLFW_KEY_F2))
+            screenshots::jpeg(100);
+
+        glfwSwapBuffers(cl_globals::window);
 
         input::update();
 
@@ -221,8 +239,6 @@ void client_app::run()
     composite::shutdown();
 
     chunk_mesher::shutdown();
-
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     shadow_manager::shutdown();
 
@@ -236,8 +252,8 @@ void client_app::run()
 
     chunk_renderer::shutdown();
 
-    spdlog::info("Client shutdown after {} frames, avg. dt: {}", cl_globals::frame_count, avg_frametime);
+    spdlog::info("Client shutdown after {} frames, avg. dt: {}", cl_globals::frame_count, cl_globals::avg_frametime);
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(cl_globals::window);
     glfwTerminate();
 }
