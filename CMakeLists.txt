@@ -14,29 +14,24 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-# shared dependencies
+# File structure of the repo is organized
+# in a such way that a single project can
+# include any header from any other project.
+set(GIT_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}")
+
+add_subdirectory(deps/bitsery)
+add_subdirectory(deps/enet)
 add_subdirectory(deps/entt)
+add_subdirectory(deps/glad)
+add_subdirectory(deps/glfw)
 add_subdirectory(deps/glm)
+add_subdirectory(deps/imgui)
 add_subdirectory(deps/spdlog)
 add_subdirectory(deps/stb)
 add_subdirectory(deps/thread_pool)
 
-# client-side dependencies
-add_subdirectory(deps/glad)
-add_subdirectory(deps/glfw)
-add_subdirectory(deps/imgui)
-
-set(vgame_target vgame)
-add_executable(${vgame_target} "")
-target_compile_definitions(${vgame_target} PRIVATE GLFW_INCLUDE_NONE)
-target_link_libraries(${vgame_target} PRIVATE EnTT glm spdlog stb thread_pool)
-add_subdirectory(src)
-
-if(MSVC)
-    # C4307 is being thrown EVERY FUCKING TIME the
-    # compiler traverses through EnTT headers. Annoying!
-    target_compile_options(${vgame_target} PRIVATE /wd4307)
-
-    # warning C4996: This function or variable may be unsafe
-    target_compile_definitions(${vgame_target} PRIVATE _CRT_SECURE_NO_WARNINGS)
-endif()
+add_subdirectory(common)
+add_subdirectory(game/client)
+add_subdirectory(game/server)
+add_subdirectory(game/shared)
+add_subdirectory(init)

@@ -4,6 +4,8 @@
             "name": "default",
             "includePath": [
                 "${default}",
+                "${workspaceFolder}/deps/bitsery/include",
+                "${workspaceFolder}/deps/enet/include",
                 "${workspaceFolder}/deps/entt/src",
                 "${workspaceFolder}/deps/glad/include",
                 "${workspaceFolder}/deps/glfw/include",
@@ -12,11 +14,12 @@
                 "${workspaceFolder}/deps/spdlog/include",
                 "${workspaceFolder}/deps/stb",
                 "${workspaceFolder}/deps/thread_pool",
-                "${workspaceFolder}/src"
+                "${workspaceFolder}"
             ],
             "defines": [
                 "GLFW_INCLUDE_NONE",
-                "UVRE_STATIC"
+                "NOMINMAX",
+                "VGAME_CLIENT"
             ],
             "cppStandard": "c++17",
             "cStandard": "c99"
