@@ -4,12 +4,12 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <game/client/input.hpp>
-#include <limits>
 #include <common/math/const.hpp>
-#include <spdlog/spdlog.h>
 #include <game/client/globals.hpp>
+#include <game/client/input.hpp>
 #include <imgui_impl_glfw.h>
+#include <limits>
+#include <spdlog/spdlog.h>
 
 static constexpr const size_t NUM_KEYS = GLFW_KEY_LAST + 1;
 static constexpr const size_t NUM_MOUSE_BUTTONS = GLFW_MOUSE_BUTTON_LAST + 1;
@@ -106,12 +106,12 @@ void input::init()
 {
     spdlog::debug("Hooking input events");
 
-    glfwSetKeyCallback(cl_globals::window, onKey);
-    glfwSetCharCallback(cl_globals::window, onChar);
-    glfwSetMouseButtonCallback(cl_globals::window, onMouseButton);
-    glfwSetCursorEnterCallback(cl_globals::window, onCursorEnter);
-    glfwSetCursorPosCallback(cl_globals::window, onCursorPos);
-    glfwSetScrollCallback(cl_globals::window, onScroll);
+    glfwSetKeyCallback(globals::window, onKey);
+    glfwSetCharCallback(globals::window, onChar);
+    glfwSetMouseButtonCallback(globals::window, onMouseButton);
+    glfwSetCursorEnterCallback(globals::window, onCursorEnter);
+    glfwSetCursorPosCallback(globals::window, onCursorPos);
+    glfwSetScrollCallback(globals::window, onScroll);
 
     // Do a pre-update to make sure
     // our last pressed/released fields
@@ -167,7 +167,7 @@ void input::toggleCursor()
 void input::enableCursor(bool enable)
 {
     cursor_enabled = enable;
-    glfwSetInputMode(cl_globals::window, GLFW_CURSOR, cursor_enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(globals::window, GLFW_CURSOR, cursor_enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
 bool input::cursorEnabled()

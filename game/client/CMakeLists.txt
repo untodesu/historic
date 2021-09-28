@@ -11,6 +11,7 @@ target_sources(client PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/gbuffer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/globals.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/input.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/network.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/screen.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/shadow_manager.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/shadowmap.cpp")

@@ -6,10 +6,20 @@
  */
 #pragma once
 #include <game/shared/protocol/common.hpp>
+#include <string>
 
 namespace protocol
 {
-struct ChunkData final : public BasePacket<0x01> {
+struct LoginSuccess final : public BasePacket<0x0000> {
+    uint32_t id;
+    std::string username;
 
+    template<typename S>
+    inline void serialize(S &s)
+    {
+        s.value4b(id);
+        s.text1b(username, 40);
+    }
 };
 } // namespace protocol
+

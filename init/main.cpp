@@ -5,9 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <common/filesystem.hpp>
+#include <enet/enet.h>
 #include <game/client/client_app.hpp>
 #include <game/server/server_app.hpp>
-#include <game/shared/enet/init.hpp>
 #include <iostream>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -29,8 +29,11 @@ int main(int argc, char **argv)
 
     fs::init();
     fs::setRoot("dist"); // keep the repo clean
-    
-    enet::init();
+
+    if(enet_initialize() < 0) {
+        spdlog::error("Unable to initialize ENet.");
+        std::terminate();
+    }    
 
 #if defined(VGAME_CLIENT)
     client_app::run();
@@ -40,7 +43,7 @@ int main(int argc, char **argv)
     #error No side defined
 #endif
 
-    enet::shutdown();
+    enet_deinitialize();
 
     fs::shutdown();
 

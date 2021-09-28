@@ -127,7 +127,7 @@ static inline bool isInFrustum(const Frustum &frustum, const float3 &position, c
 void chunk_renderer::draw()
 {
     int width, height;
-    const auto group = cl_globals::registry.group(entt::get<ChunkMeshComponent, ChunkComponent>);
+    const auto group = globals::registry.group(entt::get<ChunkMeshComponent, ChunkComponent>);
     if(group.empty())
         return;
 
@@ -167,7 +167,7 @@ void chunk_renderer::draw()
             shadow_ubo.write(offsetof(UBOData_Shadow, chunkpos), sizeof(float3), &shadow_ubo_data.chunkpos);
             mesh.vao.bind();
             mesh.cmd.invoke();
-            cl_globals::vertices_drawn += mesh.cmd.size();
+            globals::vertices_drawn += mesh.cmd.size();
         }
     }
 
@@ -186,8 +186,8 @@ void chunk_renderer::draw()
     gbuffer_samplers[0].bind(0);
     gbuffer_samplers[1].bind(1);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, gbuffer_ubo.get());
-    cl_globals::solid_gbuffer.getFBO().bind();
-    cl_globals::solid_textures.getTexture().bind(0);
+    globals::solid_gbuffer.getFBO().bind();
+    globals::solid_textures.getTexture().bind(0);
 
     screen::getSize(width, height);
     glViewport(0, 0, width, height);
@@ -203,7 +203,7 @@ void chunk_renderer::draw()
             gbuffer_ubo.write(offsetof(UBOData_GBuffer, chunkpos), sizeof(float3), &gbuffer_ubo_data.chunkpos);
             mesh.vao.bind();
             mesh.cmd.invoke();
-            cl_globals::vertices_drawn += mesh.cmd.size();
+            globals::vertices_drawn += mesh.cmd.size();
         }
     }
 }

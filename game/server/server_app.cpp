@@ -4,47 +4,53 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+#include <game/server/chunks.hpp>
+#include <game/server/globals.hpp>
+#include <game/server/network.hpp>
 #include <game/server/server_app.hpp>
+#include <game/shared/protocol/client/handshake.hpp>
+#include <game/shared/protocol/util.hpp>
 #include <spdlog/spdlog.h>
-#include <game/shared/enet/host.hpp>
-#include <game/shared/enet/init.hpp>
-#include <game/shared/packets/common.hpp>
+#include <thread>
 
 void server_app::run()
 {
-    enet::Address addr;
-    addr.setHost("localhost");
-    addr.setPort(24000);
-
-    enet::Host host = enet::Host(addr, 16, 2, 0, 0);
-    if(!host.get()) {
-        spdlog::error("SV: enet::Host::Host() failed");
-        std::terminate();
-    }
+    network::init(1, 24000);
 
     ENetEvent event;
-    while(host.service(event, 10000) > 0) {
-        if(event.type == ENET_EVENT_TYPE_CONNECT) {
-            spdlog::info("SV: someone connected");
-            continue;
-        }
+    for(;;) {
+        while(network::event(event)) {
+            if(event.type == ENET_EVENT_TYPE_CONNECT) {
+                spdlog::info("Connected!");
+                continue;
+            }
 
-        if(event.type == ENET_EVENT_TYPE_DISCONNECT) {
-            spdlog::info("SV: someone disconnected");
-            continue;
-        }
+            if(event.type == ENET_EVENT_TYPE_DISCONNECT) {
+                spdlog::info("Disconnected!");
+                continue;
+            }
 
-        if(event.type == ENET_EVENT_TYPE_RECEIVE) {
-            packets::TestPacket tp;
-            packets::buffer_type buffer;
-            std::copy(event.packet->data, event.packet->data + event.packet->dataLength, std::back_inserter(buffer));
+            if(event.type == ENET_EVENT_TYPE_RECEIVE) {
+                spdlog::info("Data!");
 
-            const auto state = bitsery::quickDeserialization(packets::input_adapter { buffer.begin(), event.packet->dataLength }, tp);
-            if(state.first == bitsery::ReaderError::NoError && state.second)
-                spdlog::info("SV: received a valid TestPacket: {}, {:X}", tp.a, tp.b);
+                const std::vector<uint8_t> packet(event.packet->data, event.packet->data + event.packet->dataLength);
 
-            enet_packet_destroy(event.packet);
-            continue;
+                uint16_t type;
+                std::vector<uint8_t> payload;
+                if(protocol::split(packet, type, payload)) {
+                    if(type == protocol::Handshake::ID) {
+                        protocol::Handshake hs;
+                        if(protocol::deserialize(payload, hs)) {
+                            spdlog::info("Handshake! {}", hs.version);
+                        }
+                    }
+                }
+
+                enet_packet_destroy(event.packet);
+                continue;
+            }
         }
     }
+
+    network::shutdown();
 }

@@ -19,7 +19,7 @@ void player_look::update()
     // FIXME: sensitivity is higher when the FPS is higher.
     // UNDONE: FPS-independent mouse look (hard but possible, I guess).
     const float2 delta = input::getCursorDelta() * 8.0f / screen::getSize();
-    auto hg = cl_globals::registry.group(entt::get<LocalPlayerComponent, HeadComponent, PlayerComponent>);
+    auto hg = globals::registry.group(entt::get<LocalPlayerComponent, HeadComponent, PlayerComponent>);
     for(auto [entity, head] : hg.each()) {
         head.angles.x -= delta.y;
         head.angles.y -= delta.x;

@@ -5,17 +5,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <entt/entt.hpp>
 #include <common/math/types.hpp>
+#include <enet/enet.h>
+#include <entt/entt.hpp>
 
-class Atlas;
-class ClientChunkManager;
-class GBuffer;
-class VoxelDef;
 struct GLFWwindow;
+class ClientChunkManager;
+class VoxelDef;
+class Atlas;
+class GBuffer;
 
-namespace cl_globals
+namespace globals
 {
+extern ENetHost *host;
+extern ENetPeer *peer;
 extern GLFWwindow *window;
 extern float curtime;
 extern float frametime;
@@ -27,4 +30,4 @@ extern ClientChunkManager chunks;
 extern VoxelDef voxels;
 extern Atlas solid_textures;
 extern GBuffer solid_gbuffer;
-} // namespace cl_globals
+} // namespace globals

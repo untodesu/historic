@@ -137,10 +137,10 @@ void composite::draw()
     composite_ubuffer_data.ambient = float4(0.25f, 0.25f, 0.25f, 0.0f);
     composite_ubuffer.write(0, sizeof(UBufferData_Composite), &composite_ubuffer_data);
 
-    cl_globals::solid_gbuffer.getAlbedo().bind(0);
-    cl_globals::solid_gbuffer.getNormal().bind(1);
-    cl_globals::solid_gbuffer.getPosition().bind(2);
-    cl_globals::solid_gbuffer.getShadowProjCoord().bind(3);
+    globals::solid_gbuffer.getAlbedo().bind(0);
+    globals::solid_gbuffer.getNormal().bind(1);
+    globals::solid_gbuffer.getPosition().bind(2);
+    globals::solid_gbuffer.getShadowProjCoord().bind(3);
     shadow_manager::getShadowMap().getShadow().bind(4);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, composite_ubuffer.get());
     composite_samplers[0].bind(0);

@@ -5,9 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <enet/enet.h>
+#include <entt/entt.hpp>
+#include <common/math/types.hpp>
 
-namespace enet
+class ServerChunkManager;
+class VoxelDef;
+
+namespace globals
 {
-void init();
-void shutdown();
-} // namespace enet
+extern ENetHost *host;
+extern entt::registry registry;
+extern ServerChunkManager chunks;
+extern VoxelDef voxels;
+} // namespace globals

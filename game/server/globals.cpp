@@ -4,19 +4,11 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#pragma once
-#include <game/shared/enet/init.hpp>
-#include <enet/enet.h>
-#include <exception>
+#include <game/server/chunks.hpp>
+#include <game/server/globals.hpp>
+#include <game/shared/voxels.hpp>
 
-void enet::init()
-{
-    if(enet_initialize() >= 0)
-        return;
-    std::terminate();
-}
-
-void enet::shutdown()
-{
-    enet_deinitialize();
-}
+ENetHost *globals::host = nullptr;
+entt::registry globals::registry;
+ServerChunkManager globals::chunks;
+VoxelDef globals::voxels;

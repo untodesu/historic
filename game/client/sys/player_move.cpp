@@ -34,11 +34,11 @@ void player_move::update()
     if(input::isKeyPressed(GLFW_KEY_LEFT_SHIFT))
         direction -= FLOAT3_UP;
 
-    auto pg = cl_globals::registry.group(entt::get<LocalPlayerComponent, CreatureComponent, HeadComponent, PlayerComponent>);
+    auto pg = globals::registry.group(entt::get<LocalPlayerComponent, CreatureComponent, HeadComponent, PlayerComponent>);
     for(auto [entity, creature, head] : pg.each()) {
-        creature.position += floatquat(math::wrapAngle180N(head.angles)) * direction * 16.0f * cl_globals::frametime;
+        creature.position += floatquat(math::wrapAngle180N(head.angles)) * direction * 16.0f * globals::frametime;
         if(input::isMouseButtonJustPressed(GLFW_MOUSE_BUTTON_LEFT))
-            cl_globals::chunks.set(toVoxelPos(glm::floor(creature.position + head.offset)), NULL_VOXEL, VOXEL_SET_UPDATE_NEIGHBOURS);
+            globals::chunks.set(toVoxelPos(glm::floor(creature.position + head.offset)), NULL_VOXEL, VOXEL_SET_UPDATE_NEIGHBOURS);
         return;
     }
 }

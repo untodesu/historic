@@ -26,7 +26,7 @@ struct ChunkMesherData final {
 
 inline const size_t ChunkMesherData::trySetChunk(const chunkpos_t &cp)
 {
-    if(ClientChunk *chunk = cl_globals::chunks.find(cp)) {
+    if(ClientChunk *chunk = globals::chunks.find(cp)) {
         data[cp] = *chunk;
         return CHUNK_VOLUME;
     }
@@ -49,7 +49,7 @@ inline const bool ChunkMesherData::hasFace(const chunkpos_t &cp, const localpos_
     const auto it = data.find(toChunkPos(vp));
     if(it != data.cend()) {
         if(voxel_t voxel = it->second.data.at(toVoxelIdx(toLocalPos(vp)))) {
-            if(const VoxelInfo *info = cl_globals::voxels.tryGet(voxel))
+            if(const VoxelInfo *info = globals::voxels.tryGet(voxel))
                 return info->transparency.find(face) == info->transparency.cend();
             return false;
         }
@@ -265,10 +265,10 @@ static size_t meshing_memory = 0;
 static void genMesh(ChunkMeshBuilder *builder, ChunkMesherData *data, const chunkpos_t &cp)
 {
     uint16_t base = 0;
-    for(VoxelDef::const_iterator it = cl_globals::voxels.cbegin(); it != cl_globals::voxels.cend(); it++) {
+    for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
         if(it->second.type == VoxelType::SOLID) {
             for(const VoxelFaceInfo &face : it->second.faces) {
-                if(const AtlasNode *node = cl_globals::solid_textures.getNode(face.texture)) {
+                if(const AtlasNode *node = globals::solid_textures.getNode(face.texture)) {
                     greedyFace(builder, data, cp, it->second, node, it->first, face.face, base);
                     if(cancel_meshing) {
                         builder->clear();
@@ -295,11 +295,11 @@ void chunk_mesher::shutdown()
 void chunk_mesher::update()
 {
     // Firstly we go through things that require meshing.
-    const auto pending_group = cl_globals::registry.group<ChunkFlaggedForMeshingComponent>(entt::get<ChunkComponent>);
+    const auto pending_group = globals::registry.group<ChunkFlaggedForMeshingComponent>(entt::get<ChunkComponent>);
     for(const auto [entity, chunk] : pending_group.each()) {
-        cl_globals::registry.remove<ChunkFlaggedForMeshingComponent>(entity);
-        if(ClientChunk *client_chunk = cl_globals::chunks.find(chunk.position)) {
-            ThreadedChunkMesherComponent &mesher = cl_globals::registry.emplace_or_replace<ThreadedChunkMesherComponent>(entity);
+        globals::registry.remove<ChunkFlaggedForMeshingComponent>(entity);
+        if(ClientChunk *client_chunk = globals::chunks.find(chunk.position)) {
+            ThreadedChunkMesherComponent &mesher = globals::registry.emplace_or_replace<ThreadedChunkMesherComponent>(entity);
             mesher.builder = new ChunkMeshBuilder();
             mesher.data = new ChunkMesherData();
 
@@ -321,13 +321,13 @@ void chunk_mesher::update()
     }
 
     // Secondly we go through finished tasks
-    const auto finished_view = cl_globals::registry.view<ThreadedChunkMesherComponent>();
+    const auto finished_view = globals::registry.view<ThreadedChunkMesherComponent>();
     for(const auto [entity, mesher] : finished_view.each()) {
         if(mesher.future.valid() && mesher.future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
             if(!mesher.builder->empty()) {       
-                ChunkMeshComponent *mesh = cl_globals::registry.try_get<ChunkMeshComponent>(entity);
+                ChunkMeshComponent *mesh = globals::registry.try_get<ChunkMeshComponent>(entity);
                 if(!mesh) {
-                    mesh = &cl_globals::registry.emplace<ChunkMeshComponent>(entity);
+                    mesh = &globals::registry.emplace<ChunkMeshComponent>(entity);
                     mesh->ibo.create();
                     mesh->vbo.create();
                     mesh->vao.create();
@@ -380,7 +380,7 @@ void chunk_mesher::update()
             delete mesher.data;
             delete mesher.builder;
 
-            cl_globals::registry.remove<ThreadedChunkMesherComponent>(entity);
+            globals::registry.remove<ThreadedChunkMesherComponent>(entity);
         }
     }
 }

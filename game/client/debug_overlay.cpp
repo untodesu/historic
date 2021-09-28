@@ -22,8 +22,8 @@ void debug_overlay::draw()
     if(ImGui::Begin("debug_overlay", nullptr, WINDOW_FLAGS)) {
         ImGui::SetWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
         ImGui::SetWindowSize(ImVec2(size.x, size.y), ImGuiCond_Always);
-        ImGui::Text("%.03f ms (%05.02f FPS)", cl_globals::avg_frametime * 1000.0f, 1.0f / cl_globals::avg_frametime);
-        ImGui::Text("%zu vertices this frame", cl_globals::vertices_drawn);
+        ImGui::Text("%.03f ms (%05.02f FPS)", globals::avg_frametime * 1000.0f, 1.0f / globals::avg_frametime);
+        ImGui::Text("%zu vertices this frame", globals::vertices_drawn);
         ImGui::Text("chunk_mesher: %zu KiB allocated", chunk_mesher::memory() / 1024);
         ImGui::Text("pos: %.03f %.03f %.03f", pos.x, pos.y, pos.z);
         ImGui::Text("ang: %.03f %.03f %.03f", ang.x, ang.y, ang.z);
