@@ -15,7 +15,7 @@
 
 void server_app::run()
 {
-    network::init(1, 24000);
+    network::init(1);
 
     ENetEvent event;
     for(;;) {

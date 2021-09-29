@@ -30,7 +30,7 @@ void client_app::run()
 {
     network::init();
 
-    if(!network::connect("localhost", 24000))
+    if(!network::connect("localhost"))
         std::terminate();
 
     const std::vector<uint8_t> hsbuf = protocol::serialize(protocol::Handshake(42));
