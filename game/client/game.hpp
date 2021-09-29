@@ -6,14 +6,19 @@
  */
 #pragma once
 #include <common/math/types.hpp>
-#include <enet/enet.h>
 #include <string>
 
-namespace network
+namespace cl_game
 {
-void init(size_t peers, uint16_t port = 43103);
+void init();
+void postInit();
 void shutdown();
-void disconnect(ENetPeer *peer, const std::string &reason);
-bool event(ENetEvent &event, size_t timeout = 5);
-void broadcast(size_t size, const void *data, uint8_t channel = 0, uint32_t flags = ENET_PACKET_FLAG_RELIABLE);
-} // namespace network
+void modeChange(int width, int height);
+bool connect(const std::string &host, uint16_t port);
+void disconnect(const std::string &reason);
+void update();
+void draw();
+void imgui();
+} // namespace cl_game
+
+namespace game = cl_game;

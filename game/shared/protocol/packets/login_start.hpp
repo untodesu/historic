@@ -5,30 +5,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <game/shared/protocol/common.hpp>
+#include <game/shared/protocol/protocol.hpp>
 #include <string>
 
-namespace protocol
+namespace protocol::packets
 {
-struct Disconnect final : public BasePacket<0xF000> {
-    std::string reason;
-
-    inline Disconnect()
-        : reason("Disconnected by User.")
-    {
-
-    }
-
-    inline Disconnect(const std::string &reason)
-        : reason(reason)
-    {
-        
-    }
+struct LoginStart final : public ClientPacket<0x001> {
+    std::string username;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.text1b(reason, 256);
+        // GitHub username I guess.
+        s.text1b(username, 39);
     }
 };
-} // namespace protocol
+} // namespace protocol::packets

@@ -5,19 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <game/shared/protocol/common.hpp>
-#include <string>
+#include <game/shared/protocol/protocol.hpp>
 
-namespace protocol
+namespace protocol::packets
 {
-struct Chat final : public BasePacket<0xF001> {
-    std::string message;
+struct Handshake final : public ClientPacket<0x000> {
+    uint16_t version { VERSION };
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.text1b(message, 2048);
+        s.value2b(version);
     }
 };
-} // namespace protocol
-
+} // namespace protocol::packets

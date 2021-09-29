@@ -5,21 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <game/shared/protocol/common.hpp>
-#include <string>
+#include <game/shared/protocol/protocol.hpp>
 
-namespace protocol
+namespace protocol::packets
 {
-struct LoginSuccess final : public BasePacket<0x0000> {
-    uint32_t id;
-    std::string username;
+struct LoginSuccess final : public ServerPacket<0x000> {
+    uint32_t session_id;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value4b(id);
-        s.text1b(username, 40);
+        s.value4b(session_id);
     }
 };
-} // namespace protocol
-
+} // namespace protocol::packets

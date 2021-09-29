@@ -6,19 +6,35 @@
  */
 #pragma once
 #include <algorithm>
+#include <bitsery/bitsery.h>
+#include <bitsery/adapter/buffer.h>
 #include <bitsery/adapter/measure_size.h>
+#include <bitsery/traits/string.h>
+#include <bitsery/traits/vector.h>
+#include <common/math/types.hpp>
 #include <enet/enet.h>
-#include <game/shared/protocol/common.hpp>
 
 namespace protocol
 {
+constexpr static const uint16_t VERSION = 0x0001;
+constexpr static const uint16_t DEFAULT_PORT = 43103;
+
+template<uint16_t packet_id>
+struct Packet { constexpr static const uint16_t id = packet_id; };
+template<uint16_t packet_id>
+struct ClientPacket : public Packet<(packet_id & 0x0FFF) | 0x1000> {};
+template<uint16_t packet_id>
+struct ServerPacket : public Packet<(packet_id & 0x0FFF) | 0x4000> {};
+template<uint16_t packet_id>
+struct SharedPacket : public Packet<(packet_id & 0x0FFF) | 0xF000> {};
+
 template<typename T>
 static inline const std::vector<uint8_t> serialize(const T &data)
 {
     std::vector<uint8_t> result;
 
     // Packet id
-    const uint16_t id = ENET_HOST_TO_NET_16(T::ID);
+    const uint16_t id = ENET_HOST_TO_NET_16(T::id);
     std::copy(reinterpret_cast<const uint8_t *>(&id), reinterpret_cast<const uint8_t *>(&id + 1), std::back_inserter(result));
 
     // Payload

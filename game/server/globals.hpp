@@ -12,10 +12,14 @@
 class ServerChunkManager;
 class VoxelDef;
 
-namespace globals
+namespace sv_globals
 {
 extern ENetHost *host;
+extern uint64_t num_ticks;
+
 extern entt::registry registry;
 extern ServerChunkManager chunks;
 extern VoxelDef voxels;
-} // namespace globals
+} // namespace sv_globals
+
+namespace globals = sv_globals;

@@ -15,19 +15,22 @@ class VoxelDef;
 class Atlas;
 class GBuffer;
 
-namespace globals
+namespace cl_globals
 {
 extern ENetHost *host;
-extern ENetPeer *peer;
 extern GLFWwindow *window;
 extern float curtime;
 extern float frametime;
 extern float avg_frametime;
 extern size_t frame_count;
 extern size_t vertices_drawn;
+
+extern ENetPeer *peer;
 extern entt::registry registry;
 extern ClientChunkManager chunks;
 extern VoxelDef voxels;
 extern Atlas solid_textures;
 extern GBuffer solid_gbuffer;
-} // namespace globals
+} // namespace cl_globals
+
+namespace globals = cl_globals;

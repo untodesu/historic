@@ -8,7 +8,9 @@
 #include <game/server/globals.hpp>
 #include <game/shared/voxels.hpp>
 
-ENetHost *globals::host = nullptr;
-entt::registry globals::registry;
-ServerChunkManager globals::chunks;
-VoxelDef globals::voxels;
+ENetHost *sv_globals::host = nullptr;
+uint64_t sv_globals::num_ticks = 0;
+
+entt::registry sv_globals::registry;
+ServerChunkManager sv_globals::chunks;
+VoxelDef sv_globals::voxels;

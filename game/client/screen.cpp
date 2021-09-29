@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <glad/gl.h>
-#include <game/client/gbuffer.hpp>
+#include <game/client/game.hpp>
 #include <game/client/globals.hpp>
 #include <game/client/screen.hpp>
 #include <GLFW/glfw3.h>
@@ -19,8 +19,7 @@ static float aspect_ratio = 1.0f;
 
 static void onFramebufferSize(GLFWwindow *, int width, int height)
 {
-    globals::solid_gbuffer.init(width, height);
-
+    game::modeChange(width, height);
     screen_size = float2(width, height);
     screen_width = width;
     screen_height = height;
