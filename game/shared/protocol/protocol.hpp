@@ -19,6 +19,24 @@ namespace protocol
 constexpr static const uint16_t VERSION = 0x0001;
 constexpr static const uint16_t DEFAULT_PORT = 43103;
 
+enum class ServerState {
+    AWAIT_HANDSHAKE,
+    AWAIT_LOGIN,
+    SEND_VOXELS,
+    SEND_CHUNKS,
+    SEND_ENTITIES,
+    PLAYING
+};
+
+enum class ClientState {
+    DISCONNECTED,
+    LOGGING_IN,
+    AWAIT_VOXELS,
+    AWAIT_CHUNKS,
+    AWAIT_ENTITIES,
+    PLAYING
+};
+
 template<uint16_t packet_id>
 struct Packet { constexpr static const uint16_t id = packet_id; };
 template<uint16_t packet_id>

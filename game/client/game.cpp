@@ -14,15 +14,10 @@
 #include <game/shared/protocol/packets/login_success.hpp>
 #include <spdlog/spdlog.h>
 
-enum class ClientStatus {
-    DISCONNECTED,   // The client is disconnected
-    LOGGING_IN,     // The client is awaiting for a LoginSuccess packet
-    CONNECTED,      // The client is connected and ready for playing
-};
-
 constexpr static const char *DEFAULT_DISCONNECT_MESSAGE = "Disconnected";
 
-static ClientStatus status = ClientStatus::DISCONNECTED;
+static protocol::ClientState game_state = protocol::ClientState::DISCONNECTED;
+
 
 void cl_game::init()
 {
@@ -82,7 +77,7 @@ bool cl_game::connect(const std::string &host, uint16_t port)
                 enet_peer_send(globals::peer, 0, enet_packet_create(pbuf.data(), pbuf.size(), ENET_PACKET_FLAG_RELIABLE));
             }
 
-            status = ClientStatus::LOGGING_IN;
+            game_state = protocol::ClientState::LOGGING_IN;
             return true;
         }
 
@@ -153,7 +148,7 @@ void cl_game::update()
                 protocol::deserialize(payload, packet);
                 spdlog::info("Disconnected: {}", packet.reason);
                 enet_peer_reset(globals::peer);
-                status = ClientStatus::DISCONNECTED;
+                game_state = protocol::ClientState::DISCONNECTED;
                 break;
             }
 
@@ -162,7 +157,7 @@ void cl_game::update()
                 protocol::packets::LoginSuccess packet;
                 protocol::deserialize(payload, packet);
                 spdlog::info("Logged in with ID={}", packet.session_id);
-                status = ClientStatus::CONNECTED;
+                game_state = protocol::ClientState::PLAYING;
                 continue;
             }
 

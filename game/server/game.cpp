@@ -12,15 +12,10 @@
 #include <game/shared/protocol/packets/login_success.hpp>
 #include <spdlog/spdlog.h>
 
-enum class SessionStatus {
-    CONNECTED,
-    TARGETING,
-    PLAYING
-};
 
 struct PeerData final {
     uint32_t id;
-    SessionStatus status;
+    protocol::ServerState state;
     std::string username;
 };
 
@@ -47,7 +42,7 @@ void sv_game::update()
             spdlog::info("Someone connected...");
             PeerData *data = new PeerData;
             data->id = 0;
-            data->status = SessionStatus::CONNECTED;
+            data->state = protocol::ServerState::AWAIT_HANDSHAKE;
             event.peer->data = data;
             continue;
         }
@@ -76,7 +71,7 @@ void sv_game::update()
                 protocol::packets::Handshake packet;
                 protocol::deserialize(payload, packet);
                 spdlog::info("Handshake version {}", packet.version);
-                data->status = SessionStatus::TARGETING;
+                data->state = protocol::ServerState::AWAIT_LOGIN;
                 continue;
             }
 
@@ -94,7 +89,7 @@ void sv_game::update()
                     enet_peer_send(event.peer, 0, enet_packet_create(pbuf.data(), pbuf.size(), ENET_PACKET_FLAG_RELIABLE));
                 }
 
-                data->status = SessionStatus::PLAYING;
+                data->state = protocol::ServerState::PLAYING;
                 data->username = packet.username;
                 continue;
             }
