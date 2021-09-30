@@ -19,13 +19,21 @@
 #include <game/shared/protocol/packets/server/voxels_checksum.hpp>
 #include <game/shared/protocol/packets/server/voxels_face.hpp>
 #include <game/shared/protocol/packets/shared/disconnect.hpp>
+#include <game/shared/voxels.hpp>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
 
 constexpr static const char *DEFAULT_DISCONNECT_MESSAGE = "Disconnected";
 
+class VoxelDefBuilder final {
+public:
+    void add(voxel_t voxel, const VoxelFaceInfo &face, bool transparent);
+    std::unordered_map<voxel_t, VoxelInfo> def;
+};
+
 static protocol::ClientState client_state = protocol::ClientState::DISCONNECTED;
 static uint32_t session_id = 0;
+static VoxelDefBuilder voxeldef_builder;
 
 using packet_handler_t = void(*)(const std::vector<uint8_t> &);
 static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
@@ -35,7 +43,9 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
             protocol::packets::Disconnect packet;
             protocol::deserialize(payload, packet);
             spdlog::info("Disconnected: {}", packet.reason);
+
             enet_peer_disconnect(globals::peer, 0);
+
             client_state = protocol::ClientState::DISCONNECTED;
         }
     },
@@ -44,7 +54,51 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
         [](const std::vector<uint8_t> &payload) {
             protocol::packets::LoginSuccess packet;
             protocol::deserialize(payload, packet);
-            
+
+            session_id = packet.session_id;
+            spdlog::info("Logged in with session_id={}", session_id);
+
+            client_state = protocol::ClientState::RECEIVE_VOXELS;
+
+            voxeldef_builder.def.clear();
+
+            const std::vector<uint8_t> rpbuf = protocol::serialize(protocol::packets::RequestVoxels {});
+            enet_peer_send(globals::peer, 0, enet_packet_create(rpbuf.data(), rpbuf.size(), ENET_PACKET_FLAG_RELIABLE));
+        }
+    },
+    {
+        protocol::packets::VoxelsFace::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::VoxelsFace packet;
+            protocol::deserialize(payload, packet);
+
+            VoxelFaceInfo face;
+            face.face = packet.face;
+            face.texture = packet.texture;
+            voxeldef_builder.add(packet.voxel, face, packet.transparent);
+        }
+    },
+    {
+        protocol::packets::VoxelsChecksum::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::VoxelsChecksum packet;
+            protocol::deserialize(payload, packet);
+
+            globals::voxels.clear();
+            for(const auto it : voxeldef_builder.def)
+                globals::voxels.set(it.first, it.second);
+
+            uint64_t checksum = globals::voxels.getChecksum();
+            if(checksum != packet.checksum) {
+                spdlog::warn("VoxelDef checksums differ (CL: {}, SV: {}). Re-requesting data.", checksum, packet.checksum);
+                const std::vector<uint8_t> rpbuf = protocol::serialize(protocol::packets::RequestVoxels {});
+                enet_peer_send(globals::peer, 0, enet_packet_create(rpbuf.data(), rpbuf.size(), ENET_PACKET_FLAG_RELIABLE));
+                return;
+            }
+
+
+
+
         }
     }
 };

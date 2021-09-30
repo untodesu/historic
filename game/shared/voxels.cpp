@@ -12,6 +12,12 @@ VoxelDef::VoxelDef()
 {
 }
 
+void VoxelDef::clear()
+{
+    checksum = 0;
+    def.clear();
+}
+
 bool VoxelDef::set(voxel_t voxel, const VoxelInfo &info)
 {
     if(voxel == NULL_VOXEL) {
@@ -28,6 +34,19 @@ bool VoxelDef::set(voxel_t voxel, const VoxelInfo &info)
         checksum++;
     def[voxel] = info;
     return true;
+}
+
+bool VoxelDef::set(voxel_t voxel, const VoxelFaceInfo &info, bool transparent)
+{
+    if(voxel == NULL_VOXEL) {
+        spdlog::error("VoxelDef: NULL_VOXEL is reserved!");
+        return false;
+    }
+
+    const auto it = def.find(voxel);
+    VoxelInfo &voxel_info = (it != def.cend()) ? it->second : (def[voxel] = VoxelInfo());
+
+
 }
 
 const VoxelInfo *VoxelDef::tryGet(voxel_t voxel) const
