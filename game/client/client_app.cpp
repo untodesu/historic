@@ -9,7 +9,6 @@
 #include <game/client/gl/context.hpp>
 #include <game/client/util/clock.hpp>
 #include <game/client/client_app.hpp>
-#include <game/client/debug_overlay.hpp>
 #include <game/client/game.hpp>
 #include <game/client/globals.hpp>
 #include <game/client/input.hpp>
@@ -90,10 +89,11 @@ void client_app::run()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        game::imgui();
-        debug_overlay::draw();
+        game::drawImgui();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        game::postDraw();
 
         glfwSwapBuffers(globals::window);
 

@@ -9,5 +9,11 @@
 
 namespace protocol::packets
 {
-struct RequestChunks final : public ClientPacket<0x003> {};
+struct RequestChunks final : public ClientPacket<0x003> {
+    template<typename S>
+    inline void serialize(S &s)
+    {
+        
+    }
+};
 } // namespace protocol::packets

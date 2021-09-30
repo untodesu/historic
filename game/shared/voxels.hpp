@@ -92,7 +92,6 @@ public:
 
     void clear();
     bool set(voxel_t voxel, const VoxelInfo &info);
-    bool set(voxel_t voxel, const VoxelFaceInfo &info, bool transparent);
     const VoxelInfo *tryGet(voxel_t voxel) const;
 
     inline uint64_t getChecksum() const

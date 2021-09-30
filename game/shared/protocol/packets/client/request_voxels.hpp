@@ -9,5 +9,11 @@
 
 namespace protocol::packets
 {
-struct RequestVoxels final : public ClientPacket<0x002> {};
+struct RequestVoxels final : public ClientPacket<0x002> {
+    template<typename S>
+    inline void serialize(S &s)
+    {
+        
+    }
+};
 } // namespace protocol::packets

@@ -6,8 +6,19 @@
  */
 #pragma once
 #include <game/shared/protocol/protocol.hpp>
+#include <game/shared/voxels.hpp>
 
 namespace protocol::packets
 {
-struct RequestSpawn final : public ClientPacket<0x004> {};
+struct VoxelInfo final : public ServerPacket<0x001> {
+    voxel_t voxel;
+    VoxelType type;
+
+    template<typename S>
+    inline void serialize(S &s)
+    {
+        s.value1b(voxel);
+        s.value1b(type);
+    }
+};
 } // namespace protocol::packets

@@ -315,8 +315,6 @@ void chunk_mesher::update()
             meshing_memory += mesher.data->trySetChunk(chunk.position - chunkpos_t(1, 0, 0));
 
             mesher.future = mesher_pool.submit(genMesh, mesher.builder, mesher.data, chunk.position);
-
-            spdlog::info("Meshing data usage: {} KiB", meshing_memory / 1024);
         }
     }
 

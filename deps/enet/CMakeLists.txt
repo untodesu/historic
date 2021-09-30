@@ -17,7 +17,7 @@ if(WIN32)
     target_compile_options(enet PRIVATE -W3)
     target_link_libraries(enet INTERFACE winmm ws2_32)
 else()
-    target_compile_definitions(enet PRIVATE -Wno-error)
+    target_compile_options(enet PRIVATE -Wno-error)
 endif()
 
 include(CheckFunctionExists)

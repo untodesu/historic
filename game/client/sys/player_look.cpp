@@ -24,6 +24,7 @@ void player_look::update()
         head.angles.x -= delta.y;
         head.angles.y -= delta.x;
         head.angles.x = math::clamp(head.angles.x, -ANGLE_89D, ANGLE_89D);
+        head.angles = math::wrapAngle180N(head.angles);
         return;
     }
 }

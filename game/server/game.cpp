@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <common/math/const.hpp>
+#include <common/math/math.hpp>
 #include <game/server/chunks.hpp>
 #include <game/server/game.hpp>
 #include <game/server/globals.hpp>
@@ -16,16 +17,19 @@
 #include <game/shared/protocol/packets/client/handshake.hpp>
 #include <game/shared/protocol/packets/client/login_start.hpp>
 #include <game/shared/protocol/packets/client/request_chunks.hpp>
-#include <game/shared/protocol/packets/client/request_spawn.hpp>
 #include <game/shared/protocol/packets/client/request_voxels.hpp>
 #include <game/shared/protocol/packets/server/chunk_data.hpp>
 #include <game/shared/protocol/packets/server/client_spawn.hpp>
 #include <game/shared/protocol/packets/server/login_success.hpp>
-#include <game/shared/protocol/packets/server/voxels_checksum.hpp>
-#include <game/shared/protocol/packets/server/voxels_face.hpp>
+#include <game/shared/protocol/packets/server/voxel_checksum.hpp>
+#include <game/shared/protocol/packets/server/voxel_face_info.hpp>
+#include <game/shared/protocol/packets/server/voxel_info.hpp>
 #include <game/shared/protocol/packets/shared/disconnect.hpp>
+#include <game/shared/protocol/enet.hpp>
 #include <game/shared/voxels.hpp>
+#include <glm/gtc/noise.hpp>
 #include <spdlog/spdlog.h>
+#include <random>
 #include <unordered_map>
 
 using packet_handler_t = void(*)(const std::vector<uint8_t> &, SessionInfo *, ENetPeer *);
@@ -37,10 +41,9 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
             protocol::deserialize(payload, packet);
 
             if(packet.version != protocol::VERSION) {
-                protocol::packets::Disconnect response;
+                protocol::packets::Disconnect response = {};
                 response.reason = "Protocol versions do not match!";
-                const std::vector<uint8_t> rpbuf = protocol::serialize(response);
-                enet_peer_send(peer, 0, enet_packet_create(rpbuf.data(), rpbuf.size(), ENET_PACKET_FLAG_RELIABLE));
+                protocol::send(peer, response, 0, ENET_PACKET_FLAG_RELIABLE);
                 enet_peer_disconnect_later(peer, 0);
                 return;
             }
@@ -57,10 +60,9 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
             info->state = protocol::SessionState::SEND_GAME_DATA;
             info->username = packet.username;
 
-            protocol::packets::LoginSuccess response;
+            protocol::packets::LoginSuccess response = {};
             response.session_id = info->session_id;
-            const std::vector<uint8_t> rpbuf = protocol::serialize(response);
-            enet_peer_send(peer, 0, enet_packet_create(rpbuf.data(), rpbuf.size(), ENET_PACKET_FLAG_RELIABLE));
+            protocol::send(peer, response, 0, ENET_PACKET_FLAG_RELIABLE);
 
             spdlog::info("Client {} logged in as {}", info->session_id, info->username);
         }
@@ -69,21 +71,24 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
         protocol::packets::RequestVoxels::id,
         [](const std::vector<uint8_t> &, SessionInfo *info, ENetPeer *peer) {
             for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
+                protocol::packets::VoxelInfo voxel_info = {};
+                voxel_info.voxel = it->first;
+                voxel_info.type = it->second.type;
+                protocol::send(peer, voxel_info, 0, ENET_PACKET_FLAG_RELIABLE);
+
                 for(const VoxelFaceInfo &face : it->second.faces) {
-                    protocol::packets::VoxelsFace packet;
-                    packet.voxel = it->first;
-                    packet.face = face.face;
-                    packet.transparent = (it->second.transparency.find(packet.face) != it->second.transparency.cend());
-                    packet.texture = face.texture;
-                    const std::vector<uint8_t> pbuf = protocol::serialize(packet);
-                    enet_peer_send(peer, 0, enet_packet_create(pbuf.data(), pbuf.size(), ENET_PACKET_FLAG_RELIABLE));
+                    protocol::packets::VoxelFaceInfo voxel_face_info = {};
+                    voxel_face_info.voxel = it->first;
+                    voxel_face_info.face = face.face;
+                    voxel_face_info.transparent = (it->second.transparency.find(face.face) != it->second.transparency.cend());
+                    voxel_face_info.texture = face.texture;
+                    protocol::send(peer, voxel_face_info, 0, ENET_PACKET_FLAG_RELIABLE);
                 }
             }
-
-            protocol::packets::VoxelsChecksum packet;
-            packet.checksum = globals::voxels.getChecksum();
-            const std::vector<uint8_t> pbuf = protocol::serialize(packet);
-            enet_peer_send(peer, 0, enet_packet_create(pbuf.data(), pbuf.size(), ENET_PACKET_FLAG_RELIABLE));
+            
+            protocol::packets::VoxelChecksum checksum = {};
+            checksum.checksum = globals::voxels.getChecksum();
+            protocol::send(peer, checksum, 0, ENET_PACKET_FLAG_RELIABLE);
         }
     },
     {
@@ -91,36 +96,33 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
         [](const std::vector<uint8_t> &, SessionInfo *info, ENetPeer *peer) {
             const auto view = globals::registry.view<ChunkComponent>();
             for(const auto [entity, chunk] : view.each()) {
-                if(ServerChunk *svc = globals::chunks.find(chunk.position)) {
-                    protocol::packets::ChunkData packet;
-                    packet.position = chunk.position;
-                    packet.data = svc->data;
-                    const std::vector<uint8_t> pbuf = protocol::serialize(packet);
-                    enet_peer_send(peer, 0, enet_packet_create(pbuf.data(), pbuf.size(), ENET_PACKET_FLAG_RELIABLE));
+                if(ServerChunk *chunkp = globals::chunks.find(chunk.position)) {
+                    protocol::packets::ChunkData data;
+                    math::vecToArray(chunk.position, data.position);
+                    data.data = chunkp->data;
+                    protocol::send(peer, data, 0, ENET_PACKET_FLAG_RELIABLE);
                 }
             }
-        }
-    },
-    {
-        protocol::packets::RequestSpawn::id,
-        [](const std::vector<uint8_t> &, SessionInfo *info, ENetPeer *peer) {
-            protocol::packets::ClientSpawn packet;
-            packet.position = FLOAT3_ZERO;
-            packet.head_angles = FLOAT3_ZERO;
-            const std::vector<uint8_t> pbuf = protocol::serialize(packet);
-            enet_peer_send(peer, 0, enet_packet_create(pbuf.data(), pbuf.size(), ENET_PACKET_FLAG_RELIABLE));
 
-            // Create an entity
-            info->entity = globals::registry.create();
-            globals::registry.emplace<PlayerComponent>(info->entity);
+            // trollge
+            {
+                info->entity = globals::registry.create();
 
-            CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(info->entity);
-            creature.position = packet.position;
-            creature.orientation = FLOATQUAT_IDENTITY;
+                CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(info->entity);
+                creature.position = FLOAT3_ZERO;
+                creature.orientation = FLOATQUAT_IDENTITY;
 
-            HeadComponent &head = globals::registry.emplace<HeadComponent>(info->entity);
-            head.angles = packet.head_angles;
-            head.offset = FLOAT3_ZERO;
+                HeadComponent &head = globals::registry.emplace<HeadComponent>(info->entity);
+                head.angles = FLOAT3_ZERO;
+                head.offset = FLOAT3_ZERO;
+
+                protocol::packets::ClientSpawn response;
+                math::vecToArray(creature.position, response.position);
+                math::vecToArray(head.angles, response.head_angles);
+                protocol::send(peer, response, 0, ENET_PACKET_FLAG_RELIABLE);
+
+                info->state = protocol::SessionState::PLAYING;
+            }
         }
     },
     {
@@ -142,19 +144,93 @@ static uint32_t getNewSessionID()
     return counter++;
 }
 
+static inline float octanoise(const float3 &v, unsigned int oct)
+{
+    float result = 1.0;
+    for(unsigned int i = 1; i <= oct; i++)
+        result += glm::simplex(v * static_cast<float>(i));
+    return result / static_cast<float>(oct);
+}
+
+static void generate(uint64_t seed = 0)
+{
+    constexpr const int64_t START = -128;
+    constexpr const int64_t END = 128;
+
+    std::mt19937_64 mtgen = std::mt19937_64(seed);
+    const float seed_f = std::uniform_real_distribution<float>()(mtgen);
+    for(int64_t vx = START; vx < END; vx++) {
+        for(int64_t vz = START; vz < END; vz++) {
+            const float3 vxz = float3(vx, vz, seed_f * 5120.0f);
+            const float solidity = octanoise(vxz / 160.0f, 3);
+            const float hmod = octanoise((vxz + 1.0f) / 160.0f, 8);
+            if(solidity > 0.1f) {
+                int64_t h1 = ((solidity - 0.1f) * 32.0f);
+                int64_t h2 = (hmod * 16.0f);
+                for(int64_t vy = 1; vy < h1; vy++)
+                    globals::chunks.set(voxelpos_t(vx, -vy, vz), 0x01, true);
+                for(int64_t vy = 0; h1 && vy < h2; vy++)
+                    globals::chunks.set(voxelpos_t(vx, vy, vz), (vy == h2 - 1) ? 0x03 : 0x02, VOXEL_SET_FORCE);
+            }
+        }
+    }
+}
+
 void sv_game::init()
 {
-
+    // We literally do nothing here at the moment
 }
 
 void sv_game::postInit()
 {
+    // Stone
+    {
+        VoxelInfo vinfo = {};
+        vinfo.type = VoxelType::SOLID;
+        vinfo.faces.push_back({ VoxelFace::LF, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::RT, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::FT, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::BK, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::UP, "textures/stone.png" });
+        vinfo.faces.push_back({ VoxelFace::DN, "textures/stone.png" });
+        globals::voxels.set(0x01, vinfo);
+    }
 
+    // Dirt
+    {
+        VoxelInfo vinfo = {};
+        vinfo.type = VoxelType::SOLID;
+        vinfo.faces.push_back({ VoxelFace::LF, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::RT, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::FT, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::BK, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::UP, "textures/dirt.png" });
+        vinfo.faces.push_back({ VoxelFace::DN, "textures/dirt.png" });
+        globals::voxels.set(0x02, vinfo);
+    }
+
+    // Grass
+    {
+        VoxelInfo vinfo = {};
+        vinfo.type = VoxelType::SOLID;
+        vinfo.faces.push_back({ VoxelFace::LF, "textures/grass_side.png" });
+        vinfo.faces.push_back({ VoxelFace::RT, "textures/grass_side.png" });
+        vinfo.faces.push_back({ VoxelFace::FT, "textures/grass_side.png" });
+        vinfo.faces.push_back({ VoxelFace::BK, "textures/grass_side.png" });
+        vinfo.faces.push_back({ VoxelFace::UP, "textures/grass.png" });
+        vinfo.faces.push_back({ VoxelFace::DN, "textures/dirt.png" });
+        globals::voxels.set(0x03, vinfo);
+    }
+
+    uint64_t seed = static_cast<uint64_t>(std::time(nullptr));
+    spdlog::info("Generating ({})...", seed);
+    generate(seed);
+    spdlog::info("Generating done");
 }
 
 void sv_game::shutdown()
 {
-
+    globals::registry.clear();
 }
 
 void sv_game::update()
@@ -199,4 +275,6 @@ void sv_game::update()
             it->second(payload, info, event.peer);
         }
     }
+
+    // We literally do nothing here at the moment
 }

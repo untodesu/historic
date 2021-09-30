@@ -6,24 +6,16 @@
  */
 #pragma once
 #include <game/shared/protocol/protocol.hpp>
-#include <game/shared/voxels.hpp>
 
 namespace protocol::packets
 {
-struct VoxelsFace final : public ServerPacket<0x001> {
-    voxel_t voxel;
-    VoxelFace face;
-    uint8_t transparent;
-    std::string texture;
+struct VoxelChecksum final : public ServerPacket<0x003> {
+    uint64_t checksum;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        // UNDONE: 16-bit voxels
-        s.value1b(voxel);
-        s.value1b(face);
-        s.value1b(transparent);
-        s.text1b(texture, 255);
+        s.value8b(checksum);
     }
 };
 } // namespace protocol::packets

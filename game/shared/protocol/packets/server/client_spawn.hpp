@@ -10,19 +10,15 @@
 
 namespace protocol::packets
 {
-struct ClientSpawn final : public ServerPacket<0x004> {
-    float3 position;
-    float3 head_angles;
+struct ClientSpawn final : public ServerPacket<0x005> {
+    float position[3];
+    float head_angles[3];
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value4b(position.x);
-        s.value4b(position.y);
-        s.value4b(position.z);
-        s.value4b(head_angles.x);
-        s.value4b(head_angles.y);
-        s.value4b(head_angles.z);
+        s.container4b(position);
+        s.container4b(head_angles);
     }
 };
 } // namespace protocol::packets

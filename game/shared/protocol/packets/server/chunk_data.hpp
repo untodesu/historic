@@ -11,17 +11,15 @@
 
 namespace protocol::packets
 {
-struct ChunkData final : public ServerPacket<0x003> {
-    chunkpos_t position;
+struct ChunkData final : public ServerPacket<0x004> {
+    int32_t position[3];
     voxel_array_t data;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value4b(position.x);
-        s.value4b(position.y);
-        s.value4b(position.z);
-        s.container1b(data.data(), CHUNK_VOLUME);
+        s.container4b(position);
+        s.container1b(data);
     }
 };
 } // namespace protocol::packets

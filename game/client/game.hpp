@@ -18,7 +18,8 @@ bool connect(const std::string &host, uint16_t port);
 void disconnect(const std::string &reason);
 void update();
 void draw();
-void imgui();
+void drawImgui();
+void postDraw();
 } // namespace cl_game
 
 namespace game = cl_game;
