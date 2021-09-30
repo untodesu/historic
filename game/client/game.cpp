@@ -159,12 +159,10 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
 
             const uint64_t checksum = globals::voxels.getChecksum();
             if(packet.checksum != checksum) {
-                spdlog::warn("VoxelDef checksums differ (CL: {}, SV: {})", checksum, packet.checksum);
-                protocol::send(globals::peer, protocol::packets::RequestVoxels {}, 0, ENET_PACKET_FLAG_RELIABLE);
-                return;
-            }
-            else {
-                spdlog::info("VoxelDef checksums are the same");
+                // This is not THAT bad to request the
+                // whole voxel description table again
+                // so we stay only with a warning.
+                spdlog::warn("VoxelDef checksums differ! (CL: {}, SV: {})", checksum, packet.checksum);
             }
 
             globals::solid_textures.create(32, 32, MAX_VOXELS);
@@ -183,21 +181,7 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
         [](const std::vector<uint8_t> &payload) {
             protocol::packets::ChunkData packet;
             protocol::deserialize(payload, packet);
-            const chunkpos_t cp = math::arrayToVec<chunkpos_t>(packet.position);
-
-            bool empty = true;
-            for(size_t i = 0; i < CHUNK_VOLUME; i++) {
-                if(packet.data[i] != NULL_VOXEL) {
-                    empty = false;
-                    break;
-                }
-            }
-
-            if(empty) {
-                spdlog::info("EMPTY CHUNK: {} {} {}", cp.x, cp.y, cp.z);
-            }
-
-            globals::chunks.create(cp)->data = packet.data;
+            globals::chunks.create(math::arrayToVec<chunkpos_t>(packet.position))->data = packet.data;
         }
     },
     {

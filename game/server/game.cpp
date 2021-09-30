@@ -6,6 +6,7 @@
  */
 #include <common/math/const.hpp>
 #include <common/math/math.hpp>
+#include <ctime>
 #include <game/server/chunks.hpp>
 #include <game/server/game.hpp>
 #include <game/server/globals.hpp>

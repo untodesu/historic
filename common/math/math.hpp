@@ -83,19 +83,19 @@ constexpr static inline const bool isInBB(const float3 &p, const float3 &a, cons
     return p.x >= a.x && p.y >= a.y && p.z >= a.z && p.x <= b.x && p.y <= b.y && p.z <= b.z;
 }
 
-template<glm::length_t L, typename T, glm::qualifier Q>
-constexpr static inline void vecToArray(const glm::vec<L, T, Q> &vec, T array[L])
+template<typename T>
+constexpr static inline void vecToArray(const T &vec, typename T::value_type array[T::length()])
 {
-    for(glm::length_t i = 0; i < L; i++)
+    for(T::length_type i = 0; i < T::length(); i++)
         array[i] = vec[i];
 }
 
-template<typename OT>
-constexpr static inline const OT arrayToVec(const typename OT::value_type array[OT::length()])
+template<typename T>
+constexpr static inline const T arrayToVec(const typename T::value_type array[T::length()])
 {
-    OT vec;
-    for(glm::length_t i = 0; i < OT::length(); i++)
-        vec[i] = static_cast<typename OT::value_type>(array[i]);
+    T vec;
+    for(T::length_type i = 0; i < T::length(); i++)
+        vec[i] = array[i];
     return vec;
 }
 } // namespace math
