@@ -8,7 +8,7 @@
 #include <spdlog/spdlog.h>
 
 VoxelDef::VoxelDef()
-    : def()
+    : def(), checksum(0)
 {
 }
 
@@ -24,6 +24,8 @@ bool VoxelDef::set(voxel_t voxel, const VoxelInfo &info)
         return true;
     }
 
+    for(const VoxelFaceInfo &face : info.faces)
+        checksum++;
     def[voxel] = info;
     return true;
 }

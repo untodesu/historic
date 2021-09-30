@@ -19,21 +19,18 @@ namespace protocol
 constexpr static const uint16_t VERSION = 0x0001;
 constexpr static const uint16_t DEFAULT_PORT = 43103;
 
-enum class ServerState {
-    AWAIT_HANDSHAKE,
-    AWAIT_LOGIN,
-    SEND_VOXELS,
-    SEND_CHUNKS,
-    SEND_ENTITIES,
-    PLAYING
-};
-
 enum class ClientState {
     DISCONNECTED,
     LOGGING_IN,
-    AWAIT_VOXELS,
-    AWAIT_CHUNKS,
-    AWAIT_ENTITIES,
+    RECEIVE_VOXELS,
+    RECEIVE_CHUNKS,
+    PLAYING
+};
+
+enum class SessionState {
+    RECEIVE_HANDSHAKE,
+    RECEIVE_LOGIN,
+    SEND_GAME_DATA,
     PLAYING
 };
 

@@ -9,21 +9,21 @@
 #include <unordered_map>
 #include <unordered_set>
 
-enum class VoxelType {
-    GAS,            // Kind of a liquid voxel, but in reverse. Reserved.
-    SOLID,          // A solid voxel. Rendered through chunk_renderer.
-    SOLID_ENTITY,   // A solid voxel entity. Reserved.
-    SOLID_FLORA,    // A solid voxel flora. Reserved.
-    LIQUID,         // A liquid voxel. Reserved.
+enum class VoxelType : uint8_t {
+    GAS = 0,            // Kind of a liquid voxel, but in reverse. Reserved.
+    SOLID = 1,          // A solid voxel. Rendered through chunk_renderer.
+    SOLID_ENTITY = 2,   // A solid voxel entity. Reserved.
+    SOLID_FLORA = 3,    // A solid voxel flora. Reserved.
+    LIQUID = 4,         // A liquid voxel. Reserved.
 };
 
-enum class VoxelFace : uint16_t {
-    LF, // west
-    RT, // east
-    FT, // south
-    BK, // north
-    UP, // up
-    DN, // down
+enum class VoxelFace : uint8_t {
+    LF = 0, // west
+    RT = 1, // east
+    FT = 2, // south
+    BK = 3, // north
+    UP = 4, // up
+    DN = 5, // down
 };
 
 constexpr static inline const VoxelFace backVoxelFace(const VoxelFace face)
@@ -93,6 +93,11 @@ public:
     bool set(voxel_t voxel, const VoxelInfo &info);
     const VoxelInfo *tryGet(voxel_t voxel) const;
 
+    inline uint64_t getChecksum() const
+    {
+        return checksum;
+    }
+
     inline const_iterator cbegin() const
     {
         return def.cbegin();
@@ -104,5 +109,6 @@ public:
     }
 
 private:
+    uint64_t checksum;
     map_type def;
 };

@@ -8,16 +8,46 @@
 #include <game/client/game.hpp>
 #include <game/client/gbuffer.hpp>
 #include <game/client/globals.hpp>
-#include <game/shared/protocol/packets/disconnect.hpp>
-#include <game/shared/protocol/packets/handshake.hpp>
-#include <game/shared/protocol/packets/login_start.hpp>
-#include <game/shared/protocol/packets/login_success.hpp>
+#include <game/shared/protocol/packets/client/handshake.hpp>
+#include <game/shared/protocol/packets/client/login_start.hpp>
+#include <game/shared/protocol/packets/client/request_chunks.hpp>
+#include <game/shared/protocol/packets/client/request_spawn.hpp>
+#include <game/shared/protocol/packets/client/request_voxels.hpp>
+#include <game/shared/protocol/packets/server/chunk_data.hpp>
+#include <game/shared/protocol/packets/server/client_spawn.hpp>
+#include <game/shared/protocol/packets/server/login_success.hpp>
+#include <game/shared/protocol/packets/server/voxels_checksum.hpp>
+#include <game/shared/protocol/packets/server/voxels_face.hpp>
+#include <game/shared/protocol/packets/shared/disconnect.hpp>
 #include <spdlog/spdlog.h>
+#include <unordered_map>
 
 constexpr static const char *DEFAULT_DISCONNECT_MESSAGE = "Disconnected";
 
-static protocol::ClientState game_state = protocol::ClientState::DISCONNECTED;
+static protocol::ClientState client_state = protocol::ClientState::DISCONNECTED;
+static uint32_t session_id = 0;
 
+using packet_handler_t = void(*)(const std::vector<uint8_t> &);
+static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
+    {
+        protocol::packets::Disconnect::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::Disconnect packet;
+            protocol::deserialize(payload, packet);
+            spdlog::info("Disconnected: {}", packet.reason);
+            enet_peer_disconnect(globals::peer, 0);
+            client_state = protocol::ClientState::DISCONNECTED;
+        }
+    },
+    {
+        protocol::packets::LoginSuccess::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::LoginSuccess packet;
+            protocol::deserialize(payload, packet);
+            
+        }
+    }
+};
 
 void cl_game::init()
 {
@@ -77,7 +107,7 @@ bool cl_game::connect(const std::string &host, uint16_t port)
                 enet_peer_send(globals::peer, 0, enet_packet_create(pbuf.data(), pbuf.size(), ENET_PACKET_FLAG_RELIABLE));
             }
 
-            game_state = protocol::ClientState::LOGGING_IN;
+            client_state = protocol::ClientState::LOGGING_IN;
             return true;
         }
 
@@ -142,30 +172,13 @@ void cl_game::update()
                 continue;
             }
 
-            // Handle Disconnect
-            if(type == protocol::packets::Disconnect::id) {
-                protocol::packets::Disconnect packet;
-                protocol::deserialize(payload, packet);
-                spdlog::info("Disconnected: {}", packet.reason);
-                enet_peer_reset(globals::peer);
-                game_state = protocol::ClientState::DISCONNECTED;
-                break;
-            }
-
-            // Handle LoginSuccess
-            if(type == protocol::packets::LoginSuccess::id) {
-                protocol::packets::LoginSuccess packet;
-                protocol::deserialize(payload, packet);
-                spdlog::info("Logged in with ID={}", packet.session_id);
-                game_state = protocol::ClientState::PLAYING;
+            const auto it = packet_handlers.find(type);
+            if(it == packet_handlers.cend()) {
+                spdlog::warn("Invalid packet 0x{:04X} received from server", type);
                 continue;
             }
 
-            // TODO: Handle KeepAlive
-            // TODO: Handle VoxelDefEntry (ClientStatus::RETREIVING_SERVER_INFO)
-            // TODO: Handle PlayerInfo (ClientStatus::RETREIVING_SERVER_INFO)
-            // TODO: Handle ChunkVoxelData (ClientStatus::LOADING_WORLD & ClientStatus::CONNECTED)
-            // etc. etc.
+            it->second(payload);
         }
     }
 
