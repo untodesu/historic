@@ -7,12 +7,12 @@
 #include <enet/enet.h>
 #include <exception>
 #include <game/client/gl/context.hpp>
-#include <game/client/util/clock.hpp>
 #include <game/client/client_app.hpp>
 #include <game/client/game.hpp>
 #include <game/client/globals.hpp>
 #include <game/client/input.hpp>
 #include <game/client/screen.hpp>
+#include <game/shared/util/clock.hpp>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -70,10 +70,10 @@ void client_app::run()
     globals::avg_frametime = 0.0f;
     globals::frame_count = 0;
 
-    Clock frametime_clock;
+    ChronoClock<std::chrono::high_resolution_clock> frametime_clock;
     while(!glfwWindowShouldClose(globals::window)) {
-        globals::curtime = static_cast<float>(glfwGetTime());
-        globals::frametime = frametime_clock.restart();
+        globals::curtime = util::seconds<float>(frametime_clock.now().time_since_epoch());
+        globals::frametime = util::seconds<float>(frametime_clock.restart());
         globals::avg_frametime += globals::frametime;
         globals::avg_frametime *= 0.5f;
         globals::vertices_drawn = 0;

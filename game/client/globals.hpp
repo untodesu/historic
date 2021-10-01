@@ -9,6 +9,14 @@
 #include <enet/enet.h>
 #include <entt/entt.hpp>
 
+enum class ClientState {
+    DISCONNECTED,
+    LOGGING_IN,
+    RECEIVING_GAME_DATA,
+    PLAYING,
+    PAUSED
+};
+
 struct GLFWwindow;
 class ClientChunkManager;
 class VoxelDef;
@@ -17,20 +25,29 @@ class GBuffer;
 
 namespace cl_globals
 {
+// Networking
 extern ENetHost *host;
+extern ENetPeer *peer;
+extern uint32_t session_id;
+extern ClientState state;
+
+// Rendering
 extern GLFWwindow *window;
+extern Atlas solid_textures;
+extern GBuffer solid_gbuffer;
+
+// World
+extern entt::entity local_player;
+extern entt::registry registry;
+extern ClientChunkManager chunks;
+extern VoxelDef voxels;
+
+// Stats
 extern float curtime;
 extern float frametime;
 extern float avg_frametime;
 extern size_t frame_count;
 extern size_t vertices_drawn;
-
-extern ENetPeer *peer;
-extern entt::registry registry;
-extern ClientChunkManager chunks;
-extern VoxelDef voxels;
-extern Atlas solid_textures;
-extern GBuffer solid_gbuffer;
 } // namespace cl_globals
 
 namespace globals = cl_globals;

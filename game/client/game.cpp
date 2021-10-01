@@ -23,34 +23,37 @@
 #include <game/client/gbuffer.hpp>
 #include <game/client/globals.hpp>
 #include <game/client/input.hpp>
+#include <game/client/screen.hpp>
 #include <game/client/shadow_manager.hpp>
 #include <game/shared/comp/creature.hpp>
 #include <game/shared/comp/head.hpp>
 #include <game/shared/comp/player.hpp>
 #include <game/shared/protocol/packets/client/handshake.hpp>
 #include <game/shared/protocol/packets/client/login_start.hpp>
-#include <game/shared/protocol/packets/client/request_chunks.hpp>
-#include <game/shared/protocol/packets/client/request_voxels.hpp>
+#include <game/shared/protocol/packets/client/request_login_chunks.hpp>
+#include <game/shared/protocol/packets/client/request_spawn.hpp>
+#include <game/shared/protocol/packets/client/request_voxeldef.hpp>
 #include <game/shared/protocol/packets/server/chunk_data.hpp>
-#include <game/shared/protocol/packets/server/client_spawn.hpp>
+#include <game/shared/protocol/packets/server/login_chunks_end.hpp>
 #include <game/shared/protocol/packets/server/login_success.hpp>
-#include <game/shared/protocol/packets/server/voxel_checksum.hpp>
-#include <game/shared/protocol/packets/server/voxel_face_info.hpp>
-#include <game/shared/protocol/packets/server/voxel_info.hpp>
+#include <game/shared/protocol/packets/server/spawn_player.hpp>
+#include <game/shared/protocol/packets/server/voxeldef_end.hpp>
+#include <game/shared/protocol/packets/server/voxeldef_face.hpp>
+#include <game/shared/protocol/packets/server/voxeldef_voxel.hpp>
 #include <game/shared/protocol/packets/shared/disconnect.hpp>
-#include <game/shared/protocol/enet.hpp>
+#include <game/shared/util/enet.hpp>
 #include <game/shared/voxels.hpp>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
 
 class VoxelDefBuilder final {
 public:
-    inline void clear()
+    static inline void clear()
     {
         data.clear();
     }
 
-    inline void info(voxel_t voxel, VoxelType type)
+    static inline void info(voxel_t voxel, VoxelType type)
     {
         if(voxel != NULL_VOXEL) {
             auto it = data.find(voxel);
@@ -61,7 +64,7 @@ public:
         }
     }
 
-    inline void face(voxel_t voxel, const VoxelFaceInfo &face, bool transparent)
+    static inline void face(voxel_t voxel, const VoxelFaceInfo &face, bool transparent)
     {
         if(voxel != NULL_VOXEL) {
             auto it = data.find(voxel);
@@ -81,7 +84,7 @@ public:
         }
     }
 
-    inline void submit(VoxelDef &def)
+    static inline void submit(VoxelDef &def)
     {
         def.clear();
         for(const auto it : data)
@@ -89,13 +92,10 @@ public:
     }
 
 private:
-    std::unordered_map<voxel_t, VoxelInfo> data;
+    static std::unordered_map<voxel_t, VoxelInfo> data;
 };
 
-static protocol::ClientState client_state = protocol::ClientState::DISCONNECTED;
-static uint32_t session_id = 0;
-static VoxelDefBuilder voxeldef_builder;
-static entt::entity local_player = entt::null;
+std::unordered_map<voxel_t, VoxelInfo> VoxelDefBuilder::data;
 
 using packet_handler_t = void(*)(const std::vector<uint8_t> &);
 static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
@@ -109,7 +109,12 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
 
             enet_peer_disconnect(globals::peer, 0);
 
-            client_state = protocol::ClientState::DISCONNECTED;
+            globals::peer = nullptr;
+            globals::session_id = 0;
+            globals::state = ClientState::DISCONNECTED;
+            globals::local_player = entt::null;
+
+            globals::registry.clear();
         }
     },
     {
@@ -118,44 +123,46 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
             protocol::packets::LoginSuccess packet;
             protocol::deserialize(payload, packet);
 
-            client_state = protocol::ClientState::RECEIVE_VOXELS;
-            session_id = packet.session_id;
+            globals::state = ClientState::RECEIVING_GAME_DATA;
+            globals::session_id = packet.session_id;
 
-            spdlog::info("Logged in with session_id={}", session_id);
+            spdlog::info("Logged in with session_id={}", globals::session_id);
 
-            voxeldef_builder.clear();
-            protocol::send(globals::peer, protocol::packets::RequestVoxels {}, 0, ENET_PACKET_FLAG_RELIABLE);
+            VoxelDefBuilder::clear();
+
+            util::sendPacket(globals::peer, protocol::packets::RequestVoxelDef {}, 0, ENET_PACKET_FLAG_RELIABLE);
+            util::sendPacket(globals::peer, protocol::packets::RequestLoginChunks {}, 0, ENET_PACKET_FLAG_RELIABLE);
         }
     },
     {
-        protocol::packets::VoxelInfo::id,
+        protocol::packets::VoxelDefVoxel::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::VoxelInfo packet;
+            protocol::packets::VoxelDefVoxel packet;
             protocol::deserialize(payload, packet);
-            voxeldef_builder.info(packet.voxel, packet.type);
+            VoxelDefBuilder::info(packet.voxel, packet.type);
         }
     },
     {
-        protocol::packets::VoxelFaceInfo::id,
+        protocol::packets::VoxelDefFace::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::VoxelFaceInfo packet;
+            protocol::packets::VoxelDefFace packet;
             protocol::deserialize(payload, packet);
 
             VoxelFaceInfo face = {};
             face.face = packet.face;
             face.texture = packet.texture;
 
-            voxeldef_builder.face(packet.voxel, face, packet.transparent);
+            VoxelDefBuilder::face(packet.voxel, face, packet.transparent);
         }
     },
     {
-        protocol::packets::VoxelChecksum::id,
+        protocol::packets::VoxelDefEnd::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::VoxelChecksum packet;
+            protocol::packets::VoxelDefEnd packet;
             protocol::deserialize(payload, packet);
 
-            voxeldef_builder.submit(globals::voxels);
-            voxeldef_builder.clear();
+            VoxelDefBuilder::submit(globals::voxels);
+            VoxelDefBuilder::clear();
 
             const uint64_t checksum = globals::voxels.getChecksum();
             if(packet.checksum != checksum) {
@@ -171,9 +178,6 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
                     globals::solid_textures.push(face.texture);
             }
             globals::solid_textures.submit();
-
-            client_state = protocol::ClientState::RECEIVE_CHUNKS;
-            protocol::send(globals::peer, protocol::packets::RequestChunks {}, 0, ENET_PACKET_FLAG_RELIABLE);
         }
     },
     {
@@ -181,34 +185,43 @@ static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
         [](const std::vector<uint8_t> &payload) {
             protocol::packets::ChunkData packet;
             protocol::deserialize(payload, packet);
-            globals::chunks.create(math::arrayToVec<chunkpos_t>(packet.position))->data = packet.data;
+            globals::chunks.create(math::arrayToVec<chunkpos_t>(packet.position), CHUNK_CREATE_UPDATE_NEIGHBOURS)->data = packet.data;
         }
     },
     {
-        protocol::packets::ClientSpawn::id,
+        protocol::packets::LoginChunksEnd::id,
+        [](const std::vector<uint8_t> &) {
+            // TODO: request entity data here.
+            util::sendPacket(globals::peer, protocol::packets::RequestSpawn {}, 0, ENET_PACKET_FLAG_RELIABLE);
+        }
+    },
+    {
+        protocol::packets::SpawnPlayer::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::ClientSpawn packet;
+            protocol::packets::SpawnPlayer packet;
             protocol::deserialize(payload, packet);
 
-            local_player = globals::registry.create();
-            globals::registry.emplace<PlayerComponent>(local_player);
-            globals::registry.emplace<LocalPlayerComponent>(local_player);
-            globals::registry.emplace<ActiveCameraComponent>(local_player);
+            entt::entity player = globals::registry.create();
+            globals::registry.emplace<PlayerComponent>(player);
+            globals::registry.emplace<LocalPlayerComponent>(player);
 
-            CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(local_player);
+            CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(player);
             creature.orientation = FLOATQUAT_IDENTITY;
             creature.position = math::arrayToVec<float3>(packet.position);
 
-            HeadComponent &head = globals::registry.emplace<HeadComponent>(local_player);
-            head.angles = math::arrayToVec<float3>(packet.head_angles);
+            HeadComponent &head = globals::registry.emplace<HeadComponent>(player);
+            head.angles = math::arrayToVec<float2>(packet.head_angles);
             head.offset = FLOAT3_ZERO;
 
-            CameraComponent &camera = globals::registry.emplace<CameraComponent>(local_player);
-            camera.fov = glm::radians(90.0f);
-            camera.z_near = 0.01f;
-            camera.z_far = 1024.0f;
-
-            client_state = protocol::ClientState::PLAYING;
+            if(packet.session_id == globals::session_id && globals::state != ClientState::PLAYING) {
+                globals::registry.emplace<ActiveCameraComponent>(player);
+                CameraComponent &camera = globals::registry.emplace<CameraComponent>(player);
+                camera.fov = glm::radians(90.0f);
+                camera.z_near = 0.01f;
+                camera.z_far = 1024.0f;
+                globals::state = ClientState::PLAYING;
+                globals::local_player = player;
+            }
         }
     }
 };
@@ -285,7 +298,7 @@ bool cl_game::connect(const std::string &host, uint16_t port)
             const std::vector<uint8_t> lpbuf = protocol::serialize(login);
             enet_peer_send(globals::peer, 0, enet_packet_create(lpbuf.data(), lpbuf.size(), ENET_PACKET_FLAG_RELIABLE));
 
-            client_state = protocol::ClientState::LOGGING_IN;
+            globals::state = ClientState::LOGGING_IN;
             return true;
         }
 
@@ -358,12 +371,38 @@ void cl_game::update()
     }
 
     proj_view::update();
+
+    // NOTENOTE: when the new chunks arrive (during the login stage
+    // when clientside receives some important data like voxels)
+    // sometimes shit gets fucked and one side of a chunk becomes
+    // visible. This is not a problem for now because these quads
+    // are occluded by the actual geometry. Things will get hot only
+    // when mesher will start to skip actual geometry leaving holes.
     chunk_mesher::update();
+
+    bool is_playing = (globals::state == ClientState::PLAYING);
+    if(is_playing) {
+        player_look::update();
+        player_move::update();
+    }
+
+    input::enableCursor(!is_playing);
 }
 
 void cl_game::draw()
 {
+    // Draw things to GBuffers
     chunk_renderer::draw();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    int width, height;
+    screen::getSize(width, height);
+    glViewport(0, 0, width, height);
+
+    // Draw things to the main framebuffer
     composite::draw();
 }
 

@@ -5,13 +5,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <game/shared/protocol/protocol.hpp>
 
-class Clock final {
-public:
-    Clock();
-    const float elapsed() const;
-    const float restart();
-
-private:
-    float start;
+namespace protocol::packets
+{
+struct RequestVoxelDef final : public ClientPacket<0x002> {
+    template<typename S>
+    inline void serialize(S &s)
+    {
+        
+    }
 };
+} // namespace protocol::packets

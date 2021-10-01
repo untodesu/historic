@@ -8,6 +8,6 @@
 #include <common/math/const.hpp>
 
 struct HeadComponent final {
-    float3 angles { FLOAT3_ZERO };
+    float2 angles { FLOAT2_ZERO };
     float3 offset { FLOAT3_ZERO };
 };

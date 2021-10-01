@@ -12,7 +12,7 @@ void GBuffer::init(int width, int height)
     shutdown();
 
     albedo.create();
-    albedo.storage(width, height, gl::PixelFormat::R32G32B32_FLOAT);
+    albedo.storage(width, height, gl::PixelFormat::R32G32B32A32_FLOAT);
 
     normal.create();
     normal.storage(width, height, gl::PixelFormat::R32G32B32_FLOAT);

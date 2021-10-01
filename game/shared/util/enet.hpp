@@ -8,19 +8,12 @@
 #include <enet/enet.h>
 #include <game/shared/protocol/protocol.hpp>
 
-namespace protocol
+namespace util
 {
 template<typename T>
-static inline void broadcast(ENetHost *host, const T &packet, uint8_t channel, uint32_t flags)
-{
-    const std::vector<uint8_t> pbuf = protocol::serialize(packet);
-    enet_host_broadcast(host, channel, enet_packet_create(pbuf.data(), pbuf.size(), flags));
-}
-
-template<typename T>
-static inline void send(ENetPeer *peer, const T &packet, uint8_t channel, uint32_t flags)
+static inline void sendPacket(ENetPeer *peer, const T &packet, uint8_t channel, uint32_t flags)
 {
     const std::vector<uint8_t> pbuf = protocol::serialize(packet);
     enet_peer_send(peer, channel, enet_packet_create(pbuf.data(), pbuf.size(), flags));
 }
-} // namespace protocol
+} // namespace util

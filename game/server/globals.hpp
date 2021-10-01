@@ -14,12 +14,18 @@ class VoxelDef;
 
 namespace sv_globals
 {
+// Networking
 extern ENetHost *host;
-extern uint64_t num_ticks;
 
+// World
 extern entt::registry registry;
 extern ServerChunkManager chunks;
 extern VoxelDef voxels;
+
+// Stats
+extern float curtime;
+extern float ticktime;
+extern uint64_t num_ticks;
 } // namespace sv_globals
 
 namespace globals = sv_globals;

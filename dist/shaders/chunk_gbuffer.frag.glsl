@@ -14,7 +14,7 @@ in VS_OUTPUT {
     float side_shade;
 } vert;
 
-layout(location = 0) out vec3 albedo;
+layout(location = 0) out vec4 albedo;
 layout(location = 1) out vec3 normal;
 layout(location = 2) out vec3 position;
 layout(location = 3) out vec3 shadow_projcoord;
@@ -23,7 +23,7 @@ layout(binding = 0) uniform sampler2DArray atlas;
 
 void main()
 {
-    albedo = texture(atlas, vert.texcoord).rgb * vert.side_shade;
+    albedo = texture(atlas, vert.texcoord) * vec4(vec3(vert.side_shade), 1.0);
     normal = normalize(vert.normal);
     position = vert.position;
     shadow_projcoord = vert.shadow_projcoord.xyz;

@@ -9,11 +9,13 @@
 
 namespace protocol::packets
 {
-struct RequestChunks final : public ClientPacket<0x003> {
+struct VoxelDefEnd final : public ServerPacket<0x003> {
+    uint64_t checksum;
+
     template<typename S>
     inline void serialize(S &s)
     {
-        
+        s.value8b(checksum);
     }
 };
 } // namespace protocol::packets

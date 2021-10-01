@@ -6,14 +6,24 @@
  */
 #pragma once
 #include <game/shared/protocol/protocol.hpp>
+#include <game/shared/voxels.hpp>
 
 namespace protocol::packets
 {
-struct RequestVoxels final : public ClientPacket<0x002> {
+struct VoxelDefFace final : public ServerPacket<0x002> {
+    voxel_t voxel;
+    VoxelFace face;
+    uint8_t transparent;
+    std::string texture;
+
     template<typename S>
     inline void serialize(S &s)
     {
-        
+        s.value1b(voxel);
+        s.value1b(face);
+        s.value1b(transparent);
+        s.text1b(texture, 255);
     }
 };
 } // namespace protocol::packets
+

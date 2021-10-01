@@ -5,20 +5,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <common/math/types.hpp>
 #include <game/shared/protocol/protocol.hpp>
 
 namespace protocol::packets
 {
-struct ClientSpawn final : public ServerPacket<0x005> {
-    float position[3];
-    float head_angles[3];
-
+struct RequestSpawn final : public ClientPacket<0x004> {
     template<typename S>
     inline void serialize(S &s)
     {
-        s.container4b(position);
-        s.container4b(head_angles);
+        
     }
 };
 } // namespace protocol::packets

@@ -8,6 +8,9 @@
 #include <game/shared/world.hpp>
 #include <unordered_map>
 
+using chunk_create_flags_t = uint16_t;
+constexpr const chunk_create_flags_t CHUNK_CREATE_UPDATE_NEIGHBOURS = (1 << 0);
+
 using voxel_set_flags_t = uint16_t;
 constexpr const voxel_set_flags_t VOXEL_SET_FORCE = (1 << 0);
 constexpr const voxel_set_flags_t VOXEL_SET_UPDATE_NEIGHBOURS = (1 << 1);
@@ -21,7 +24,7 @@ public:
     void remove(const chunkpos_t &cp);
 
     chunk_type *find(const chunkpos_t &cp);
-    chunk_type *create(const chunkpos_t &cp);
+    chunk_type *create(const chunkpos_t &cp, chunk_create_flags_t flags);
 
     voxel_t get(const voxelpos_t &vp) const;
     voxel_t get(const chunkpos_t &cp, const localpos_t &lp) const;
@@ -30,7 +33,7 @@ public:
     // Implementations define:
     //  void implOnClear();
     //  void implOnRemove(const chunkpos_t &, const chunk_type &);
-    //  chunk_type implOnCreate(const chunkpos_t &);
+    //  chunk_type implOnCreate(const chunkpos_t &, chunk_create_flags_t);
     //  voxel_t implGetVoxel(const chunk_type &, const localpos_t &) const;
     //  void implSetVoxel(chunk_type *, const chunkpos_t &, const localpos_t &, voxel_t, voxel_set_flags_t);
 
@@ -65,12 +68,12 @@ inline chunk_type *ChunkManager<chunk_type, T>::find(const chunkpos_t &cp)
 }
 
 template<typename chunk_type, typename T>
-inline chunk_type *ChunkManager<chunk_type, T>::create(const chunkpos_t &cp)
+inline chunk_type *ChunkManager<chunk_type, T>::create(const chunkpos_t &cp, chunk_create_flags_t flags)
 {
     auto it = chunks.find(cp);
     if(it != chunks.end())
         return &it->second;
-    return &(chunks[cp] = static_cast<T *>(this)->implOnCreate(cp));
+    return &(chunks[cp] = static_cast<T *>(this)->implOnCreate(cp, flags));
 }
 
 template<typename chunk_type, typename T>
@@ -98,7 +101,7 @@ inline bool ChunkManager<chunk_type, T>::set(const voxelpos_t &vp, voxel_t voxel
     if(!chunk) {
         if(!(flags & VOXEL_SET_FORCE))
             return false;
-        chunk = create(cp);
+        chunk = create(cp, 0);
     }
 
     static_cast<T *>(this)->implSetVoxel(chunk, cp, lp, voxel, flags);

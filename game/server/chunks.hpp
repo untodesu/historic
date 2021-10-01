@@ -17,7 +17,7 @@ class ServerChunkManager final : public ChunkManager<ServerChunk, ServerChunkMan
 public:
     void implOnClear();
     void implOnRemove(const chunkpos_t &cp, const ServerChunk &data);
-    ServerChunk implOnCreate(const chunkpos_t &cp);
+    ServerChunk implOnCreate(const chunkpos_t &cp, voxel_set_flags_t flags);
     voxel_t implGetVoxel(const ServerChunk &data, const localpos_t &lp) const;
     void implSetVoxel(ServerChunk *data, const chunkpos_t &cp, const localpos_t &lp, voxel_t voxel, voxel_set_flags_t flags);
 };

@@ -10,6 +10,7 @@
 #include <game/server/globals.hpp>
 #include <game/server/server_app.hpp>
 #include <game/shared/protocol/protocol.hpp>
+#include <game/shared/util/clock.hpp>
 #include <spdlog/spdlog.h>
 #include <thread>
 
@@ -29,11 +30,17 @@ void server_app::run()
 
     game::postInit();
 
+    globals::curtime = 0.0f;
+    globals::ticktime = 0.0f;
     globals::num_ticks = 0;
+
+    ChronoClock<std::chrono::system_clock> ticktime_clock;
     for(;;) {
+        globals::curtime = util::seconds<float>(ticktime_clock.now().time_since_epoch());
+        globals::ticktime = util::seconds<float>(ticktime_clock.restart());
         game::update();
         globals::num_ticks++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     spdlog::info("Server shutdown after {} ticks", globals::num_ticks);

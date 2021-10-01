@@ -5,13 +5,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <entt/entt.hpp>
 #include <game/shared/protocol/protocol.hpp>
-#include <string>
+#include <game/shared/voxels.hpp>
 
-struct SessionInfo final {
-    uint32_t session_id;
-    std::string username;
-    entt::entity entity;
-    protocol::SessionState state;
+namespace protocol::packets
+{
+struct VoxelDefVoxel final : public ServerPacket<0x001> {
+    voxel_t voxel;
+    VoxelType type;
+
+    template<typename S>
+    inline void serialize(S &s)
+    {
+        s.value1b(voxel);
+        s.value1b(type);
+    }
 };
+} // namespace protocol::packets

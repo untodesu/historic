@@ -138,6 +138,8 @@ void chunk_renderer::draw()
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    glDisable(GL_BLEND);
+    
     //
     // SHADOW PASS
     //
@@ -194,7 +196,7 @@ void chunk_renderer::draw()
 
     glDisable(GL_POLYGON_OFFSET_FILL);
     
-    glClearColor(0.01f, 0.01f, 0.01f, 1.0f);
+    glClearColor(0.25f, 0.25f, 0.25f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     for(const auto [entity, mesh, chunk] : group.each()) {

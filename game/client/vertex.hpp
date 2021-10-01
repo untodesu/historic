@@ -15,3 +15,8 @@ struct Vertex final {
     uint32_t atlas_id;
     float side_shade;
 };
+
+struct QuadVertex2D final {
+    float2 position;
+    float2 texcoord;
+};

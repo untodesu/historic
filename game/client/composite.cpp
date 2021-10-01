@@ -4,6 +4,9 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+#include <common/filesystem.hpp>
+#include <common/math/math.hpp>
+#include <exception>
 #include <game/client/gl/drawcmd.hpp>
 #include <game/client/gl/pipeline.hpp>
 #include <game/client/gl/sampler.hpp>
@@ -14,22 +17,13 @@
 #include <game/client/globals.hpp>
 #include <game/client/screen.hpp>
 #include <game/client/shadow_manager.hpp>
-#include <exception>
-#include <common/filesystem.hpp>
-#include <common/math/math.hpp>
+#include <game/client/vertex.hpp>
 
 struct alignas(16) UBufferData_Composite final {
     float4 tweaks;
     float4 light_direction;
     float4 light_color;
     float4 ambient;
-};
-
-constexpr const size_t ss = sizeof(UBufferData_Composite);
-
-struct QuadVertex final {
-    float2 position;
-    float2 texcoord;
 };
 
 static gl::Buffer composite_ibo, composite_vbo;
@@ -41,11 +35,11 @@ static gl::Pipeline composite_pipeline;
 static gl::Sampler composite_samplers[2];
 
 static const uint8_t quad_inds[6] = { 0, 1, 2, 2, 3, 0 };
-static const QuadVertex quad_verts[4] = {
-    QuadVertex { float2(-1.0f, -1.0f), float2(0.0f, 0.0f) },
-    QuadVertex { float2(-1.0f,  1.0f), float2(0.0f, 1.0f) },
-    QuadVertex { float2( 1.0f,  1.0f), float2(1.0f, 1.0f) },
-    QuadVertex { float2( 1.0f, -1.0f), float2(1.0f, 0.0f) },
+static const QuadVertex2D quad_verts[4] = {
+    QuadVertex2D { float2(-1.0f, -1.0f), float2(0.0f, 0.0f) },
+    QuadVertex2D { float2(-1.0f,  1.0f), float2(0.0f, 1.0f) },
+    QuadVertex2D { float2( 1.0f,  1.0f), float2(1.0f, 1.0f) },
+    QuadVertex2D { float2( 1.0f, -1.0f), float2(1.0f, 0.0f) },
 };
 
 void composite::init()
@@ -60,12 +54,12 @@ void composite::init()
 
     composite_vao.create();
     composite_vao.setIndexBuffer(composite_ibo);
-    composite_vao.setVertexBuffer(0, composite_vbo, sizeof(QuadVertex));
+    composite_vao.setVertexBuffer(0, composite_vbo, sizeof(QuadVertex2D));
     composite_vao.enableAttribute(0, true);
-    composite_vao.setAttributeFormat(0, GL_FLOAT, 2, offsetof(QuadVertex, position), false);
+    composite_vao.setAttributeFormat(0, GL_FLOAT, 2, offsetof(QuadVertex2D, position), false);
     composite_vao.setAttributeBinding(0, 0);
     composite_vao.enableAttribute(1, true);
-    composite_vao.setAttributeFormat(1, GL_FLOAT, 2, offsetof(QuadVertex, texcoord), false);
+    composite_vao.setAttributeFormat(1, GL_FLOAT, 2, offsetof(QuadVertex2D, texcoord), false);
     composite_vao.setAttributeBinding(1, 0);
 
     composite_drawcmd.create();
@@ -118,14 +112,10 @@ void composite::draw()
 {
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    int width, height;
-    screen::getSize(width, height);
-    glViewport(0, 0, width, height);
-
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     int sw, sh;
     shadow_manager::getShadowMap().getSize(sw, sh);

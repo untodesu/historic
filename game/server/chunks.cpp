@@ -20,7 +20,7 @@ void ServerChunkManager::implOnRemove(const chunkpos_t &cp, const ServerChunk &d
     globals::registry.destroy(data.entity);
 }
 
-ServerChunk ServerChunkManager::implOnCreate(const chunkpos_t &cp)
+ServerChunk ServerChunkManager::implOnCreate(const chunkpos_t &cp, voxel_set_flags_t)
 {
     ServerChunk data;
     data.entity = globals::registry.create();

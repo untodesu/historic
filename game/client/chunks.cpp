@@ -21,8 +21,23 @@ void ClientChunkManager::implOnRemove(const chunkpos_t &cp, const ClientChunk &d
     globals::registry.destroy(data.entity);
 }
 
-ClientChunk ClientChunkManager::implOnCreate(const chunkpos_t &cp)
+ClientChunk ClientChunkManager::implOnCreate(const chunkpos_t &cp, chunk_create_flags_t flags)
 {
+    if(flags & CHUNK_CREATE_UPDATE_NEIGHBOURS) {
+        if(ClientChunk *nc = find(cp + chunkpos_t(0, 0, 1)))
+            globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp - chunkpos_t(0, 0, 1)))
+            globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp + chunkpos_t(0, 1, 0)))
+            globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp - chunkpos_t(0, 1, 0)))
+            globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp + chunkpos_t(1, 0, 0)))
+            globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+        if(ClientChunk *nc = find(cp - chunkpos_t(1, 0, 0)))
+            globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
+    }
+
     ClientChunk data;
     data.entity = globals::registry.create();
     globals::registry.emplace<ChunkComponent>(data.entity, ChunkComponent(cp));
@@ -37,9 +52,7 @@ voxel_t ClientChunkManager::implGetVoxel(const ClientChunk &data, const localpos
 }
 
 void ClientChunkManager::implSetVoxel(ClientChunk *data, const chunkpos_t &cp, const localpos_t &lp, voxel_t voxel, voxel_set_flags_t flags)
-{
-    data->data[toVoxelIdx(lp)] = voxel;
-    globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(data->entity);
+{ 
     if(flags & VOXEL_SET_UPDATE_NEIGHBOURS) {
         if(ClientChunk *nc = find(cp + chunkpos_t(0, 0, 1)))
             globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
@@ -54,4 +67,7 @@ void ClientChunkManager::implSetVoxel(ClientChunk *data, const chunkpos_t &cp, c
         if(ClientChunk *nc = find(cp - chunkpos_t(1, 0, 0)))
             globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(nc->entity);
     }
+
+    data->data[toVoxelIdx(lp)] = voxel;
+    globals::registry.emplace_or_replace<ChunkFlaggedForMeshingComponent>(data->entity);
 }
