@@ -6,16 +6,19 @@
  */
 #pragma once
 #include <game/shared/protocol/protocol.hpp>
+#include <string>
 
 namespace protocol::packets
 {
 struct LoginSuccess final : public ServerPacket<0x000> {
-    uint32_t session_id;
+    uint32_t session_id { 0 };
+    std::string username { "unnamed" };
 
     template<typename S>
     inline void serialize(S &s)
     {
         s.value4b(session_id);
+        s.text1b(username, 40);
     }
 };
 } // namespace protocol::packets

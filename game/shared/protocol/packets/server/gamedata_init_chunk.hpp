@@ -6,16 +6,19 @@
  */
 #pragma once
 #include <game/shared/protocol/protocol.hpp>
+#include <game/shared/world.hpp>
 
 namespace protocol::packets
 {
-struct Handshake final : public ClientPacket<0x000> {
-    uint16_t version { VERSION };
+struct GameDataInitChunk final : public ServerPacket<0x003> {
+    chunkpos_t::value_type position[3];
+    voxel_array_t data;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value2b(version);
+        s.container4b(position);
+        s.container1b(data);
     }
 };
 } // namespace protocol::packets

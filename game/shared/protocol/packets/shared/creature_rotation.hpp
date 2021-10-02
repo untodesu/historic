@@ -9,15 +9,15 @@
 
 namespace protocol::packets
 {
-struct SpawnPlayer final : public ServerPacket<0x007> {
+struct CreatureRotation : public SharedPacket<0x002> {
     uint64_t network_id;
-    uint32_t session_id;
+    float rotation;
 
     template<typename S>
     inline void serialize(S &s)
     {
         s.value8b(network_id);
-        s.value4b(session_id);
+        s.value4b(rotation);
     }
 };
 } // namespace protocol::packets

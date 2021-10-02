@@ -9,11 +9,13 @@
 
 namespace protocol::packets
 {
-struct RequestSpawn final : public ClientPacket<0x004> {
+struct GameDataEnd : public ServerPacket<0x004> {
+    uint64_t voxel_checksum { 0 };
+
     template<typename S>
     inline void serialize(S &s)
     {
-        
+        s.value8b(voxel_checksum);
     }
 };
 } // namespace protocol::packets

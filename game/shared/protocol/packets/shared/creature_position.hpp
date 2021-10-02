@@ -9,13 +9,15 @@
 
 namespace protocol::packets
 {
-struct VoxelDefEnd final : public ServerPacket<0x003> {
-    uint64_t checksum;
+struct CreaturePosition : public SharedPacket<0x001> {
+    uint64_t network_id;
+    float3::value_type position[3];
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value8b(checksum);
+        s.value8b(network_id);
+        s.container4b(position);
     }
 };
 } // namespace protocol::packets

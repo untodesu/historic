@@ -8,6 +8,6 @@
 #include <common/math/const.hpp>
 
 struct CreatureComponent final {
-    floatquat orientation { FLOATQUAT_IDENTITY };
     float3 position { FLOAT3_ZERO };
+    float rotation { 0.0f };
 };

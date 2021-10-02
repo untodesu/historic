@@ -5,15 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <game/shared/protocol/protocol.hpp>
+#include <common/math/types.hpp>
 
-namespace protocol::packets
-{
-struct LoginChunksEnd final : public ServerPacket<0x005> {
-    template<typename S>
-    inline void serialize(S &s)
-    {
-        
-    }
+struct NetworkComponent final {
+    uint64_t id { 0 };
 };
-} // namespace protocol::packets

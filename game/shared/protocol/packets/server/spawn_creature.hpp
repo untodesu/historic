@@ -6,18 +6,22 @@
  */
 #pragma once
 #include <game/shared/protocol/protocol.hpp>
-#include <string>
 
 namespace protocol::packets
 {
-struct LoginStart final : public ClientPacket<0x001> {
-    std::string username;
+struct SpawnCreature final : public ServerPacket<0x005> {
+    uint64_t network_id;
+    float3::value_type position[3];
+    float3::value_type velocity[3];
+    float rotation;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        // GitHub username I guess.
-        s.text1b(username, 39);
+        s.value8b(network_id);
+        s.container4b(position);
+        s.container4b(velocity);
+        s.value4b(rotation);
     }
 };
 } // namespace protocol::packets

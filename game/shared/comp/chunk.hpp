@@ -8,12 +8,5 @@
 #include <game/shared/world.hpp>
 
 struct ChunkComponent final {
-    chunkpos_t position;
-    ChunkComponent(const chunkpos_t &position);
+    chunkpos_t position { 0, 0, 0 };
 };
-
-inline ChunkComponent::ChunkComponent(const chunkpos_t &position)
-    : position(position)
-{
-    
-}
