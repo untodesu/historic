@@ -18,4 +18,4 @@ The current "milestone" is to achieve a correct client-server system and actuall
 This was in really early stage of development where there was still no greedy meshing.  
 ![](rd1.png)
 #### Pre-network code
-![](dist/screenshots/2021-09-28_15.15.26.jpg)
+![](game/screenshots/2021-09-28_15.15.26.jpg)
