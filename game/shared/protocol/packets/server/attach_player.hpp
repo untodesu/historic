@@ -9,15 +9,15 @@
 
 namespace protocol::packets
 {
-struct CreaturePosition final : public SharedPacket<0x001> {
+struct AttachPlayer final : public ServerPacket<0x008> {
     uint32_t network_id;
-    float3::value_type position[3];
+    uint32_t session_id;
 
     template<typename S>
     inline void serialize(S &s)
     {
         s.value4b(network_id);
-        s.container4b(position);
+        s.value4b(session_id);
     }
 };
 } // namespace protocol::packets

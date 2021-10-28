@@ -10,13 +10,13 @@
 namespace protocol::packets
 {
 struct CreatureRotation : public SharedPacket<0x002> {
-    uint64_t network_id;
+    uint32_t network_id;
     float rotation;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value8b(network_id);
+        s.value4b(network_id);
         s.value4b(rotation);
     }
 };

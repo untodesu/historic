@@ -6,7 +6,12 @@
  */
 #pragma once
 #include <common/math/types.hpp>
+#include <entt/entt.hpp>
 
-struct NetworkComponent final {
-    uint32_t network_id { 0 };
-};
+namespace network_entities
+{
+void clear();
+entt::entity create(uint32_t network_id);
+entt::entity find(uint32_t network_id);
+void remove(uint32_t network_id);
+} // namespace network_entities

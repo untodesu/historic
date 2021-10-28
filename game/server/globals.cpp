@@ -10,6 +10,7 @@
 
 // Networking
 ENetHost *sv_globals::host = nullptr;
+std::unordered_map<uint16_t, sv_packet_handler_t> sv_globals::packet_handlers;
 
 // World
 entt::registry sv_globals::registry;

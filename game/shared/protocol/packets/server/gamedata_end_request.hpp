@@ -6,19 +6,16 @@
  */
 #pragma once
 #include <game/shared/protocol/protocol.hpp>
-#include <game/shared/world.hpp>
 
 namespace protocol::packets
 {
-struct GameDataInitChunk final : public ServerPacket<0x003> {
-    chunkpos_t::value_type position[3];
-    voxel_array_t data;
+struct GamedataEndRequest final : public ServerPacket<0x004> {
+    uint64_t voxel_checksum;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.container4b(position);
-        s.container1b(data);
+        s.value8b(voxel_checksum);
     }
 };
 } // namespace protocol::packets

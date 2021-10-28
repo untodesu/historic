@@ -10,7 +10,7 @@
 
 namespace protocol::packets
 {
-struct GameDataVoxelFace final : public ServerPacket<0x002> {
+struct GamedataVoxelFace final : public ServerPacket<0x002> {
     voxel_t voxel;
     VoxelFace face;
     uint8_t transparent;

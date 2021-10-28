@@ -9,4 +9,10 @@
 
 struct ChunkComponent final {
     chunkpos_t position { 0, 0, 0 };
+    ChunkComponent() = default;
+    ChunkComponent(const chunkpos_t &cp)
+        : position(cp)
+    {
+
+    }
 };

@@ -5,5 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <common/math/types.hpp>
 
-struct PlayerComponent final {};
+struct PlayerComponent final {
+    uint32_t session_id { 0 };
+};

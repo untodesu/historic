@@ -14,6 +14,6 @@ template<typename T>
 static inline void sendPacket(ENetPeer *peer, const T &packet, uint8_t channel, uint32_t flags)
 {
     const std::vector<uint8_t> pbuf = protocol::serialize(packet);
-    enet_peer_send(peer, channel, enet_packet_create(pbuf.data(), pbuf.size(), flags));
+    enet_peer_send(peer, channel, enet_packet_create(pbuf.data(), pbuf.size(), flags | ENET_PACKET_FLAG_RELIABLE));
 }
 } // namespace util

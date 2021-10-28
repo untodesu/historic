@@ -8,6 +8,8 @@
 #include <common/math/types.hpp>
 #include <enet/enet.h>
 #include <entt/entt.hpp>
+#include <vector>
+#include <unordered_map>
 
 enum class ClientState {
     DISCONNECTED,
@@ -23,6 +25,8 @@ class VoxelDef;
 class Atlas;
 class GBuffer;
 
+using cl_packet_handler_t = void(*)(const std::vector<uint8_t> &);
+
 namespace cl_globals
 {
 // Networking
@@ -30,6 +34,7 @@ extern ENetHost *host;
 extern ENetPeer *peer;
 extern uint32_t session_id;
 extern ClientState state;
+extern std::unordered_map<uint16_t, cl_packet_handler_t> packet_handlers;
 
 // Rendering
 extern GLFWwindow *window;

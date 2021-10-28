@@ -5,8 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <common/math/types.hpp>
 
-struct NetworkComponent final {
-    uint32_t network_id { 0 };
-};
+namespace gamedata
+{
+void init();
+} // namespace gamedata

@@ -17,16 +17,17 @@
 #include <game/shared/comp/player.hpp>
 #include <game/shared/protocol/packets/client/handshake.hpp>
 #include <game/shared/protocol/packets/client/login_start.hpp>
-#include <game/shared/protocol/packets/client/request_login_chunks.hpp>
-#include <game/shared/protocol/packets/client/request_spawn.hpp>
-#include <game/shared/protocol/packets/client/request_voxeldef.hpp>
-#include <game/shared/protocol/packets/server/chunk_data.hpp>
-#include <game/shared/protocol/packets/server/login_chunks_end.hpp>
+#include <game/shared/protocol/packets/client/request_gamedata.hpp>
+#include <game/shared/protocol/packets/client/request_respawn.hpp>
+#include <game/shared/protocol/packets/server/attach_creature.hpp>
+#include <game/shared/protocol/packets/server/attach_head.hpp>
+#include <game/shared/protocol/packets/server/attach_player.hpp>
+#include <game/shared/protocol/packets/server/create_entity.hpp>
+#include <game/shared/protocol/packets/server/gamedata_chunk_voxels.hpp>
+#include <game/shared/protocol/packets/server/gamedata_end_request.hpp>
+#include <game/shared/protocol/packets/server/gamedata_voxel_entry.hpp>
+#include <game/shared/protocol/packets/server/gamedata_voxel_face.hpp>
 #include <game/shared/protocol/packets/server/login_success.hpp>
-#include <game/shared/protocol/packets/server/spawn_player.hpp>
-#include <game/shared/protocol/packets/server/voxeldef_end.hpp>
-#include <game/shared/protocol/packets/server/voxeldef_face.hpp>
-#include <game/shared/protocol/packets/server/voxeldef_voxel.hpp>
 #include <game/shared/protocol/packets/shared/disconnect.hpp>
 #include <game/shared/util/enet.hpp>
 #include <game/shared/voxels.hpp>
@@ -34,116 +35,6 @@
 #include <spdlog/spdlog.h>
 #include <random>
 #include <unordered_map>
-
-using packet_handler_t = void(*)(const std::vector<uint8_t> &, Session *);
-static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
-    {
-        protocol::packets::Handshake::id,
-        [](const std::vector<uint8_t> &payload, Session *session) {
-            protocol::packets::Handshake packet;
-            protocol::deserialize(payload, packet);
-
-            if(packet.version != protocol::VERSION) {
-                protocol::packets::Disconnect response = {};
-                response.reason = "Protocol versions do not match!";
-                util::sendPacket(session->peer, response, 0, ENET_PACKET_FLAG_RELIABLE);
-                enet_peer_disconnect_later(session->peer, 0);
-                return;
-            }
-
-            session->state = SessionState::LOGGING_IN;
-        }
-    },
-    {
-        protocol::packets::LoginStart::id,
-        [](const std::vector<uint8_t> &payload, Session *session) {
-            protocol::packets::LoginStart packet;
-            protocol::deserialize(payload, packet);
-
-            session->state = SessionState::SENDING_GAME_DATA;
-            session->username = packet.username;
-
-            protocol::packets::LoginSuccess response = {};
-            response.session_id = session->session_id;
-            util::sendPacket(session->peer, response, 0, ENET_PACKET_FLAG_RELIABLE);
-
-            spdlog::info("Client {} logged in as {}", session->session_id, session->username);
-        }
-    },
-    {
-        protocol::packets::RequestVoxelDef::id,
-        [](const std::vector<uint8_t> &, Session *session) {
-            for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
-                protocol::packets::VoxelDefVoxel voxeldef_voxel = {};
-                voxeldef_voxel.voxel = it->first;
-                voxeldef_voxel.type = it->second.type;
-                util::sendPacket(session->peer, voxeldef_voxel, 0, ENET_PACKET_FLAG_RELIABLE);
-
-                for(const VoxelFaceInfo &face : it->second.faces) {
-                    protocol::packets::VoxelDefFace voxeldef_face = {};
-                    voxeldef_face.voxel = it->first;
-                    voxeldef_face.face = face.face;
-                    voxeldef_face.transparent = (it->second.transparency.find(face.face) != it->second.transparency.cend());
-                    voxeldef_face.texture = face.texture;
-                    util::sendPacket(session->peer, voxeldef_face, 0, ENET_PACKET_FLAG_RELIABLE);
-                }
-            }
-            
-            protocol::packets::VoxelDefEnd voxeldef_end = {};
-            voxeldef_end.checksum = globals::voxels.getChecksum();
-            util::sendPacket(session->peer, voxeldef_end, 0, ENET_PACKET_FLAG_RELIABLE);
-        }
-    },
-    {
-        protocol::packets::RequestLoginChunks::id,
-        [](const std::vector<uint8_t> &, Session *session) {
-            const auto view = globals::registry.view<ChunkComponent>();
-            for(const auto [entity, chunk] : view.each()) {
-                if(ServerChunk *chunkp = globals::chunks.find(chunk.position)) {
-                    protocol::packets::ChunkData chunk_data;
-                    math::vecToArray(chunk.position, chunk_data.position);
-                    chunk_data.data = chunkp->data;
-                    util::sendPacket(session->peer, chunk_data, 0, ENET_PACKET_FLAG_RELIABLE);
-                }
-            }
-
-            util::sendPacket(session->peer, protocol::packets::LoginChunksEnd {}, 0, ENET_PACKET_FLAG_RELIABLE);
-        }
-    },
-    {
-        protocol::packets::RequestSpawn::id,
-        [](const std::vector<uint8_t> &, Session *session) {
-            session->player = globals::registry.create();
-
-            CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(session->player);
-            creature.position = FLOAT3_ZERO;
-            creature.orientation = FLOATQUAT_IDENTITY;
-
-            HeadComponent &head = globals::registry.emplace<HeadComponent>(session->player);
-            head.angles = FLOAT2_ZERO;
-            head.offset = FLOAT3_ZERO;
-
-            protocol::packets::SpawnPlayer response;
-            response.session_id = session->session_id;
-            math::vecToArray(creature.position, response.position);
-            math::vecToArray(head.angles, response.head_angles);
-            util::sendPacket(session->peer, response, 0, ENET_PACKET_FLAG_RELIABLE);
-
-            session->state = SessionState::PLAYING;
-        }
-    },
-    {
-        protocol::packets::Disconnect::id,
-        [](const std::vector<uint8_t> &payload, Session *session) {
-            protocol::packets::Disconnect packet;
-            protocol::deserialize(payload, packet);
-            spdlog::info("Client {} ({}) disconnected ({})", session->username, session->session_id, packet.reason);
-            if(session->player != entt::null)
-                globals::registry.destroy(session->player);
-            enet_peer_disconnect(session->peer, 0);
-        }
-    }
-};
 
 static inline float octanoise(const float3 &v, unsigned int oct)
 {
@@ -165,8 +56,8 @@ static void generate(uint64_t seed = 0)
             const float3 vxz = float3(vx, vz, seed_f * 5120.0f);
             const float solidity = octanoise(vxz / 160.0f, 3);
             const float hmod = octanoise((vxz + 1.0f) / 160.0f, 8);
-            if(solidity > 0.0f) {
-                int64_t h1 = ((solidity - 0.0f) * 32.0f);
+            if(solidity >= 0.2f) {
+                int64_t h1 = ((solidity - 0.2f) * 32.0f);
                 int64_t h2 = (hmod * 16.0f);
                 for(int64_t vy = 1; vy < h1; vy++)
                     globals::chunks.set(voxelpos_t(vx, -vy, vz), 0x01, true);
@@ -177,8 +68,122 @@ static void generate(uint64_t seed = 0)
     }
 }
 
+static void onHandshake(const std::vector<uint8_t> &payload, Session *session)
+{
+    protocol::packets::Handshake packet;
+    protocol::deserialize(payload, packet);
+
+    if(packet.version != protocol::VERSION) {
+        protocol::packets::Disconnect response = {};
+        response.reason = "Protocol versions do not match!";
+        util::sendPacket(session->peer, response, 0, ENET_PACKET_FLAG_RELIABLE);
+        enet_peer_disconnect_later(session->peer, 0);
+        return;
+    }
+
+    session->state = SessionState::LOGGING_IN;
+}
+
+static void onLoginStart(const std::vector<uint8_t> &payload, Session *session)
+{
+    protocol::packets::LoginStart packet;
+    protocol::deserialize(payload, packet);
+
+    session->state = SessionState::SENDING_GAME_DATA;
+    session->username = packet.username;
+
+    protocol::packets::LoginSuccess response = {};
+    response.session_id = session->session_id;
+    util::sendPacket(session->peer, response, 0, ENET_PACKET_FLAG_RELIABLE);
+
+    spdlog::info("Client {} logged in as {}", session->session_id, session->username);
+}
+
+static void onRequestGamedata(const std::vector<uint8_t> &, Session *session)
+{
+    for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
+        protocol::packets::GamedataVoxelEntry entryp = {};
+        entryp.voxel = it->first;
+        entryp.type = it->second.type;
+        util::sendPacket(session->peer, entryp, 0, 0);
+
+        for(const VoxelFaceInfo &face : it->second.faces) {
+            protocol::packets::GamedataVoxelFace facep = {};
+            facep.voxel = it->first;
+            facep.face = face.face;
+            facep.transparent = (it->second.transparency.find(face.face) != it->second.transparency.cend()) ? 1 : 0;
+            facep.texture = face.texture;
+            util::sendPacket(session->peer, facep, 0, 0);
+        }
+    }
+
+    const auto view = globals::registry.view<ChunkComponent>();
+    for(const auto [entity, chunk] : view.each()) {
+        if(const ServerChunk *pchunk = globals::chunks.find(chunk.position)) {
+            protocol::packets::GamedataChunkVoxels chunkp = {};
+            math::vecToArray(chunk.position, chunkp.position);
+            chunkp.data = pchunk->data;
+            util::sendPacket(session->peer, chunkp, 0, 0);
+        }
+    }
+
+    protocol::packets::GamedataEndRequest endp = {};
+    endp.voxel_checksum = globals::voxels.getChecksum();
+    util::sendPacket(session->peer, endp, 0, 0);
+}
+
+static void onRequestRespawn(const std::vector<uint8_t> &, Session *session)
+{
+    session->player = globals::registry.create();
+
+    CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(session->player);
+    creature.position = FLOAT3_ZERO;
+    creature.yaw = 0.0f;
+
+    HeadComponent &head = globals::registry.emplace<HeadComponent>(session->player);
+    head.angles = FLOAT2_ZERO;
+    head.offset = FLOAT3_ZERO;
+
+    protocol::packets::CreateEntity createp = {};
+    createp.network_id = (uint32_t)session->player;
+    util::sendPacket(session->peer, createp, 0, 0);
+
+    protocol::packets::AttachCreature creaturep = {};
+    creaturep.network_id = (uint32_t)session->player;
+    math::vecToArray(creature.position, creaturep.position);
+    creaturep.yaw = creature.yaw;
+    util::sendPacket(session->peer, creaturep, 0, 0);
+
+    protocol::packets::AttachHead headp = {};
+    headp.network_id = (uint32_t)session->player;
+    math::vecToArray(head.angles, headp.angles);
+    math::vecToArray(head.offset, headp.offset);
+    util::sendPacket(session->peer, headp, 0, 0);
+
+    protocol::packets::AttachPlayer playerp = {};
+    playerp.network_id = (uint32_t)session->player;
+    playerp.session_id = session->session_id;
+    util::sendPacket(session->peer, playerp, 0, 0);
+}
+
+static void onDisconnect(const std::vector<uint8_t> &payload, Session *session)
+{
+    protocol::packets::Disconnect packet;
+    protocol::deserialize(payload, packet);
+    spdlog::info("Client {} ({}) disconnected ({})", session->username, session->session_id, packet.reason);
+    if(session->player != entt::null)
+        globals::registry.destroy(session->player);
+    enet_peer_disconnect(session->peer, 0);
+}
+
 void sv_game::init()
 {
+    globals::packet_handlers[protocol::packets::Handshake::id] = &onHandshake;
+    globals::packet_handlers[protocol::packets::LoginStart::id] = &onLoginStart;
+    globals::packet_handlers[protocol::packets::RequestGamedata::id] = &onRequestGamedata;
+    globals::packet_handlers[protocol::packets::RequestRespawn::id] = &onRequestRespawn;
+    globals::packet_handlers[protocol::packets::Disconnect::id] = &onDisconnect;
+
     session_manager::init();
 }
 
@@ -258,16 +263,16 @@ void sv_game::update()
             const std::vector<uint8_t> pbuf = std::vector<uint8_t>(event.packet->data, event.packet->data + event.packet->dataLength);
             enet_packet_destroy(event.packet);
 
-            uint16_t type;
+            uint16_t packet_id;
             std::vector<uint8_t> payload;
-            if(!protocol::split(pbuf, type, payload)) {
+            if(!protocol::split(pbuf, packet_id, payload)) {
                 spdlog::warn("Invalid packet format received from client {}", session->session_id);
                 continue;
             }
 
-            const auto it = packet_handlers.find(type);
-            if(it == packet_handlers.cend()) {
-                spdlog::warn("Invalid packet 0x{:04X} received from client {}", type, session->session_id);
+            const auto it = globals::packet_handlers.find(packet_id);
+            if(it == globals::packet_handlers.cend()) {
+                spdlog::warn("Invalid packet 0x{:04X} received from client {}", packet_id, session->session_id);
                 continue;
             }
 

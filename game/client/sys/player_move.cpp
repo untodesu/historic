@@ -35,7 +35,7 @@ void player_move::update()
         direction -= FLOAT3_UP;
 
     auto pg = globals::registry.group(entt::get<LocalPlayerComponent, CreatureComponent, HeadComponent, PlayerComponent>);
-    for(auto [entity, creature, head] : pg.each()) {
+    for(auto [entity, creature, head, player] : pg.each()) {
         creature.position += floatquat(math::wrapAngle180N(float3(head.angles.x, head.angles.y, 0.0f))) * direction * 16.0f * globals::frametime;
         if(input::isMouseButtonJustPressed(GLFW_MOUSE_BUTTON_LEFT))
             globals::chunks.set(toVoxelPos(glm::floor(creature.position + head.offset)), NULL_VOXEL, VOXEL_SET_UPDATE_NEIGHBOURS);

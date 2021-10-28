@@ -6,9 +6,9 @@
  */
 #pragma once
 
-namespace composite
+namespace deferred_pass
 {
 void init();
 void shutdown();
 void draw();
-} // namespace composite
+} // namespace deferred_pass

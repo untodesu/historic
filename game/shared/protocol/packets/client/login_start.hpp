@@ -6,18 +6,17 @@
  */
 #pragma once
 #include <game/shared/protocol/protocol.hpp>
+#include <string>
 
 namespace protocol::packets
 {
-struct CreaturePosition final : public SharedPacket<0x001> {
-    uint32_t network_id;
-    float3::value_type position[3];
+struct LoginStart final : public ClientPacket<0x001> {
+    std::string username;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value4b(network_id);
-        s.container4b(position);
+        s.text1b(username, 39);
     }
 };
 } // namespace protocol::packets

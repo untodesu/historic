@@ -9,13 +9,13 @@
 
 namespace protocol::packets
 {
-struct GameDataEnd : public ServerPacket<0x004> {
-    uint64_t voxel_checksum { 0 };
+struct Handshake final : public ClientPacket<0x000> {
+    uint16_t version { protocol::VERSION };
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value8b(voxel_checksum);
+        s.value2b(version);
     }
 };
 } // namespace protocol::packets

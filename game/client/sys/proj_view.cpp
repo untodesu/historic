@@ -15,6 +15,7 @@
 #include <game/shared/comp/head.hpp>
 #include <game/shared/comp/player.hpp>
 #include <game/shared/world.hpp>
+#include <spdlog/spdlog.h>
 
 static float2 pv_angles = FLOAT2_ZERO;
 static float3 pv_position = FLOAT3_ZERO;
@@ -34,7 +35,7 @@ void proj_view::update()
     }
 
     const auto hg = globals::registry.group(entt::get<LocalPlayerComponent, HeadComponent, PlayerComponent>);
-    for(const auto [entity, head] : hg.each()) {
+    for(const auto [entity, head, player] : hg.each()) {
         pv_position = head.offset;
         if(CreatureComponent *creature = globals::registry.try_get<CreatureComponent>(entity))
             pv_position += creature->position;

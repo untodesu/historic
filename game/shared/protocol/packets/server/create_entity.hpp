@@ -9,15 +9,13 @@
 
 namespace protocol::packets
 {
-struct SpawnPlayer final : public ServerPacket<0x007> {
-    uint64_t network_id;
-    uint32_t session_id;
+struct CreateEntity final : public ServerPacket<0x005> {
+    uint32_t network_id;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value8b(network_id);
-        s.value4b(session_id);
+        s.value4b(network_id);
     }
 };
 } // namespace protocol::packets

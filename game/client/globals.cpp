@@ -16,6 +16,7 @@ ENetHost *cl_globals::host = nullptr;
 ENetPeer *cl_globals::peer = nullptr;
 uint32_t cl_globals::session_id = 0;
 ClientState cl_globals::state = ClientState::DISCONNECTED;
+std::unordered_map<uint16_t, cl_packet_handler_t> cl_globals::packet_handlers;
 
 // Rendering
 GLFWwindow *cl_globals::window = nullptr;

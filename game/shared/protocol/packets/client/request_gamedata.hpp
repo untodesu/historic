@@ -9,19 +9,11 @@
 
 namespace protocol::packets
 {
-struct SpawnCreature final : public ServerPacket<0x005> {
-    uint64_t network_id;
-    float3::value_type position[3];
-    float3::value_type velocity[3];
-    float rotation;
-
+struct RequestGamedata final : public ClientPacket<0x003> {
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value8b(network_id);
-        s.container4b(position);
-        s.container4b(velocity);
-        s.value4b(rotation);
+        
     }
 };
 } // namespace protocol::packets

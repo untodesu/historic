@@ -17,12 +17,14 @@
 #include <game/client/util/screenshots.hpp>
 #include <game/client/atlas.hpp>
 #include <game/client/chunks.hpp>
-#include <game/client/composite.hpp>
 #include <game/client/debug_overlay.hpp>
+#include <game/client/deferred_pass.hpp>
 #include <game/client/game.hpp>
+#include <game/client/gamedata.hpp>
 #include <game/client/gbuffer.hpp>
 #include <game/client/globals.hpp>
 #include <game/client/input.hpp>
+#include <game/client/network_entities.hpp>
 #include <game/client/screen.hpp>
 #include <game/client/shadow_manager.hpp>
 #include <game/shared/comp/creature.hpp>
@@ -30,206 +32,129 @@
 #include <game/shared/comp/player.hpp>
 #include <game/shared/protocol/packets/client/handshake.hpp>
 #include <game/shared/protocol/packets/client/login_start.hpp>
-#include <game/shared/protocol/packets/client/request_login_chunks.hpp>
-#include <game/shared/protocol/packets/client/request_spawn.hpp>
-#include <game/shared/protocol/packets/client/request_voxeldef.hpp>
-#include <game/shared/protocol/packets/server/chunk_data.hpp>
-#include <game/shared/protocol/packets/server/login_chunks_end.hpp>
+#include <game/shared/protocol/packets/client/request_gamedata.hpp>
 #include <game/shared/protocol/packets/server/login_success.hpp>
-#include <game/shared/protocol/packets/server/spawn_player.hpp>
-#include <game/shared/protocol/packets/server/voxeldef_end.hpp>
-#include <game/shared/protocol/packets/server/voxeldef_face.hpp>
-#include <game/shared/protocol/packets/server/voxeldef_voxel.hpp>
 #include <game/shared/protocol/packets/shared/disconnect.hpp>
 #include <game/shared/util/enet.hpp>
 #include <game/shared/voxels.hpp>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
 
-class VoxelDefBuilder final {
-public:
-    static inline void clear()
-    {
-        data.clear();
+// NOTENOTE: THESE THINGS SHOULD NOT BE HERE!!!!
+// MOVE THIS TO THE WORLD HANDLING CODE ASAP!
+#include <game/shared/protocol/packets/server/attach_creature.hpp>
+#include <game/shared/protocol/packets/server/attach_head.hpp>
+#include <game/shared/protocol/packets/server/attach_player.hpp>
+#include <game/shared/protocol/packets/server/create_entity.hpp>
+
+static void onDisconnect(const std::vector<uint8_t> &payload)
+{
+    protocol::packets::Disconnect packet;
+    protocol::deserialize(payload, packet);
+
+    spdlog::info("Disconnected: {}", packet.reason);
+
+    enet_peer_disconnect(globals::peer, 0);
+
+    globals::peer = nullptr;
+    globals::session_id = 0;
+    globals::state = ClientState::DISCONNECTED;
+    globals::local_player = entt::null;
+
+    globals::registry.clear();
+}
+
+static void onLoginSuccess(const std::vector<uint8_t> &payload)
+{
+    protocol::packets::LoginSuccess packet;
+    protocol::deserialize(payload, packet);
+
+    globals::state = ClientState::RECEIVING_GAME_DATA;
+    globals::session_id = packet.session_id;
+
+    spdlog::info("Logged in as {} with session_id={}", packet.username, globals::session_id);
+
+    util::sendPacket(globals::peer, protocol::packets::RequestGamedata {}, 0, 0);
+}
+
+// NOTENOTE: THESE THINGS SHOULD NOT BE HERE!!!!
+// MOVE THIS TO THE WORLD HANDLING CODE ASAP!
+
+static void onAttachCreature(const std::vector<uint8_t> &payload)
+{
+    protocol::packets::AttachCreature packet;
+    protocol::deserialize(payload, packet);
+
+    entt::entity entity = network_entities::find(packet.network_id);
+    if(entity != entt::null) {
+        CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(entity);
+        creature.position = math::arrayToVec<float3>(packet.position);
+        creature.yaw = packet.yaw;
     }
+}
 
-    static inline void info(voxel_t voxel, VoxelType type)
-    {
-        if(voxel != NULL_VOXEL) {
-            auto it = data.find(voxel);
-            VoxelInfo &info = (it != data.end()) ? it->second : (data[voxel] = VoxelInfo());
-            info.type = type;
-            info.transparency.clear();
-            info.faces.clear();
-        }
+static void onAttachHead(const std::vector<uint8_t> &payload)
+{
+    protocol::packets::AttachHead packet;
+    protocol::deserialize(payload, packet);
+
+    entt::entity entity = network_entities::find(packet.network_id);
+    if(entity != entt::null) {
+        HeadComponent &head = globals::registry.emplace<HeadComponent>(entity);
+        head.angles = math::arrayToVec<float3>(packet.angles);
+        head.offset = math::arrayToVec<float3>(packet.offset);
     }
+}
 
-    static inline void face(voxel_t voxel, const VoxelFaceInfo &face, bool transparent)
-    {
-        if(voxel != NULL_VOXEL) {
-            auto it = data.find(voxel);
-            VoxelInfo &info = (it != data.end()) ? it->second : (data[voxel] = VoxelInfo());
+static void onAttachPlayer(const std::vector<uint8_t> &payload)
+{
+    protocol::packets::AttachPlayer packet;
+    protocol::deserialize(payload, packet);
 
-            if(transparent)
-                info.transparency.insert(face.face);
-            
-            for(VoxelFaceInfo &it : info.faces) {
-                if(it.face == face.face) {
-                    it.texture = face.texture;
-                    return;
-                }
-            }
+    entt::entity entity = network_entities::find(packet.network_id);
+    if(entity != entt::null) {
+        PlayerComponent &player = globals::registry.emplace<PlayerComponent>(entity);
+        player.session_id = packet.session_id;
 
-            info.faces.push_back(face);
-        }
-    }
+        if(packet.session_id == globals::session_id) {
+            globals::registry.emplace<LocalPlayerComponent>(entity);
+            globals::registry.emplace<ActiveCameraComponent>(entity);
 
-    static inline void submit(VoxelDef &def)
-    {
-        def.clear();
-        for(const auto it : data)
-            def.set(it.first, it.second);
-    }
+            CameraComponent &camera = globals::registry.emplace<CameraComponent>(entity);
+            camera.fov = glm::radians(90.0f);
+            camera.z_near = 0.01f;
+            camera.z_far = 1024.0f;
 
-private:
-    static std::unordered_map<voxel_t, VoxelInfo> data;
-};
-
-std::unordered_map<voxel_t, VoxelInfo> VoxelDefBuilder::data;
-
-using packet_handler_t = void(*)(const std::vector<uint8_t> &);
-static const std::unordered_map<uint16_t, packet_handler_t> packet_handlers = {
-    {
-        protocol::packets::Disconnect::id,
-        [](const std::vector<uint8_t> &payload) {
-            protocol::packets::Disconnect packet;
-            protocol::deserialize(payload, packet);
-
-            spdlog::info("Disconnected: {}", packet.reason);
-
-            enet_peer_disconnect(globals::peer, 0);
-
-            globals::peer = nullptr;
-            globals::session_id = 0;
-            globals::state = ClientState::DISCONNECTED;
-            globals::local_player = entt::null;
-
-            globals::registry.clear();
-        }
-    },
-    {
-        protocol::packets::LoginSuccess::id,
-        [](const std::vector<uint8_t> &payload) {
-            protocol::packets::LoginSuccess packet;
-            protocol::deserialize(payload, packet);
-
-            globals::state = ClientState::RECEIVING_GAME_DATA;
-            globals::session_id = packet.session_id;
-
-            spdlog::info("Logged in with session_id={}", globals::session_id);
-
-            VoxelDefBuilder::clear();
-
-            util::sendPacket(globals::peer, protocol::packets::RequestVoxelDef {}, 0, ENET_PACKET_FLAG_RELIABLE);
-            util::sendPacket(globals::peer, protocol::packets::RequestLoginChunks {}, 0, ENET_PACKET_FLAG_RELIABLE);
-        }
-    },
-    {
-        protocol::packets::VoxelDefVoxel::id,
-        [](const std::vector<uint8_t> &payload) {
-            protocol::packets::VoxelDefVoxel packet;
-            protocol::deserialize(payload, packet);
-            VoxelDefBuilder::info(packet.voxel, packet.type);
-        }
-    },
-    {
-        protocol::packets::VoxelDefFace::id,
-        [](const std::vector<uint8_t> &payload) {
-            protocol::packets::VoxelDefFace packet;
-            protocol::deserialize(payload, packet);
-
-            VoxelFaceInfo face = {};
-            face.face = packet.face;
-            face.texture = packet.texture;
-
-            VoxelDefBuilder::face(packet.voxel, face, packet.transparent);
-        }
-    },
-    {
-        protocol::packets::VoxelDefEnd::id,
-        [](const std::vector<uint8_t> &payload) {
-            protocol::packets::VoxelDefEnd packet;
-            protocol::deserialize(payload, packet);
-
-            VoxelDefBuilder::submit(globals::voxels);
-            VoxelDefBuilder::clear();
-
-            const uint64_t checksum = globals::voxels.getChecksum();
-            if(packet.checksum != checksum) {
-                // This is not THAT bad to request the
-                // whole voxel description table again
-                // so we stay only with a warning.
-                spdlog::warn("VoxelDef checksums differ! (CL: {}, SV: {})", checksum, packet.checksum);
-            }
-
-            globals::solid_textures.create(32, 32, MAX_VOXELS);
-            for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
-                for(const VoxelFaceInfo &face : it->second.faces)
-                    globals::solid_textures.push(face.texture);
-            }
-            globals::solid_textures.submit();
-        }
-    },
-    {
-        protocol::packets::ChunkData::id,
-        [](const std::vector<uint8_t> &payload) {
-            protocol::packets::ChunkData packet;
-            protocol::deserialize(payload, packet);
-            globals::chunks.create(math::arrayToVec<chunkpos_t>(packet.position), CHUNK_CREATE_UPDATE_NEIGHBOURS)->data = packet.data;
-        }
-    },
-    {
-        protocol::packets::LoginChunksEnd::id,
-        [](const std::vector<uint8_t> &) {
-            // TODO: request entity data here.
-            util::sendPacket(globals::peer, protocol::packets::RequestSpawn {}, 0, ENET_PACKET_FLAG_RELIABLE);
-        }
-    },
-    {
-        protocol::packets::SpawnPlayer::id,
-        [](const std::vector<uint8_t> &payload) {
-            protocol::packets::SpawnPlayer packet;
-            protocol::deserialize(payload, packet);
-
-            entt::entity player = globals::registry.create();
-            globals::registry.emplace<PlayerComponent>(player);
-            globals::registry.emplace<LocalPlayerComponent>(player);
-
-            CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(player);
-            creature.orientation = FLOATQUAT_IDENTITY;
-            creature.position = math::arrayToVec<float3>(packet.position);
-
-            HeadComponent &head = globals::registry.emplace<HeadComponent>(player);
-            head.angles = math::arrayToVec<float2>(packet.head_angles);
-            head.offset = FLOAT3_ZERO;
-
-            if(packet.session_id == globals::session_id && globals::state != ClientState::PLAYING) {
-                globals::registry.emplace<ActiveCameraComponent>(player);
-                CameraComponent &camera = globals::registry.emplace<CameraComponent>(player);
-                camera.fov = glm::radians(90.0f);
-                camera.z_near = 0.01f;
-                camera.z_far = 1024.0f;
-                globals::state = ClientState::PLAYING;
-                globals::local_player = player;
-            }
+            globals::local_player = entity;
+            globals::state = ClientState::PLAYING;
         }
     }
-};
+}
+
+static void onCreateEntity(const std::vector<uint8_t> &payload)
+{
+    protocol::packets::CreateEntity packet;
+    protocol::deserialize(payload, packet);
+    network_entities::create(packet.network_id);
+}
+
 
 void cl_game::init()
 {
+    globals::packet_handlers[protocol::packets::Disconnect::id] = &onDisconnect;
+    globals::packet_handlers[protocol::packets::LoginSuccess::id] = &onLoginSuccess;
+
+    // NOTENOTE: THESE THINGS SHOULD NOT BE HERE!!!!
+    // MOVE THIS TO THE WORLD HANDLING CODE ASAP!
+    globals::packet_handlers[protocol::packets::AttachCreature::id] = &onAttachCreature;
+    globals::packet_handlers[protocol::packets::AttachHead::id] = &onAttachHead;
+    globals::packet_handlers[protocol::packets::AttachPlayer::id] = &onAttachPlayer;
+    globals::packet_handlers[protocol::packets::CreateEntity::id] = &onCreateEntity;
+
+    gamedata::init();
+
     chunk_renderer::init();
-    composite::init();
+    deferred_pass::init();
 
     shadow_manager::init(8192, 8192);
     shadow_manager::setLightOrientation(floatquat(glm::radians(float3(45.0f, 0.0f, 45.0f))));
@@ -253,7 +178,7 @@ void cl_game::shutdown()
 
     shadow_manager::shutdown();
 
-    composite::shutdown();
+    deferred_pass::shutdown();
     chunk_renderer::shutdown();
 }
 
@@ -286,17 +211,13 @@ bool cl_game::connect(const std::string &host, uint16_t port)
         if(event.type == ENET_EVENT_TYPE_CONNECT) {
             spdlog::debug("Logging in...");
 
-            // Send Handshake
-            protocol::packets::Handshake handshake;
-            const std::vector<uint8_t> hpbuf = protocol::serialize(handshake);
-            enet_peer_send(globals::peer, 0, enet_packet_create(hpbuf.data(), hpbuf.size(), ENET_PACKET_FLAG_RELIABLE));
-            
-            // Send LoginStart
+            protocol::packets::Handshake handshake = {};
+            util::sendPacket(globals::peer, handshake, 0, 0);
+
             // TODO: change-able username
-            protocol::packets::LoginStart login;
+            protocol::packets::LoginStart login = {};
             login.username = "Kirill";
-            const std::vector<uint8_t> lpbuf = protocol::serialize(login);
-            enet_peer_send(globals::peer, 0, enet_packet_create(lpbuf.data(), lpbuf.size(), ENET_PACKET_FLAG_RELIABLE));
+            util::sendPacket(globals::peer, login, 0, 0);
 
             globals::state = ClientState::LOGGING_IN;
             return true;
@@ -321,8 +242,7 @@ void cl_game::disconnect(const std::string &reason)
         // Send Disconnect
         protocol::packets::Disconnect packet;
         packet.reason = reason;
-        const std::vector<uint8_t> pbuf = protocol::serialize(packet);
-        enet_peer_send(globals::peer, 0, enet_packet_create(pbuf.data(), pbuf.size(), ENET_PACKET_FLAG_RELIABLE));
+        util::sendPacket(globals::peer, packet, 0, 0);
 
         enet_peer_disconnect_later(globals::peer, 0);
 
@@ -353,16 +273,16 @@ void cl_game::update()
             const std::vector<uint8_t> packet = std::vector<uint8_t>(event.packet->data, event.packet->data + event.packet->dataLength);
             enet_packet_destroy(event.packet);
 
-            uint16_t type;
+            uint16_t packet_id;
             std::vector<uint8_t> payload;
-            if(!protocol::split(packet, type, payload)) {
+            if(!protocol::split(packet, packet_id, payload)) {
                 spdlog::warn("Invalid packet format!");
                 continue;
             }
 
-            const auto it = packet_handlers.find(type);
-            if(it == packet_handlers.cend()) {
-                spdlog::warn("Invalid packet 0x{:04X}", type);
+            const auto &it = globals::packet_handlers.find(packet_id);
+            if(it == globals::packet_handlers.cend()) {
+                spdlog::warn("Invalid packet 0x{:04X}", packet_id);
                 continue;
             }
 
@@ -372,16 +292,16 @@ void cl_game::update()
 
     proj_view::update();
 
-    // NOTENOTE: when the new chunks arrive (during the login stage
-    // when clientside receives some important data like voxels)
-    // sometimes shit gets fucked and one side of a chunk becomes
-    // visible. This is not a problem for now because these quads
-    // are occluded by the actual geometry. Things will get hot only
-    // when mesher will start to skip actual geometry leaving holes.
-    chunk_mesher::update();
-
     bool is_playing = (globals::state == ClientState::PLAYING);
     if(is_playing) {
+        // NOTENOTE: when the new chunks arrive (during the login stage
+        // when clientside receives some important data like voxel info)
+        // sometimes shit gets fucked and one side of a chunk becomes
+        // visible. This is not a problem for now because these quads
+        // are occluded by the actual geometry. Things will get hot only
+        // when mesher will start to skip actual geometry leaving holes.
+        chunk_mesher::update();
+
         player_look::update();
         player_move::update();
     }
@@ -403,7 +323,7 @@ void cl_game::draw()
     glViewport(0, 0, width, height);
 
     // Draw things to the main framebuffer
-    composite::draw();
+    deferred_pass::draw();
 }
 
 void cl_game::drawImgui()

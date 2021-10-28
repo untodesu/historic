@@ -6,18 +6,19 @@
  */
 #pragma once
 #include <game/shared/protocol/protocol.hpp>
+#include <game/shared/voxels.hpp>
 
 namespace protocol::packets
 {
-struct CreaturePosition final : public SharedPacket<0x001> {
-    uint32_t network_id;
-    float3::value_type position[3];
+struct GamedataVoxelEntry final : public ServerPacket<0x001> {
+    voxel_t voxel;
+    VoxelType type;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value4b(network_id);
-        s.container4b(position);
+        s.value1b(voxel);
+        s.value1b(type);
     }
 };
 } // namespace protocol::packets

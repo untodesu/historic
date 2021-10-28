@@ -8,14 +8,20 @@
 #include <enet/enet.h>
 #include <entt/entt.hpp>
 #include <common/math/types.hpp>
+#include <vector>
+#include <unordered_map>
 
 class ServerChunkManager;
 class VoxelDef;
+struct Session;
+
+using sv_packet_handler_t = void(*)(const std::vector<uint8_t> &, Session *);
 
 namespace sv_globals
 {
 // Networking
 extern ENetHost *host;
+extern std::unordered_map<uint16_t, sv_packet_handler_t> packet_handlers;
 
 // World
 extern entt::registry registry;

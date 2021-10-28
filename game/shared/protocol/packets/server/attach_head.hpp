@@ -9,15 +9,15 @@
 
 namespace protocol::packets
 {
-struct SpawnHead final : public ServerPacket<0x006> {
-    uint64_t network_id;
+struct AttachHead final : public ServerPacket<0x007> {
+    uint32_t network_id;
     float3::value_type offset[3];
     float2::value_type angles[2];
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value8b(network_id);
+        s.value4b(network_id);
         s.container4b(offset);
         s.container4b(angles);
     }

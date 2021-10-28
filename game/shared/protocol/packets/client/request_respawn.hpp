@@ -9,15 +9,11 @@
 
 namespace protocol::packets
 {
-struct CreatureVelocity final : public SharedPacket<0x003> {
-    uint64_t network_id;
-    float3::value_type velocity[3];
-
+struct RequestRespawn final : public ClientPacket<0x004> {
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value8b(network_id);
-        s.container4b(velocity);
+        
     }
 };
 } // namespace protocol::packets
