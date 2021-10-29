@@ -24,7 +24,8 @@ Atlas cl_globals::solid_textures;
 GBuffer cl_globals::solid_gbuffer;
 
 // World
-entt::entity cl_globals::local_player;
+uint32_t cl_globals::local_player_network_id = 0;
+entt::entity cl_globals::local_player = entt::null;
 entt::registry cl_globals::registry;
 ClientChunkManager cl_globals::chunks;
 VoxelDef cl_globals::voxels;

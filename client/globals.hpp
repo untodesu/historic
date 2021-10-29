@@ -42,6 +42,7 @@ extern Atlas solid_textures;
 extern GBuffer solid_gbuffer;
 
 // World
+extern uint32_t local_player_network_id;
 extern entt::entity local_player;
 extern entt::registry registry;
 extern ClientChunkManager chunks;

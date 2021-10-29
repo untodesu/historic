@@ -20,11 +20,12 @@
 #include <client/debug_overlay.hpp>
 #include <client/deferred_pass.hpp>
 #include <client/game.hpp>
-#include <client/gamedata.hpp>
 #include <client/gbuffer.hpp>
 #include <client/globals.hpp>
 #include <client/input.hpp>
-#include <client/network_entities.hpp>
+#include <client/net_ecs.hpp>
+#include <client/net_entities.hpp>
+#include <client/net_gamedata.hpp>
 #include <client/screen.hpp>
 #include <client/shadow_manager.hpp>
 #include <shared/comp/creature.hpp>
@@ -39,13 +40,6 @@
 #include <shared/voxels.hpp>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
-
-// NOTENOTE: THESE THINGS SHOULD NOT BE HERE!!!!
-// MOVE THIS TO THE WORLD HANDLING CODE ASAP!
-#include <shared/protocol/packets/server/attach_creature.hpp>
-#include <shared/protocol/packets/server/attach_head.hpp>
-#include <shared/protocol/packets/server/attach_player.hpp>
-#include <shared/protocol/packets/server/create_entity.hpp>
 
 static void onDisconnect(const std::vector<uint8_t> &payload)
 {
@@ -77,81 +71,14 @@ static void onLoginSuccess(const std::vector<uint8_t> &payload)
     util::sendPacket(globals::peer, protocol::packets::RequestGamedata {}, 0, 0);
 }
 
-// NOTENOTE: THESE THINGS SHOULD NOT BE HERE!!!!
-// MOVE THIS TO THE WORLD HANDLING CODE ASAP!
-
-static void onAttachCreature(const std::vector<uint8_t> &payload)
-{
-    protocol::packets::AttachCreature packet;
-    protocol::deserialize(payload, packet);
-
-    entt::entity entity = network_entities::find(packet.network_id);
-    if(entity != entt::null) {
-        CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(entity);
-        creature.position = math::arrayToVec<float3>(packet.position);
-        creature.yaw = packet.yaw;
-    }
-}
-
-static void onAttachHead(const std::vector<uint8_t> &payload)
-{
-    protocol::packets::AttachHead packet;
-    protocol::deserialize(payload, packet);
-
-    entt::entity entity = network_entities::find(packet.network_id);
-    if(entity != entt::null) {
-        HeadComponent &head = globals::registry.emplace<HeadComponent>(entity);
-        head.angles = math::arrayToVec<float3>(packet.angles);
-        head.offset = math::arrayToVec<float3>(packet.offset);
-    }
-}
-
-static void onAttachPlayer(const std::vector<uint8_t> &payload)
-{
-    protocol::packets::AttachPlayer packet;
-    protocol::deserialize(payload, packet);
-
-    entt::entity entity = network_entities::find(packet.network_id);
-    if(entity != entt::null) {
-        PlayerComponent &player = globals::registry.emplace<PlayerComponent>(entity);
-        player.session_id = packet.session_id;
-
-        if(packet.session_id == globals::session_id) {
-            globals::registry.emplace<LocalPlayerComponent>(entity);
-            globals::registry.emplace<ActiveCameraComponent>(entity);
-
-            CameraComponent &camera = globals::registry.emplace<CameraComponent>(entity);
-            camera.fov = glm::radians(90.0f);
-            camera.z_near = 0.01f;
-            camera.z_far = 1024.0f;
-
-            globals::local_player = entity;
-            globals::state = ClientState::PLAYING;
-        }
-    }
-}
-
-static void onCreateEntity(const std::vector<uint8_t> &payload)
-{
-    protocol::packets::CreateEntity packet;
-    protocol::deserialize(payload, packet);
-    network_entities::create(packet.network_id);
-}
-
 
 void cl_game::init()
 {
     globals::packet_handlers[protocol::packets::Disconnect::id] = &onDisconnect;
     globals::packet_handlers[protocol::packets::LoginSuccess::id] = &onLoginSuccess;
 
-    // NOTENOTE: THESE THINGS SHOULD NOT BE HERE!!!!
-    // MOVE THIS TO THE WORLD HANDLING CODE ASAP!
-    globals::packet_handlers[protocol::packets::AttachCreature::id] = &onAttachCreature;
-    globals::packet_handlers[protocol::packets::AttachHead::id] = &onAttachHead;
-    globals::packet_handlers[protocol::packets::AttachPlayer::id] = &onAttachPlayer;
-    globals::packet_handlers[protocol::packets::CreateEntity::id] = &onCreateEntity;
-
-    gamedata::init();
+    net_gamedata::init();
+    net_ecs::init();
 
     chunk_renderer::init();
     deferred_pass::init();

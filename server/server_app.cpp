@@ -14,6 +14,8 @@
 #include <spdlog/spdlog.h>
 #include <thread>
 
+constexpr const float TICK_DT = 1.0f / protocol::DEFAULT_TICKRATE;
+
 void server_app::run()
 {
     ENetAddress address;
@@ -34,13 +36,27 @@ void server_app::run()
     globals::ticktime = 0.0f;
     globals::num_ticks = 0;
 
-    ChronoClock<std::chrono::system_clock> ticktime_clock;
+    const std::chrono::microseconds tick_us(static_cast<size_t>(TICK_DT * 1.0e6f));
+
+    ChronoClock<std::chrono::system_clock> clock;
+    std::chrono::system_clock::time_point time_accum = clock.now();
+
     for(;;) {
-        globals::curtime = util::seconds<float>(ticktime_clock.now().time_since_epoch());
-        globals::ticktime = util::seconds<float>(ticktime_clock.restart());
+        std::chrono::system_clock::time_point time_now = clock.now();
+        globals::curtime = util::seconds<float>(time_now.time_since_epoch());
+        globals::ticktime = util::seconds<float>(clock.restart());
+
+        if(globals::ticktime < TICK_DT) {
+            if(size_t drop = static_cast<size_t>(util::seconds<float>(time_now - time_accum) / TICK_DT)) {
+                spdlog::warn("Dropping {} server frames", drop);
+                time_accum = time_now;
+            }
+        }
+
         game::update();
         globals::num_ticks++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        std::this_thread::sleep_until(time_accum += tick_us);
     }
 
     spdlog::info("Server shutdown after {} ticks", globals::num_ticks);

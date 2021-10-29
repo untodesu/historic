@@ -5,8 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <common/math/types.hpp>
+#include <entt/entt.hpp>
 
-namespace gamedata
+namespace net_entities
 {
-void init();
-} // namespace gamedata
+void clear();
+entt::entity create(uint32_t network_id);
+entt::entity find(uint32_t network_id);
+void remove(uint32_t network_id);
+} // namespace net_entities

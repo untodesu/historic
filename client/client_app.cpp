@@ -61,7 +61,7 @@ void client_app::run()
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(globals::window, false);
-    ImGui_ImplOpenGL3_Init("#version 460");
+    ImGui_ImplOpenGL3_Init("#version 460 core");
 
     game::postInit();
 
@@ -70,10 +70,10 @@ void client_app::run()
     globals::avg_frametime = 0.0f;
     globals::frame_count = 0;
 
-    ChronoClock<std::chrono::high_resolution_clock> frametime_clock;
+    ChronoClock<std::chrono::high_resolution_clock> clock;
     while(!glfwWindowShouldClose(globals::window)) {
-        globals::curtime = util::seconds<float>(frametime_clock.now().time_since_epoch());
-        globals::frametime = util::seconds<float>(frametime_clock.restart());
+        globals::curtime = util::seconds<float>(clock.now().time_since_epoch());
+        globals::frametime = util::seconds<float>(clock.restart());
         globals::avg_frametime += globals::frametime;
         globals::avg_frametime *= 0.5f;
         globals::vertices_drawn = 0;

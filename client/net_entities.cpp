@@ -6,13 +6,13 @@
  */
 #include <shared/comp/network.hpp>
 #include <client/globals.hpp>
-#include <client/network_entities.hpp>
+#include <client/net_entities.hpp>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
 
 static std::unordered_map<uint32_t, entt::entity> data;
 
-void network_entities::clear()
+void net_entities::clear()
 {
     const auto view = globals::registry.view<NetworkComponent>();
     for(const auto [entity, net] : view.each())
@@ -20,7 +20,7 @@ void network_entities::clear()
     data.clear();
 }
 
-entt::entity network_entities::create(uint32_t network_id)
+entt::entity net_entities::create(uint32_t network_id)
 {
     const auto it = data.find(network_id);
     if(it != data.cend()) {
@@ -34,7 +34,7 @@ entt::entity network_entities::create(uint32_t network_id)
     return data[network_id] = entity;
 }
 
-entt::entity network_entities::find(uint32_t network_id)
+entt::entity net_entities::find(uint32_t network_id)
 {
     const auto it = data.find(network_id);
     if(it != data.cend())
@@ -42,7 +42,7 @@ entt::entity network_entities::find(uint32_t network_id)
     return entt::null;
 }
 
-void network_entities::remove(uint32_t network_id)
+void net_entities::remove(uint32_t network_id)
 {
     const auto it = data.find(network_id);
     if(it != data.cend()) {

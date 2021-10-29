@@ -6,8 +6,8 @@
  */
 #include <client/atlas.hpp>
 #include <client/chunks.hpp>
-#include <client/gamedata.hpp>
 #include <client/globals.hpp>
+#include <client/net_gamedata.hpp>
 #include <shared/protocol/packets/client/request_respawn.hpp>
 #include <shared/protocol/packets/server/gamedata_chunk_voxels.hpp>
 #include <shared/protocol/packets/server/gamedata_end_request.hpp>
@@ -113,7 +113,7 @@ static void onVoxelFace(const std::vector<uint8_t> &payload)
     voxeldef_builder::face(packet.voxel, info, !!packet.transparent);
 }
 
-void gamedata::init()
+void net_gamedata::init()
 {
     globals::packet_handlers[protocol::packets::GamedataChunkVoxels::id] = &onChunkVoxels;
     globals::packet_handlers[protocol::packets::GamedataEndRequest::id] = &onEndRequest;
