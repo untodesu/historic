@@ -200,38 +200,18 @@ static void greedyFace(ChunkMeshBuilder *builder, ChunkMesherData *data, const c
                     float3 normal = FLOAT3_ZERO;
                     normal[d] = voxelFaceNormal(face);
 
-                    // IT CAN BE SHRUNK TO JUST TWO BITS!1!!
-                    // UNDONE: packed vertex format for voxels.
-                    float side_shade = 1.0f;
-                    switch(face) {
-                        case VoxelFace::LF:
-                        case VoxelFace::RT:
-                            side_shade = 0.6f;
-                            break;
-                        case VoxelFace::FT:
-                        case VoxelFace::BK:
-                            side_shade = 0.8f;
-                            break;
-                        case VoxelFace::UP:
-                            side_shade = 1.0f;
-                            break;
-                        case VoxelFace::DN:
-                            side_shade = 0.4f;
-                            break;
-                    }
-
                     Vertex verts[4];
                     if(isBackVoxelFace(face)) {
-                        verts[0] = Vertex { position, normal, texcoords[0], node->index, side_shade };
-                        verts[1] = Vertex { position + dv, normal, texcoords[1], node->index, side_shade };
-                        verts[2] = Vertex { position + du + dv, normal, texcoords[2], node->index, side_shade };
-                        verts[3] = Vertex { position + du, normal, texcoords[3], node->index, side_shade };
+                        verts[0] = Vertex { position, normal, texcoords[0], node->index };
+                        verts[1] = Vertex { position + dv, normal, texcoords[1], node->index };
+                        verts[2] = Vertex { position + du + dv, normal, texcoords[2], node->index };
+                        verts[3] = Vertex { position + du, normal, texcoords[3], node->index };
                     }
                     else {
-                        verts[0] = Vertex { position, normal, texcoords[0], node->index, side_shade };
-                        verts[1] = Vertex { position + du, normal, texcoords[1], node->index, side_shade };
-                        verts[2] = Vertex { position + du + dv, normal, texcoords[2], node->index, side_shade };
-                        verts[3] = Vertex { position + dv, normal, texcoords[3], node->index, side_shade };
+                        verts[0] = Vertex { position, normal, texcoords[0], node->index };
+                        verts[1] = Vertex { position + du, normal, texcoords[1], node->index };
+                        verts[2] = Vertex { position + du + dv, normal, texcoords[2], node->index };
+                        verts[3] = Vertex { position + dv, normal, texcoords[3], node->index };
                     }
 
                     pushQuad(builder, base, verts);
@@ -359,11 +339,6 @@ void chunk_mesher::update()
                     mesh->vao.enableAttribute(3, true);
                     mesh->vao.setAttributeFormat(3, GL_UNSIGNED_INT, 1, offsetof(Vertex, atlas_id), false);
                     mesh->vao.setAttributeBinding(3, 0);
-                    
-                    // Side shade
-                    mesh->vao.enableAttribute(4, true);
-                    mesh->vao.setAttributeFormat(4, GL_FLOAT, 1, offsetof(Vertex, side_shade), false);
-                    mesh->vao.setAttributeBinding(4, 0);
                 }
 
                 mesh->ibo.resize(mesher.builder->isize(), mesher.builder->idata(), GL_STATIC_DRAW);

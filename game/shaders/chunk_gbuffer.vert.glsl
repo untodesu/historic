@@ -10,14 +10,12 @@ layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 texcoord;
 layout(location = 3) in uint atlas_id;
-layout(location = 4) in float side_shade;
 
 out VS_OUTPUT {
     vec3 texcoord;
     vec3 normal;
     vec3 position;
     vec4 shadow_projcoord;
-    float side_shade;
 } vert;
 
 out gl_PerVertex {
@@ -42,10 +40,6 @@ void main()
     vert.shadow_projcoord.xyz /= vert.shadow_projcoord.w;
     vert.shadow_projcoord.xyz *= 0.5;
     vert.shadow_projcoord.xyz += 0.5;
-
-    // Side shades make voxel faces more distinguishable
-    // when they are not lit only by the ambient light.
-    vert.side_shade = side_shade;
 
     gl_Position = projview * vec4(vert.position, 1.0);
 }

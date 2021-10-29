@@ -23,7 +23,7 @@ layout(binding = 0) uniform sampler2DArray atlas;
 
 void main()
 {
-    albedo = texture(atlas, vert.texcoord) * vec4(vec3(vert.side_shade), 1.0);
+    albedo = texture(atlas, vert.texcoord);
     normal = normalize(vert.normal);
     position = vert.position;
     shadow_projcoord = vert.shadow_projcoord.xyz;
