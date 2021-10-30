@@ -5,8 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <client/shadowmap.hpp>
 #include <common/math/types.hpp>
+#include <client/render/shadowmap.hpp>
 
 // Let me speak to your shadow manager!
 namespace shadow_manager

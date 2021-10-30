@@ -5,19 +5,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <entt/entt.hpp>
 #include <common/math/types.hpp>
 #include <string>
 
-namespace cl_game
+namespace cl_network
 {
 void init();
-void postInit();
 void shutdown();
-void modeChange(int width, int height);
+bool connect(const std::string &host, uint16_t port);
+void disconnect(const std::string &reason);
 void update();
-void draw();
-void drawImgui();
-void postDraw();
-} // namespace cl_game
+entt::entity createEntity(uint32_t network_id);
+entt::entity findEntity(uint32_t network_id);
+void removeEntity(uint32_t network_id);
+} // namespace cl_network
 
-namespace game = cl_game;
+namespace network = cl_network;

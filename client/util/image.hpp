@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <client/gl/texture.hpp>
+#include <client/render/gl/texture.hpp>
 #include <common/filesystem.hpp>
 
 class Image final {

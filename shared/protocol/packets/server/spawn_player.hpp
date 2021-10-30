@@ -9,15 +9,21 @@
 
 namespace protocol::packets
 {
-struct HeadAngles final : public SharedPacket<0x002> {
+struct SpawnPlayer final : public ServerPacket<0x005> {
     uint32_t network_id;
-    float2::value_type angles[2];
+    uint32_t session_id;
+    float3::value_type head_angles[2];
+    float3::value_type position[3];
+    float yaw;
 
     template<typename S>
     inline void serialize(S &s)
     {
         s.value4b(network_id);
-        s.container4b(angles);
+        s.value4b(session_id);
+        s.container4b(head_angles);
+        s.container4b(position);
+        s.value4b(yaw);
     }
 };
 } // namespace protocol::packets

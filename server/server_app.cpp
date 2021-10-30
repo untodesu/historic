@@ -4,11 +4,10 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <enet/enet.h>
-#include <exception>
 #include <server/game.hpp>
 #include <server/globals.hpp>
 #include <server/server_app.hpp>
+#include <server/network.hpp>
 #include <shared/protocol/protocol.hpp>
 #include <shared/util/clock.hpp>
 #include <spdlog/spdlog.h>
@@ -18,18 +17,9 @@ constexpr const float TICK_DT = 1.0f / protocol::DEFAULT_TICKRATE;
 
 void server_app::run()
 {
-    ENetAddress address;
-    address.host = ENET_HOST_ANY;
-    address.port = protocol::DEFAULT_PORT;
-
-    globals::host = enet_host_create(&address, 16, 2, 0, 0);
-    if(!globals::host) {
-        spdlog::error("Unable to create a server host object.");
-        std::terminate();
-    }
+    network::init();
 
     game::init();
-
     game::postInit();
 
     globals::curtime = 0.0f;
@@ -48,10 +38,12 @@ void server_app::run()
 
         if(globals::ticktime < TICK_DT) {
             if(size_t drop = static_cast<size_t>(util::seconds<float>(time_now - time_accum) / TICK_DT)) {
-                spdlog::warn("Dropping {} server frames", drop);
+                spdlog::warn("Dropping {} ticks", drop);
                 time_accum = time_now;
             }
         }
+
+        network::update();
 
         game::update();
         globals::num_ticks++;
@@ -59,9 +51,8 @@ void server_app::run()
         std::this_thread::sleep_until(time_accum += tick_us);
     }
 
-    spdlog::info("Server shutdown after {} ticks", globals::num_ticks);
     game::shutdown();
+    spdlog::info("Server shutdown after {} ticks", globals::num_ticks);
 
-    enet_host_destroy(globals::host);
-    globals::host = nullptr;
+    network::shutdown();
 }

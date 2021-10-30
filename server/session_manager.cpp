@@ -8,6 +8,7 @@
 #include <shared/util/enet.hpp>
 #include <server/globals.hpp>
 #include <server/session_manager.hpp>
+#include <unordered_map>
 
 static uint32_t session_id_base = 0;
 static std::unordered_map<uint32_t, Session> sessions;
@@ -22,8 +23,8 @@ void session_manager::init()
 Session *session_manager::create()
 {
     Session session = {};
-    session.session_id = session_id_base++;
-    return &(sessions[session.session_id] = session);
+    session.id = session_id_base++;
+    return &(sessions[session.id] = session);
 }
 
 Session *session_manager::find(uint32_t session_id)
@@ -38,8 +39,8 @@ void session_manager::destroy(Session *session)
 {
     for(auto it = sessions.cbegin(); it != sessions.cend(); it++) {
         if(&it->second == session) {
-            if(session->player != entt::null)
-                globals::registry.destroy(session->player);
+            if(globals::registry.valid(it->second.player_entity))
+                globals::registry.destroy(session->player_entity);
             sessions.erase(it);
             return;
         }

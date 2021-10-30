@@ -5,14 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <shared/session.hpp>
 
-namespace session_manager
+namespace sv_network
 {
 void init();
-Session *create();
-Session *find(uint32_t session_id);
-void destroy(Session *session);
-void kick(Session *session, const std::string &reason);
-void kickAll(const std::string &reason);
-} // namespace session_manager
+void shutdown();
+void update();
+} // namespace sv_network
+
+namespace network = sv_network;

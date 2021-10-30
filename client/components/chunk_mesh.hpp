@@ -5,19 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <common/math/types.hpp>
-#include <string>
+#include <client/render/gl/drawcmd.hpp>
+#include <client/render/gl/vertexarray.hpp>
 
-namespace cl_game
-{
-void init();
-void postInit();
-void shutdown();
-void modeChange(int width, int height);
-void update();
-void draw();
-void drawImgui();
-void postDraw();
-} // namespace cl_game
-
-namespace game = cl_game;
+struct ChunkFlaggedForMeshingComponent final {};
+struct ChunkMeshComponent final {
+    gl::Buffer ibo, vbo;
+    gl::VertexArray vao;
+    gl::DrawCommand cmd;
+};

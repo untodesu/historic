@@ -5,19 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <common/math/types.hpp>
-#include <string>
 
-namespace cl_game
+namespace player_move
 {
-void init();
-void postInit();
-void shutdown();
-void modeChange(int width, int height);
 void update();
-void draw();
-void drawImgui();
-void postDraw();
-} // namespace cl_game
-
-namespace game = cl_game;
+void send();
+} // namespace player_move

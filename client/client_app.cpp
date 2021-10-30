@@ -4,13 +4,13 @@
  * License, v2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <enet/enet.h>
 #include <exception>
-#include <client/gl/context.hpp>
+#include <client/render/gl/context.hpp>
 #include <client/client_app.hpp>
 #include <client/game.hpp>
 #include <client/globals.hpp>
 #include <client/input.hpp>
+#include <client/network.hpp>
 #include <client/screen.hpp>
 #include <shared/util/clock.hpp>
 #include <glad/gl.h>
@@ -27,12 +27,6 @@ static void glfwOnError(int code, const char *message)
 
 void client_app::run()
 {
-    globals::host = enet_host_create(nullptr, 1, 2, 0, 0);
-    if(!globals::host) {
-        spdlog::error("Unable to create a client host object.");
-        std::terminate();
-    }
-
     glfwSetErrorCallback(glfwOnError);
     if(!glfwInit()) {
         spdlog::error("glfwInit() failed.");
@@ -49,6 +43,8 @@ void client_app::run()
 
     glfwMakeContextCurrent(globals::window);
     gl::init();
+
+    network::init();
 
     game::init();
 
@@ -78,6 +74,8 @@ void client_app::run()
         globals::avg_frametime *= 0.5f;
         globals::vertices_drawn = 0;
 
+        network::update();
+
         game::update();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -104,11 +102,11 @@ void client_app::run()
     }
 
     game::shutdown();
+    
     spdlog::info("Client shutdown after {} frames. Avg. dt: {:.03f} ms ({:.02f} FPS)", globals::frame_count, globals::avg_frametime * 1000.0f, 1.0f / globals::avg_frametime);
 
     glfwDestroyWindow(globals::window);
     glfwTerminate();
 
-    enet_host_destroy(globals::host);
-    globals::host = nullptr;
+    network::shutdown();
 }

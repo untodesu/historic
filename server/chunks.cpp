@@ -6,7 +6,7 @@
  */
 #include <server/chunks.hpp>
 #include <server/globals.hpp>
-#include <shared/comp/chunk.hpp>
+#include <shared/components/chunk.hpp>
 
 void ServerChunkManager::implOnClear()
 {

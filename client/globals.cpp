@@ -5,18 +5,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <common/math/const.hpp>
-#include <client/atlas.hpp>
 #include <client/chunks.hpp>
-#include <client/gbuffer.hpp>
 #include <client/globals.hpp>
+#include <client/render/atlas.hpp>
+#include <client/render/gbuffer.hpp>
+#include <shared/session.hpp>
 #include <shared/voxels.hpp>
 
 // Networking
 ENetHost *cl_globals::host = nullptr;
-ENetPeer *cl_globals::peer = nullptr;
-uint32_t cl_globals::session_id = 0;
-ClientState cl_globals::state = ClientState::DISCONNECTED;
-std::unordered_map<uint16_t, cl_packet_handler_t> cl_globals::packet_handlers;
+ClientSession cl_globals::session;
 
 // Rendering
 GLFWwindow *cl_globals::window = nullptr;
