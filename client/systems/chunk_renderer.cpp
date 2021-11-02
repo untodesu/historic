@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2021, Kirill GPRB. All Rights Reserved.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * chunk_renderer.cpp
+ * Copyright (c) 2021, Kirill GPRB.
+ * All Rights Reserved.
  */
 #include <common/filesystem.hpp>
 #include <client/components/chunk_mesh.hpp>
@@ -34,7 +33,7 @@ struct UBOData_GBuffer final {
 };
 
 static gl::Buffer shadow_ubo;
-static gl::Shader shadow_shaders[2];
+static gl::Shader shadow_shader;
 static gl::Pipeline shadow_pipeline;
 static gl::Buffer gbuffer_ubo;
 static gl::Shader gbuffer_shaders[2];
@@ -48,17 +47,12 @@ void chunk_renderer::init()
     shadow_ubo.create();
     shadow_ubo.storage(sizeof(UBOData_Shadow), nullptr, GL_DYNAMIC_STORAGE_BIT);
 
-    shadow_shaders[0].create();
-    if(!fs::readText("shaders/chunk_shadow.vert.glsl", source) || !shadow_shaders[0].glsl(GL_VERTEX_SHADER, source))
-        std::terminate();
-
-    shadow_shaders[1].create();
-    if(!fs::readText("shaders/chunk_shadow.frag.glsl", source) || !shadow_shaders[1].glsl(GL_FRAGMENT_SHADER, source))
+    shadow_shader.create();
+    if(!fs::readText("shaders/chunk_shadow.vert.glsl", source) || !shadow_shader.glsl(GL_VERTEX_SHADER, source))
         std::terminate();
 
     shadow_pipeline.create();
-    shadow_pipeline.stage(shadow_shaders[0]);
-    shadow_pipeline.stage(shadow_shaders[1]);
+    shadow_pipeline.stage(shadow_shader);
 
     gbuffer_ubo.create();
     gbuffer_ubo.storage(sizeof(UBOData_GBuffer), nullptr, GL_DYNAMIC_STORAGE_BIT);
@@ -94,8 +88,7 @@ void chunk_renderer::shutdown()
     gbuffer_ubo.destroy();
 
     shadow_pipeline.destroy();
-    shadow_shaders[1].destroy();
-    shadow_shaders[0].destroy();
+    shadow_shader.destroy();
     shadow_ubo.destroy();
 }
 

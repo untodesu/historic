@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2021, Kirill GPRB. All Rights Reserved.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * chunk_shadow.vert.glsl
+ * Copyright (c) 2021, Kirill GPRB.
+ * All Rights Reserved.
  */
 #version 460
 
@@ -12,7 +11,7 @@ out gl_PerVertex {
     vec4 gl_Position;
 };
 
-layout(std140, binding = 0) uniform UBO_Shadow {
+layout(std140, binding = 0) uniform __ubo_0 {
     mat4 projview;
     vec4 chunkpos;
 };

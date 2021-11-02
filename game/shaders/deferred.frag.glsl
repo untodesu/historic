@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2021, Kirill GPRB. All Rights Reserved.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * deferred.frag.glsl
+ * Copyright (c) 2021, Kirill GPRB.
+ * All Rights Reserved.
  */
 #version 460
 
@@ -18,7 +17,7 @@ layout(binding = 2) uniform sampler2D position;
 layout(binding = 3) uniform sampler2D shadow_projcoord;
 layout(binding = 4) uniform sampler2DShadow shadowmap;
 
-layout(std140, binding = 0) uniform UBO_Composite {
+layout(std140, binding = 0) uniform __ubo_0 {
     vec4 tweaks;
     vec4 light_direction;
     vec4 light_color;
