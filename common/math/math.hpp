@@ -85,7 +85,7 @@ constexpr static inline const bool isInBB(const float3 &p, const float3 &a, cons
 template<typename T>
 constexpr static inline void vecToArray(const T &vec, typename T::value_type array[T::length()])
 {
-    for(T::length_type i = 0; i < T::length(); i++)
+    for(typename T::length_type i = 0; i < T::length(); i++)
         array[i] = vec[i];
 }
 
@@ -93,7 +93,7 @@ template<typename T>
 constexpr static inline const T arrayToVec(const typename T::value_type array[T::length()])
 {
     T vec;
-    for(T::length_type i = 0; i < T::length(); i++)
+    for(typename T::length_type i = 0; i < T::length(); i++)
         vec[i] = array[i];
     return vec;
 }

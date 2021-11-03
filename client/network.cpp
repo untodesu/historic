@@ -227,7 +227,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
         [](const std::vector<uint8_t> &payload) {
             protocol::packets::HeadAngles packet;
             protocol::deserialize(payload, packet);
-
+    
             entt::entity entity = network::findEntity(packet.network_id);
             if(globals::registry.valid(entity) && entity != globals::session.player_entity) {
                 HeadComponent &head = globals::registry.get<HeadComponent>(entity);
@@ -363,7 +363,7 @@ entt::entity cl_network::createEntity(uint32_t network_id)
 {
     const auto it = network_entities.find(network_id);
     if(it != network_entities.cend()) {
-        spdlog::warn("Network entity {} alread exists!", network_id);
+        spdlog::warn("Network entity {} already exists!", network_id);
         return it->second;
     }
 

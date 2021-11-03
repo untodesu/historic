@@ -15,6 +15,7 @@
 #include <shared/components/player.hpp>
 #include <shared/world.hpp>
 #include <spdlog/spdlog.h>
+#include <shared/session.hpp>
 
 static float2 pv_angles = FLOAT2_ZERO;
 static float3 pv_position = FLOAT3_ZERO;
@@ -27,19 +28,20 @@ void proj_view::update()
     pv_position = FLOAT3_ZERO;
     pv_matrix = FLOAT4X4_IDENTITY;
 
-    const auto group = globals::registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
-    for(const auto [entity, camera] : group.each()) {
+    const auto cg = globals::registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
+    for(const auto [entity, camera] : cg.each()) {
         pv_matrix *= glm::perspective(camera.fov, screen::getAspectRatio(), camera.z_near, camera.z_far);
         break;
     }
 
-    const auto view = globals::registry.view<HeadComponent>();
-    for(const auto [entity, head] : view.each()) {
+    const auto hg = globals::registry.group(entt::get<HeadComponent, PlayerComponent, LocalPlayerComponent>);
+    for(const auto [entity, head, player] : hg.each()) {
         pv_angles = head.angles;
         pv_position = head.offset;
         if(CreatureComponent *creature = globals::registry.try_get<CreatureComponent>(entity))
             pv_position += creature->position;
         pv_matrix *= glm::lookAt(pv_position, pv_position + floatquat(float3(pv_angles.x, pv_angles.y, 0.0f)) * FLOAT3_FORWARD, FLOAT3_UP);
+        break;
     }
 
     pv_frustum.update(pv_matrix);
