@@ -7,16 +7,20 @@
 #include <shared/util/enet.hpp>
 #include <server/globals.hpp>
 #include <server/session_manager.hpp>
-#include <unordered_map>
 
 static uint32_t session_id_base = 0;
-static std::unordered_map<uint32_t, Session> sessions;
+static session_manager::map_type sessions;
 
 void session_manager::init()
 {
     kickAll("Session manager has restarted.");
     session_id_base = 0;
     sessions.clear();
+}
+
+session_manager::map_type &session_manager::all()
+{
+    return sessions;
 }
 
 Session *session_manager::create()

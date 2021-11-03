@@ -93,6 +93,19 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
                 }
             }
 
+            session_manager::map_type &sessions = session_manager::all();
+            for(const auto it : sessions) {
+                if(it.first == session->id)
+                    continue;
+                protocol::packets::SpawnPlayer playerp = {};
+                playerp.network_id = static_cast<uint32_t>(it.second.player_entity);
+                playerp.session_id = it.second.id;
+                math::vecToArray(globals::registry.get<CreatureComponent>(it.second.player_entity).position, playerp.position);
+                playerp.yaw = globals::registry.get<CreatureComponent>(it.second.player_entity).yaw;
+                math::vecToArray(globals::registry.get<HeadComponent>(it.second.player_entity).angles, playerp.head_angles);
+                util::sendPacket(session->peer, playerp, 0, 0);
+            }
+
             protocol::packets::GamedataEndRequest endp = {};
             endp.voxel_checksum = globals::voxels.getChecksum();
             util::sendPacket(session->peer, endp, 0, 0);

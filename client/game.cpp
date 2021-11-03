@@ -122,9 +122,33 @@ void cl_game::draw()
     deferred_pass::draw();
 }
 
+#include <imgui.h>
+constexpr static const ImGuiWindowFlags WINDOW_FLAGS = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar;
+
 void cl_game::drawImgui()
 {
     debug_overlay::draw();
+    
+    // This is just a quick-and-dirty way
+    // for me to see if the client recognizes
+    // other players that join. Nothing more.
+    if(ImGui::Begin("kludge", nullptr, WINDOW_FLAGS)) {
+        const float2 &ss = screen::getSize();
+        ImGui::SetWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+        ImGui::SetWindowSize(ImVec2(ss.x, ss.y), ImGuiCond_Always);
+        const float4x4 &pv = proj_view::matrix();
+        const auto group = globals::registry.group(entt::get<CreatureComponent, PlayerComponent>, entt::exclude<LocalPlayerComponent>);
+        for(const auto [entity, creature, player] : group.each()) {
+            float4 pos = float4(creature.position, 1.0f) * pv;
+            pos.x /= pos.w;
+            pos.y /= pos.w;
+            pos.z /= pos.w;
+            float2 sp = (float2(pos.x, pos.y) + 1.0f) * 0.5f * ss;
+            ImGui::SetCursorPos(ImVec2(sp.x, sp.y));
+            ImGui::Text("ID_%u", player.session_id);
+        }
+        ImGui::End();
+    }
 }
 
 void cl_game::postDraw()
