@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 #include <cstdio>
+#include <cinttypes>
 
 namespace util
 {

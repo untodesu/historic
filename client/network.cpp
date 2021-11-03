@@ -15,19 +15,20 @@
 #include <shared/components/player.hpp>
 #include <shared/protocol/packets/client/handshake.hpp>
 #include <shared/protocol/packets/client/login_start.hpp>
-#include <shared/protocol/packets/client/request_gamedata.hpp>
-#include <shared/protocol/packets/client/request_respawn.hpp>
-#include <shared/protocol/packets/server/gamedata_chunk_voxels.hpp>
-#include <shared/protocol/packets/server/gamedata_end_request.hpp>
-#include <shared/protocol/packets/server/gamedata_voxel_entry.hpp>
-#include <shared/protocol/packets/server/gamedata_voxel_face.hpp>
+#include <shared/protocol/packets/server/chunk_voxels.hpp>
 #include <shared/protocol/packets/server/login_success.hpp>
+#include <shared/protocol/packets/server/player_info_entry.hpp>
+#include <shared/protocol/packets/server/player_info_username.hpp>
 #include <shared/protocol/packets/server/remove_entity.hpp>
+#include <shared/protocol/packets/server/spawn_entity.hpp>
 #include <shared/protocol/packets/server/spawn_player.hpp>
-#include <shared/protocol/packets/shared/creature_position.hpp>
+#include <shared/protocol/packets/server/voxel_def_checksum.hpp>
+#include <shared/protocol/packets/server/voxel_def_entry.hpp>
+#include <shared/protocol/packets/server/voxel_def_face.hpp>
+#include <shared/protocol/packets/shared/chat_message.hpp>
 #include <shared/protocol/packets/shared/disconnect.hpp>
-#include <shared/protocol/packets/shared/head_angles.hpp>
-#include <shared/session.hpp>
+#include <shared/protocol/packets/shared/update_creature.hpp>
+#include <shared/protocol/packets/shared/update_head.hpp>
 #include <shared/util/enet.hpp>
 #include <shared/voxels.hpp>
 #include <spdlog/spdlog.h>
@@ -36,6 +37,7 @@
 
 struct NetIDComponent final { uint32_t id; };
 static std::unordered_map<uint32_t, entt::entity> network_entities;
+static std::unordered_map<uint32_t, ClientSession> sessions;
 static std::unordered_map<voxel_t, VoxelInfo> voxeldef_draft;
 
 static void clearNetworkEntities()
@@ -86,28 +88,49 @@ static void draftSubmit()
 
 static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)> packets = {
     {
-        protocol::packets::GamedataChunkVoxels::id,
+        protocol::packets::LoginSuccess::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::GamedataChunkVoxels packet;
+            protocol::packets::LoginSuccess packet;
             protocol::deserialize(payload, packet);
-            globals::chunks.create(math::arrayToVec<chunkpos_t>(packet.position), CHUNK_CREATE_UPDATE_NEIGHBOURS)->data = packet.data;
+            globals::session.id = packet.session_id;
+            globals::session.state = SessionState::RECEIVING_GAMEDATA;
         }
     },
     {
-        protocol::packets::GamedataEndRequest::id,
+        protocol::packets::VoxelDefEntry::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::GamedataEndRequest packet;
+            protocol::packets::VoxelDefEntry packet;
+            protocol::deserialize(payload, packet);
+            draftVoxelEntry(packet.voxel, packet.type);
+        }
+    },
+    {
+        protocol::packets::VoxelDefFace::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::VoxelDefFace packet;
+            protocol::deserialize(payload, packet);
+
+            VoxelFaceInfo info = {};
+            info.face = packet.face;
+            info.texture = packet.texture;
+
+            draftVoxelFace(packet.voxel, info, packet.flags & protocol::packets::VoxelDefFace::TRANSPARENT);
+        }
+    },
+    {
+        protocol::packets::VoxelDefChecksum::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::VoxelDefChecksum packet;
             protocol::deserialize(payload, packet);
 
             draftSubmit();
-            voxeldef_draft.clear();
 
-            uint64_t voxel_checksum = globals::voxels.getChecksum();
-            if(packet.voxel_checksum != voxel_checksum) {
-                // This is not THAT bad to request the
-                // whole voxel description table again
-                // so we stay only with a warning.
-                spdlog::warn("VoxelDef checksums differ! (CL: {}, SV: {})", voxel_checksum, packet.voxel_checksum);
+            uint64_t client_checksum = globals::voxels.getChecksum();
+            if(client_checksum != packet.checksum) {
+                // It's not that bad to disconnect and/or
+                // try to receive the table again so we
+                // are going to stay with a warning now.
+                spdlog::warn("VoxelDef checksums differ! (client: {}, server: {})", client_checksum, packet.checksum);
             }
 
             globals::solid_textures.create(32, 32, MAX_VOXELS);
@@ -116,30 +139,62 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
                     globals::solid_textures.push(face.texture);
             }
             globals::solid_textures.submit();
-
-            // UNDONE: do this in the client game loop!!!
-            util::sendPacket(globals::session.peer, protocol::packets::RequestRespawn {}, 0, 0);
         }
     },
     {
-        protocol::packets::GamedataVoxelEntry::id,
+        protocol::packets::ChunkVoxels::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::GamedataVoxelEntry packet;
+            protocol::packets::ChunkVoxels packet;
             protocol::deserialize(payload, packet);
-            draftVoxelEntry(packet.voxel, packet.type);
+            globals::chunks.create(math::arrayToVec<chunkpos_t>(packet.position), CHUNK_CREATE_UPDATE_NEIGHBOURS)->data = packet.data;
         }
     },
     {
-        protocol::packets::GamedataVoxelFace::id,
+        protocol::packets::PlayerInfoEntry::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::GamedataVoxelFace packet;
+            protocol::packets::PlayerInfoEntry packet;
+            protocol::deserialize(payload, packet);
+            network::createSession(packet.session_id);
+        }
+    },
+    {
+        protocol::packets::PlayerInfoUsername::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::PlayerInfoUsername packet;
             protocol::deserialize(payload, packet);
 
-            VoxelFaceInfo info = {};
-            info.face = packet.face;
-            info.texture = packet.texture;
+            if(ClientSession *session = network::findSession(packet.session_id)) {
+                session->username = packet.username;
+                if(session == &globals::session)
+                    spdlog::info("Logged in as {}, session_id={}", session->username, session->id);
+                return;
+            }
 
-            draftVoxelFace(packet.voxel, info, !!packet.transparent);
+            spdlog::warn("PlayerInfoUsername: unknown session_id: {}", packet.session_id);
+        }
+    },
+    {
+        protocol::packets::SpawnEntity::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::SpawnEntity packet;
+            protocol::deserialize(payload, packet);
+
+            entt::entity entity = network::createEntity(packet.entity_id);
+            switch(packet.type) {
+                case EntityType::PLAYER:
+                    globals::registry.emplace<CreatureComponent>(entity);
+                    globals::registry.emplace<HeadComponent>(entity);
+                    globals::registry.emplace<PlayerComponent>(entity);
+                    break;
+            }
+        }
+    },
+    {
+        protocol::packets::RemoveEntity::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::RemoveEntity packet;
+            protocol::deserialize(payload, packet);
+            network::removeEntity(packet.entity_id);
         }
     },
     {
@@ -148,60 +203,25 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
             protocol::packets::SpawnPlayer packet;
             protocol::deserialize(payload, packet);
 
-            entt::entity entity = network::createEntity(packet.network_id);
-
-            HeadComponent &head = globals::registry.emplace<HeadComponent>(entity);
-            head.angles = math::arrayToVec<float3>(packet.head_angles);
-            head.offset = FLOAT3_ZERO;
-
-            CreatureComponent &creature = globals::registry.emplace<CreatureComponent>(entity);
-            creature.position = math::arrayToVec<float3>(packet.position);
-            creature.yaw = packet.yaw;
-
-            PlayerComponent &player = globals::registry.emplace<PlayerComponent>(entity);
-            player.session_id = packet.session_id;
-
-            // Local player?
-            if(player.session_id == globals::session.id) {
-                globals::registry.emplace<LocalPlayerComponent>(entity);
-                globals::registry.emplace<ActiveCameraComponent>(entity);
-
-                CameraComponent &camera = globals::registry.emplace<CameraComponent>(entity);
-                camera.fov = glm::radians(90.0f);
-                camera.z_near = 0.01f;
-                camera.z_far = 1024.0f;
-
-                globals::session.player_entity = entity;
-                globals::session.player_network_id = packet.network_id;
-                globals::session.state = SessionState::PLAYING;
+            entt::entity entity = network::findEntity(packet.entity_id);
+            if(!globals::registry.valid(entity)) {
+                // At this moment player entity must be valid
+                // and if it isn't it's just a red flag for us.
+                network::disconnect("Protocol mishmash");
+                return;
             }
+
+            globals::session.player_entity = entity;
+            globals::session.player_entity_id = packet.entity_id;
+            globals::session.state = SessionState::PLAYING;
         }
     },
     {
-        protocol::packets::LoginSuccess::id,
+        protocol::packets::ChatMessage::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::LoginSuccess packet;
+            protocol::packets::ChatMessage packet;
             protocol::deserialize(payload, packet);
-
-            globals::session.state = SessionState::LOADING_GAMEDATA;
-            globals::session.id = packet.session_id;
-
-            spdlog::info("Logged in as {} with session_id={}", packet.username, globals::session.id);
-
-            util::sendPacket(globals::session.peer, protocol::packets::RequestGamedata {}, 0, 0);
-        }
-    },
-    {
-        protocol::packets::CreaturePosition::id,
-        [](const std::vector<uint8_t> &payload) {
-            protocol::packets::CreaturePosition packet;
-            protocol::deserialize(payload, packet);
-
-            entt::entity entity = network::findEntity(packet.network_id);
-            if(globals::registry.valid(entity) && entity != globals::session.player_entity) {
-                CreatureComponent &creature = globals::registry.get<CreatureComponent>(entity);
-                creature.position = math::arrayToVec<float3>(packet.position);
-            }
+            spdlog::info(packet.message);
         }
     },
     {
@@ -218,30 +238,33 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
             globals::session.id = 0;
             globals::session.state = SessionState::DISCONNECTED;
             globals::session.player_entity = entt::null;
-            globals::session.player_network_id = 0;
+            globals::session.player_entity_id = 0;
 
             globals::registry.clear();
         }
     },
     {
-        protocol::packets::HeadAngles::id,
+        protocol::packets::UpdateCreature::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::HeadAngles packet;
+            protocol::packets::UpdateCreature packet;
             protocol::deserialize(payload, packet);
-    
-            entt::entity entity = network::findEntity(packet.network_id);
-            if(globals::registry.valid(entity) && entity != globals::session.player_entity) {
-                HeadComponent &head = globals::registry.get<HeadComponent>(entity);
-                head.angles = math::arrayToVec<float3>(packet.angles);
+            entt::entity entity = network::findEntity(packet.entity_id);
+            if(globals::registry.valid(entity)) {
+                if(CreatureComponent *creature = globals::registry.try_get<CreatureComponent>(entity))
+                    creature->position = math::arrayToVec<float3>(packet.position);
             }
         }
     },
     {
-        protocol::packets::RemoveEntity::id,
+        protocol::packets::UpdateHead::id,
         [](const std::vector<uint8_t> &payload) {
-            protocol::packets::RemoveEntity packet;
+            protocol::packets::UpdateHead packet;
             protocol::deserialize(payload, packet);
-            network::removeEntity(packet.network_id);
+            entt::entity entity = network::findEntity(packet.entity_id);
+            if(globals::registry.valid(entity)) {
+                if(HeadComponent *head = globals::registry.try_get<HeadComponent>(entity))
+                    head->angles = math::arrayToVec<float2>(packet.angles);
+            }
         }
     }
 };
@@ -259,14 +282,14 @@ void cl_network::init()
 
 void cl_network::shutdown()
 {
-    disconnect("Client shutting down");
+    network::disconnect("Client shutting down");
     enet_host_destroy(globals::host);
     globals::host = nullptr;
 }
 
 bool cl_network::connect(const std::string &host, uint16_t port)
 {
-    disconnect("red vented");
+    network::disconnect("red vented");
 
     globals::registry.clear();
 
@@ -395,5 +418,39 @@ void cl_network::removeEntity(uint32_t network_id)
     if(it != network_entities.cend()) {
         globals::registry.destroy(it->second);
         network_entities.erase(it);
+    }
+}
+
+ClientSession *cl_network::createSession(uint32_t session_id)
+{
+    if(session_id == globals::session.id)
+        return &globals::session;
+    
+    const auto it = sessions.find(session_id);
+    if(it != sessions.cend()) {
+        spdlog::warn("Session {} already exists!", session_id);
+        return &it->second;
+    }
+
+    ClientSession session = {};
+    session.id = session_id;
+    return &(sessions[session_id] = session);
+}
+
+ClientSession *cl_network::findSession(uint32_t session_id)
+{
+    const auto it = sessions.find(session_id);
+    if(it != sessions.cend())
+        return &it->second;
+    return nullptr;
+}
+
+void cl_network::destroySession(ClientSession *session)
+{
+    const auto it = sessions.find(session->id);
+    if(it != sessions.cend()) {
+        if(globals::registry.valid(it->second.player_entity))
+            network::removeEntity(it->second.player_entity_id);
+        sessions.erase(it);
     }
 }

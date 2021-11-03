@@ -8,13 +8,13 @@
 
 namespace protocol::packets
 {
-struct RemoveEntity final : public ServerPacket<0x006> {
-    uint32_t network_id;
+struct RemoveEntity final : public ServerPacket<0x009> {
+    uint32_t entity_id;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value4b(network_id);
+        s.value4b(entity_id);
     }
 };
 } // namespace protocol::packets

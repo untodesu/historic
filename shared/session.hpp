@@ -6,14 +6,23 @@
 #pragma once
 #include <enet/enet.h>
 #include <entt/entt.hpp>
+#include <shared/voxels.hpp>
 #include <string>
+#include <deque>
 
 enum class SessionState {
     DISCONNECTED,
     CONNECTED,
     LOGGING_IN,
-    LOADING_GAMEDATA,
+    RECEIVING_GAMEDATA,
     PLAYING
+};
+
+enum class ServerGameDataState {
+    VOXEL_DEF,
+    CHUNK_DATA,
+    PLAYER_INFO,
+    ENTITIES
 };
 
 struct Session {
@@ -26,5 +35,5 @@ struct Session {
 
 struct ClientSession final : public Session {
     // server-side entity ID
-    uint32_t player_network_id { 0 };
+    uint32_t player_entity_id { 0 };
 };

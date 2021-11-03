@@ -9,15 +9,13 @@
 
 namespace protocol::packets
 {
-struct LoginSuccess final : public ServerPacket<0x000> {
+struct LoginSuccess final : public ServerPacket<0x001> {
     uint32_t session_id;
-    std::string username;
 
     template<typename S>
     inline void serialize(S &s)
     {
         s.value4b(session_id);
-        s.text1b(username, 39);
     }
 };
 } // namespace protocol::packets

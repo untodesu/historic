@@ -1,23 +1,24 @@
 /*
- * gamedata_voxel_entry.hpp
+ * player_info_username.hpp
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
 #pragma once
 #include <shared/protocol/protocol.hpp>
-#include <shared/voxels.hpp>
+#include <string>
 
 namespace protocol::packets
 {
-struct GamedataVoxelEntry final : public ServerPacket<0x001> {
-    voxel_t voxel;
-    VoxelType type;
+struct PlayerInfoUsername final : public ServerPacket<0x007> {
+    uint32_t session_id;
+    std::string username;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value1b(voxel);
-        s.value1b(type);
+        s.value4b(session_id);
+        s.text1b(username, 63);
     }
 };
 } // namespace protocol::packets
+

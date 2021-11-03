@@ -8,5 +8,4 @@
 
 struct CreatureComponent final {
     float3 position { FLOAT3_ZERO };
-    float yaw { 0.0f };
 };

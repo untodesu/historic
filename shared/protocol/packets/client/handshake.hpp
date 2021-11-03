@@ -9,12 +9,12 @@
 namespace protocol::packets
 {
 struct Handshake final : public ClientPacket<0x000> {
-    uint16_t version { protocol::VERSION };
+    uint16_t protocol_version { protocol::VERSION };
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value2b(version);
+        s.value2b(protocol_version);
     }
 };
 } // namespace protocol::packets

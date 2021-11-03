@@ -1,23 +1,23 @@
 /*
- * gamedata_chunk_voxels.hpp
+ * voxel_def_entry.hpp
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
 #pragma once
 #include <shared/protocol/protocol.hpp>
-#include <shared/world.hpp>
+#include <shared/voxels.hpp>
 
 namespace protocol::packets
 {
-struct GamedataChunkVoxels final : public ServerPacket<0x003> {
-    chunkpos_t::value_type position[3];
-    voxel_array_t data;
+struct VoxelDefEntry final : public ServerPacket<0x002> {
+    voxel_t voxel;
+    VoxelType type;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.container4b(position);
-        s.container1b(data);
+        s.value1b(voxel);
+        s.value1b(type);
     }
 };
 } // namespace protocol::packets

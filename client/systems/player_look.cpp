@@ -9,7 +9,7 @@
 #include <common/math/math.hpp>
 #include <client/screen.hpp>
 #include <client/systems/player_look.hpp>
-#include <shared/protocol/packets/shared/head_angles.hpp>
+#include <shared/protocol/packets/shared/update_head.hpp>
 #include <shared/session.hpp>
 #include <shared/util/enet.hpp>
 
@@ -27,8 +27,8 @@ void player_look::send()
 {
     const float2 delta = input::getCursorDelta() * 8.0f / screen::getSize();
     const HeadComponent &head = globals::registry.get<HeadComponent>(globals::session.player_entity);
-    protocol::packets::HeadAngles headp = {};
-    headp.network_id = globals::session.player_network_id;
+    protocol::packets::UpdateHead headp = {};
+    headp.entity_id = globals::session.player_entity_id;
     math::vecToArray(head.angles, headp.angles);
     util::sendPacket(globals::session.peer, headp, 0, 0);
 }

@@ -10,7 +10,7 @@
 #include <common/math/math.hpp>
 #include <client/screen.hpp>
 #include <client/systems/player_move.hpp>
-#include <shared/protocol/packets/shared/creature_position.hpp>
+#include <shared/protocol/packets/shared/update_creature.hpp>
 #include <shared/session.hpp>
 #include <shared/util/enet.hpp>
 
@@ -38,8 +38,8 @@ void player_move::update()
 void player_move::send()
 {
     const CreatureComponent &creature = globals::registry.get<CreatureComponent>(globals::session.player_entity);
-    protocol::packets::CreaturePosition positionp = {};
-    positionp.network_id = globals::session.player_network_id;
+    protocol::packets::UpdateCreature positionp = {};
+    positionp.entity_id = globals::session.player_entity_id;
     math::vecToArray(creature.position, positionp.position);
     util::sendPacket(globals::session.peer, positionp, 0, 0);
 }

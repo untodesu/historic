@@ -1,22 +1,21 @@
 /*
- * creature_position.hpp
+ * chat_message.hpp
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
 #pragma once
 #include <shared/protocol/protocol.hpp>
+#include <string>
 
 namespace protocol::packets
 {
-struct CreaturePosition final : public SharedPacket<0x001> {
-    uint32_t network_id;
-    float3::value_type position[3];
+struct ChatMessage final : public SharedPacket<0x001> {
+    std::string message;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value4b(network_id);
-        s.container4b(position);
+        s.text1b(message, 2047);
     }
 };
 } // namespace protocol::packets

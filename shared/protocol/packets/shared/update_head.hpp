@@ -1,5 +1,5 @@
 /*
- * gamedata_end_request.hpp
+ * update_head.hpp
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
@@ -8,13 +8,15 @@
 
 namespace protocol::packets
 {
-struct GamedataEndRequest final : public ServerPacket<0x004> {
-    uint64_t voxel_checksum;
+struct UpdateHead final : public SharedPacket<0x003> {
+    uint32_t entity_id;
+    float2::value_type angles[2];
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value8b(voxel_checksum);
+        s.value4b(entity_id);
+        s.container4b(angles);
     }
 };
 } // namespace protocol::packets

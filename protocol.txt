@@ -1,78 +1,56 @@
-+---------------+---------------------------+-------------------------------+
-|   PACKET ID   |   NAME                    |   DESCRIPTION                 |
-+---------------+---------------------------+-------------------------------+
+NEW CLIENT ID 0x000
+NEW SERVER ID 0x000
+NEW SHARED ID 0x000
 
-+---------------+---------------------------+-------------------------------+
-|           C L I E N T  T O  S E R V E R  P A C K E T S                    |
-+---------------+---------------------------+-------------------------------+
-|   000         |   Handshake               | The initial packet sent       |
-|               |                           | by the client.                |
-+---------------+---------------------------+-------------------------------+
-|   001         |   Login start             | Contains various info for     |
-|               |                           | the server about the          |
-|               |                           | client.                       |
-+---------------+---------------------------+-------------------------------+
-|   002         |   Req. GameData           | Requests the initial game     |
-|               |                           | information such as voxel     |
-|               |                           | definition table and          |
-|               |                           | general server info.          |
-+---------------+---------------------------+-------------------------------+
-|   003         |   Req. Respawn            | Requests the respawn data     |
-|               |                           | to be sent to the client      |
-|               |                           | note that this also makes     |
-|               |                           | the server to broadcast       |
-|               |                           | it if the data is valid.      |
-+---------------+---------------------------+-------------------------------+
+000 Handshake
+001 LoginStart
 
-+---------------+---------------------------+-------------------------------+
-|           S E R V E R  T O  C L I E N T  P A C K E T S                    |
-+---------------+---------------------------+-------------------------------+
-|   000         |   Login success           | Server sends it if the        |
-|               |                           | data provided by the          |
-|               |                           | client is okay. It may        |
-|               |                           | forcefully change the         |
-|               |                           | username for reasons.         |
-+---------------+---------------------------+-------------------------------+
-|   001         |   GameData: voxel entry   | Voxel table entry info        |
-+---------------+---------------------------+-------------------------------+
-|   002         |   GameData: voxel face    | Voxel table entry face        |
-+---------------+---------------------------+-------------------------------+
-|   003         |   GameData: chunk voxels  | An array of voxels.           |
-+---------------+---------------------------+-------------------------------+
-|   004         |   GameData: end request   | A signal to the requesting    |
-|               |                           | client that the initial data  |
-|               |                           | is sent and needs to be       |
-|               |                           | checked via checksums.        |
-+---------------+---------------------------+-------------------------------+
-|   005         |   Create entity           | Creates an entity with NETID  |
-|               |                           | component. Usually broadcasts |
-+---------------+---------------------------+-------------------------------+
-|   006         |   Attach Creature         | Attaches CreatureComponent to |
-|               |                           | a network entity (with NETID) |
-+---------------+---------------------------+-------------------------------+
-|   007         |   Attach Head             | Attaches HeadComponent to a   |
-|               |                           | network entity (with NETID)   |
-+---------------+---------------------------+-------------------------------+
-|   008         |   Attach Player           | Attaches PlayerComponent to a |
-|               |                           | network entity (with NETID)   |
-+---------------+---------------------------+-------------------------------+
+000 RESERVED (for future responses to Handshake)
+001 LoginSuccess
+002 VoxelDefEntry
+003 VoxelDefFace
+004 VoxelDefChecksum
+005 ChunkVoxels
+006 PlayerInfoEntry
+007 PlayerInfoUsername
+008 SpawnEntity
+009 RemoveEntity
+00A SpawnPlayer
 
-+---------------+---------------------------+-------------------------------+
-|                   S H A R E D  P A C K E T S                              |
-+---------------+---------------------------+-------------------------------+
-|   000         |   Disconnect              | Disconnect notice.            |
-|               |                           | After sending either side     |
-|               |                           | disconnects immediately.      |
-+---------------+---------------------------+-------------------------------+
-|   001         |   Creature position       | CreatureComponent position.   |
-|               |                           | Valid only for ECS entities   |
-|               |                           | with NETID component.         |
-+---------------+---------------------------+-------------------------------+
-|   002         |   Creature rotation       | CreatureComponent rotation.   |
-|               |                           | Valid only for ECS entities   |
-|               |                           | with NETID component.         |
-+---------------+---------------------------+-------------------------------+
-|   003         |   Head angles             | HeadComponent angles.         |
-|               |                           | Valid only for ECS entities   |
-|               |                           | with NETID component.         |
-+---------------+---------------------------+-------------------------------+
+000 Disconnect
+001 ChatMessage
+002 UpdateCreature
+003 UpdateHead
+
+1. Server runs indefinitely waiting for new connections (session state 3).
+2. When a connection occurs, the server changes session state
+to 1 and awaits for a Handshake packet.
+3. After LoginSuccess is sent, server changes session state to 2
+and sends lots of valuable data required for the client game to work.
+4. After SpawnPlayer is broadcast across the server, session state is
+changed to 3 (game loop, the initial state),
+
+1. Connection and login:
+    C -> S: Handshake(protocol_version)
+    C -> S: LoginStart(username)
+    S -> C: LoginSuccess(session_id) [switch to 2]
+
+2. Pre-respawn game data:
+    S -> C: VoxelDefEntry(voxel, type)
+    S -> C: VoxelDefFace(voxel, face, transparent, texture)
+    S -> C: VoxelDefChecksum(checksum)
+    S -> C: ChunkVoxels(chunkpos, data)
+    S -> C: PlayerInfoEntry(session_id)
+    S -> C: PlayerInfoUsername(session_id, username)
+    S -> *: SpawnEntity(entity_id, type)
+    S -> *: UpdateCreature(entity_id, position, yaw) [shared]
+    S -> *: UpdateHead(entity_id, angles) [shared]
+    S -> C: SpawnPlayer(player entity_id) [switch to 3]
+
+3. Game loop
+    C -> S: UpdateCreature(player entity_id, position, yaw) [shared]
+    C -> S: UpdateHead(player entity_id, angles) [shared]
+    C -> S: UpdateWhatever(whatever entity_id, ...) [shared]
+    S -> A: UpdateCreature(player entity_id, position, yaw) [shared]
+    S -> A: UpdateHead(player entity_id, angles) [shared]
+    S -> A: UpdateWhatever(whatever entity_id, ...) [shared]

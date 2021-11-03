@@ -16,7 +16,7 @@
 
 namespace protocol
 {
-constexpr static const uint16_t VERSION = 0x0001;
+constexpr static const uint16_t VERSION = 0;
 constexpr static const uint16_t DEFAULT_PORT = 43103;
 constexpr static const float DEFAULT_TICKRATE = 30.0f;
 

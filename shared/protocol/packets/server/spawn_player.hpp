@@ -8,21 +8,13 @@
 
 namespace protocol::packets
 {
-struct SpawnPlayer final : public ServerPacket<0x005> {
-    uint32_t network_id;
-    uint32_t session_id;
-    float3::value_type head_angles[2];
-    float3::value_type position[3];
-    float yaw;
+struct SpawnPlayer final : public ServerPacket<0x00A> {
+    uint32_t entity_id;
 
     template<typename S>
     inline void serialize(S &s)
     {
-        s.value4b(network_id);
-        s.value4b(session_id);
-        s.container4b(head_angles);
-        s.container4b(position);
-        s.value4b(yaw);
+        s.value4b(entity_id);
     }
 };
 } // namespace protocol::packets

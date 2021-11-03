@@ -1,5 +1,5 @@
 /*
- * request_respawn.hpp
+ * voxel_def_checksum.hpp
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
@@ -8,11 +8,13 @@
 
 namespace protocol::packets
 {
-struct RequestRespawn final : public ClientPacket<0x004> {
+struct VoxelDefChecksum final : public ServerPacket<0x004> {
+    uint64_t checksum;
+
     template<typename S>
     inline void serialize(S &s)
     {
-        
+        s.value8b(checksum);
     }
 };
 } // namespace protocol::packets

@@ -29,10 +29,6 @@
 #include <shared/components/creature.hpp>
 #include <shared/components/head.hpp>
 #include <shared/components/player.hpp>
-#include <shared/protocol/packets/client/handshake.hpp>
-#include <shared/protocol/packets/client/login_start.hpp>
-#include <shared/protocol/packets/client/request_gamedata.hpp>
-#include <shared/protocol/packets/server/login_success.hpp>
 #include <shared/session.hpp>
 #include <shared/util/clock.hpp>
 #include <shared/util/enet.hpp>
