@@ -50,7 +50,7 @@ void cl_game::init()
 
     shadow_manager::init(8192, 8192);
     shadow_manager::setLightOrientation(floatquat(glm::radians(float3(45.0f, 0.0f, 45.0f))));
-    shadow_manager::setPolygonOffset(float2(3.0f, 4.0f));
+    shadow_manager::setPolygonOffset(float2(3.0f, 0.5f));
 }
 
 void cl_game::postInit()

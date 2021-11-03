@@ -16,9 +16,10 @@ static ShadowMap shadowmap;
 
 static inline void calculateDirection()
 {
-    // The light_orientation quaternion "looks"
+    // The light_orientation quaternion points
     // at the "sun" thus the direction is
     // inverse from FLOAT3_FORWARD applied to it.
+    // It's basically azimuth and elevation but with quaternions.
     light_direction = light_orientation * FLOAT3_FORWARD * -1.0f;
 }
 
@@ -86,7 +87,7 @@ const ShadowMap &shadow_manager::getShadowMap()
 const float4x4 shadow_manager::getProjView(const float3 &position)
 {
     float4x4 projview = FLOAT4X4_IDENTITY;
-    projview *= glm::ortho(-128.0f, 128.0f, -128.0f, 128.0f, -512.0f, 512.0f);
+    projview *= glm::ortho(-64.0f, 64.0f, -64.0f, 64.0f, -512.0f, 512.0f);
     projview *= glm::lookAt(position - light_direction, position, FLOAT3_UP);
     return projview;
 }
