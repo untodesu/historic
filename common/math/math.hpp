@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2021, Kirill GPRB. All Rights Reserved.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * math.hpp
+ * Copyright (c) 2021, Kirill GPRB.
+ * All Rights Reserved.
  */
 #pragma once
 #include <common/math/const.hpp>
@@ -86,7 +85,7 @@ constexpr static inline const bool isInBB(const float3 &p, const float3 &a, cons
 template<typename T>
 constexpr static inline void vecToArray(const T &vec, typename T::value_type array[T::length()])
 {
-    for(T::length_type i = 0; i < T::length(); i++)
+    for(typename T::length_type i = 0; i < T::length(); i++)
         array[i] = vec[i];
 }
 
@@ -94,7 +93,7 @@ template<typename T>
 constexpr static inline const T arrayToVec(const typename T::value_type array[T::length()])
 {
     T vec;
-    for(T::length_type i = 0; i < T::length(); i++)
+    for(typename T::length_type i = 0; i < T::length(); i++)
         vec[i] = array[i];
     return vec;
 }
