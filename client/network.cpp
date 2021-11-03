@@ -205,16 +205,31 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
             protocol::deserialize(payload, packet);
 
             entt::entity entity = network::findEntity(packet.entity_id);
-            if(!globals::registry.valid(entity)) {
-                // At this moment player entity must be valid
-                // and if it isn't it's just a red flag for us.
-                network::disconnect("Protocol mishmash");
-                return;
+            if(globals::registry.valid(entity)) {
+                if(PlayerComponent *player = globals::registry.try_get<PlayerComponent>(entity)) {
+                    player->session_id = packet.session_id;
+
+                    if(player->session_id == globals::session.id) {
+                        globals::registry.emplace<LocalPlayerComponent>(entity);
+                        globals::registry.emplace<ActiveCameraComponent>(entity);
+
+                        CameraComponent &camera = globals::registry.emplace<CameraComponent>(entity);
+                        camera.fov = glm::radians(90.0f);
+                        camera.z_near = 0.01f;
+                        camera.z_far = 1024.0f;
+
+                        globals::session.player_entity = entity;
+                        globals::session.player_entity_id = packet.entity_id;
+                        globals::session.state = SessionState::PLAYING;
+                    }
+
+                    return;
+                }
             }
 
-            globals::session.player_entity = entity;
-            globals::session.player_entity_id = packet.entity_id;
-            globals::session.state = SessionState::PLAYING;
+            // At this point player entities must be valid
+            // and if they aren't it's just a red flag for us.
+            network::disconnect("Protocol mishmash");
         }
     },
     {

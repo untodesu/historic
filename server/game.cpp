@@ -40,7 +40,7 @@ static void generate(uint64_t seed = 0)
                 int64_t h1 = ((solidity - 0.2f) * 32.0f);
                 int64_t h2 = (hmod * 16.0f);
                 for(int64_t vy = 1; vy < h1; vy++)
-                    globals::chunks.set(voxelpos_t(vx, -vy, vz), 0x01, true);
+                    globals::chunks.set(voxelpos_t(vx, -vy, vz), 0x01, VOXEL_SET_FORCE);
                 for(int64_t vy = 0; h1 && vy < h2; vy++)
                     globals::chunks.set(voxelpos_t(vx, vy, vz), (vy == h2 - 1) ? 0x03 : 0x02, VOXEL_SET_FORCE);
             }

@@ -138,11 +138,23 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
                         util::broadcastPacket(globals::host, creaturep, 0, 0, session->peer);
                         util::broadcastPacket(globals::host, headp, 0, 0, session->peer);
                     }
+
+                    if(it->first != session->id) {
+                        protocol::packets::SpawnPlayer playerp = {};
+                        playerp.entity_id = static_cast<uint32_t>(it->second.player_entity);
+                        playerp.session_id = it->first;
+                        util::sendPacket(session->peer, playerp, 0, 0);
+                    }
                 }
             }
 
+            // Notice that we send SpawnPlayer outside of the loop.
+            // The reason being client-side state machine that changes
+            // it's state to PLAYING at the exact moment a SpawnPlayer
+            // packet with owning session_id is occured.
             protocol::packets::SpawnPlayer playerp = {};
             playerp.entity_id = static_cast<uint32_t>(session->player_entity);
+            playerp.session_id = session->id;
             util::sendPacket(session->peer, playerp, 0, 0);
 
             session->state = SessionState::PLAYING;
