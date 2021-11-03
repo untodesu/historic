@@ -107,12 +107,18 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
             for(auto it = sessions.cbegin(); it != sessions.cend(); it++) {
                 protocol::packets::PlayerInfoEntry entryp = {};
                 entryp.session_id = it->first;
-                util::sendPacket(session->peer, entryp, 0, 0);
 
                 protocol::packets::PlayerInfoUsername namep = {};
                 namep.session_id = it->first;
                 namep.username = it->second.username;
+                
+                util::sendPacket(session->peer, entryp, 0, 0);
                 util::sendPacket(session->peer, namep, 0, 0);
+                
+                if(it->first == session->id) {
+                    util::broadcastPacket(globals::host, entryp, 0, 0);
+                    util::broadcastPacket(globals::host, namep, 0, 0); 
+                }
 
                 if(globals::registry.valid(it->second.player_entity)) {
                     protocol::packets::SpawnEntity spawnp = {};
@@ -155,7 +161,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
             protocol::packets::SpawnPlayer playerp = {};
             playerp.entity_id = static_cast<uint32_t>(session->player_entity);
             playerp.session_id = session->id;
-            util::sendPacket(session->peer, playerp, 0, 0);
+            util::broadcastPacket(globals::host, playerp, 0, 0);
 
             session->state = SessionState::PLAYING;
         }
