@@ -155,6 +155,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
             protocol::packets::PlayerInfoEntry packet;
             protocol::deserialize(payload, packet);
             network::createSession(packet.session_id);
+            spdlog::info("PlayerInfoEntry({})", packet.session_id);
         }
     },
     {
@@ -439,6 +440,8 @@ ClientSession *cl_network::createSession(uint32_t session_id)
 
 ClientSession *cl_network::findSession(uint32_t session_id)
 {
+    if(session_id == globals::session.id)
+        return &globals::session;
     const auto it = sessions.find(session_id);
     if(it != sessions.cend())
         return &it->second;

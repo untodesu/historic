@@ -21,6 +21,7 @@
 #include <shared/protocol/packets/server/player_info_username.hpp>
 #include <shared/protocol/packets/server/remove_entity.hpp>
 #include <shared/protocol/packets/server/spawn_entity.hpp>
+#include <shared/protocol/packets/server/spawn_player.hpp>
 #include <shared/protocol/packets/server/voxel_def_checksum.hpp>
 #include <shared/protocol/packets/server/voxel_def_entry.hpp>
 #include <shared/protocol/packets/server/voxel_def_face.hpp>
@@ -139,6 +140,10 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
                     }
                 }
             }
+
+            protocol::packets::SpawnPlayer playerp = {};
+            playerp.entity_id = static_cast<uint32_t>(session->player_entity);
+            util::sendPacket(session->peer, playerp, 0, 0);
 
             session->state = SessionState::PLAYING;
         }
