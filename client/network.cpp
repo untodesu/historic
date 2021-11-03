@@ -209,21 +209,24 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
                 if(PlayerComponent *player = globals::registry.try_get<PlayerComponent>(entity)) {
                     player->session_id = packet.session_id;
 
-                    if(player->session_id == globals::session.id) {
-                        globals::registry.emplace<LocalPlayerComponent>(entity);
-                        globals::registry.emplace<ActiveCameraComponent>(entity);
+                    if(ClientSession *session = network::findSession(player->session_id)) {
+                        session->player_entity = entity;
+                        session->player_entity_id = packet.entity_id;
 
-                        CameraComponent &camera = globals::registry.emplace<CameraComponent>(entity);
-                        camera.fov = glm::radians(90.0f);
-                        camera.z_near = 0.01f;
-                        camera.z_far = 1024.0f;
+                        if(player->session_id == globals::session.id) {
+                            globals::registry.emplace<LocalPlayerComponent>(entity);
+                            globals::registry.emplace<ActiveCameraComponent>(entity);
 
-                        globals::session.player_entity = entity;
-                        globals::session.player_entity_id = packet.entity_id;
-                        globals::session.state = SessionState::PLAYING;
+                            CameraComponent &camera = globals::registry.emplace<CameraComponent>(entity);
+                            camera.fov = glm::radians(90.0f);
+                            camera.z_near = 0.01f;
+                            camera.z_far = 1024.0f;
+
+                            globals::session.state = SessionState::PLAYING;
+                        }
+
+                        return;
                     }
-
-                    return;
                 }
             }
 

@@ -123,8 +123,6 @@ constexpr static const ImGuiWindowFlags WINDOW_FLAGS = ImGuiWindowFlags_NoBackgr
 
 void cl_game::drawImgui()
 {
-    debug_overlay::draw();
-    
     // This is just a quick-and-dirty way
     // for me to see if the client recognizes
     // other players that join. Nothing more.
@@ -141,10 +139,13 @@ void cl_game::drawImgui()
             scr.y = 1.0 - scr.y;
             scr *= ss;
             ImGui::SetCursorPos(ImVec2(scr.x, scr.y));
-            ImGui::Text("ID_%u", player.session_id);
+            ClientSession *session = network::findSession(player.session_id);
+            ImGui::Text("%s (%u)", session ? session->username.c_str() : "UNNAMED", player.session_id);
         }
         ImGui::End();
     }
+
+    debug_overlay::draw();
 }
 
 void cl_game::postDraw()
