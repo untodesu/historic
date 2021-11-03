@@ -139,12 +139,12 @@ void cl_game::drawImgui()
         const float4x4 &pv = proj_view::matrix();
         const auto group = globals::registry.group(entt::get<CreatureComponent, PlayerComponent>, entt::exclude<LocalPlayerComponent>);
         for(const auto [entity, creature, player] : group.each()) {
-            float4 pos = float4(creature.position, 1.0f) * pv;
-            pos.x /= pos.w;
-            pos.y /= pos.w;
-            pos.z /= pos.w;
-            float2 sp = (float2(pos.x, pos.y) + 1.0f) * 0.5f * ss;
-            ImGui::SetCursorPos(ImVec2(sp.x, sp.y));
+            float4 clip = pv * float4(creature.position, 1.0f);
+            float3 ndc = float3(clip) / clip.w;
+            float2 scr = (float2(ndc) + 1.0f) * 0.5f;
+            scr.y = 1.0 - scr.y;
+            scr *= ss;
+            ImGui::SetCursorPos(ImVec2(scr.x, scr.y));
             ImGui::Text("ID_%u", player.session_id);
         }
         ImGui::End();

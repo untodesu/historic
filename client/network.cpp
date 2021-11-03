@@ -22,6 +22,7 @@
 #include <shared/protocol/packets/server/gamedata_voxel_entry.hpp>
 #include <shared/protocol/packets/server/gamedata_voxel_face.hpp>
 #include <shared/protocol/packets/server/login_success.hpp>
+#include <shared/protocol/packets/server/remove_entity.hpp>
 #include <shared/protocol/packets/server/spawn_player.hpp>
 #include <shared/protocol/packets/shared/creature_position.hpp>
 #include <shared/protocol/packets/shared/disconnect.hpp>
@@ -233,6 +234,14 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
                 HeadComponent &head = globals::registry.get<HeadComponent>(entity);
                 head.angles = math::arrayToVec<float3>(packet.angles);
             }
+        }
+    },
+    {
+        protocol::packets::RemoveEntity::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::RemoveEntity packet;
+            protocol::deserialize(payload, packet);
+            network::removeEntity(packet.network_id);
         }
     }
 };

@@ -22,6 +22,7 @@
 #include <shared/protocol/packets/server/gamedata_voxel_entry.hpp>
 #include <shared/protocol/packets/server/gamedata_voxel_face.hpp>
 #include <shared/protocol/packets/server/login_success.hpp>
+#include <shared/protocol/packets/server/remove_entity.hpp>
 #include <shared/protocol/packets/server/spawn_player.hpp>
 #include <shared/protocol/packets/shared/creature_position.hpp>
 #include <shared/protocol/packets/shared/disconnect.hpp>
@@ -155,9 +156,16 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
         [](const std::vector<uint8_t> &payload, Session *session) {
             protocol::packets::Disconnect packet;
             protocol::deserialize(payload, packet);
+            
             spdlog::info("Client {} ({}) disconnected ({})", session->username, session->id, packet.reason);
-            if(globals::registry.valid(session->player_entity))
+            
+            if(globals::registry.valid(session->player_entity)) {
+                protocol::packets::RemoveEntity remp = {};
+                remp.network_id = static_cast<uint32_t>(session->player_entity);
+                util::broadcastPacket(globals::host, remp, 0, 0);
                 globals::registry.destroy(session->player_entity);
+            }
+
             enet_peer_disconnect(session->peer, 0);
         }
     },
