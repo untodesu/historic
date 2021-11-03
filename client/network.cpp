@@ -114,7 +114,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
             info.face = packet.face;
             info.texture = packet.texture;
 
-            draftVoxelFace(packet.voxel, info, packet.flags & protocol::packets::VoxelDefFace::TRANSPARENT);
+            draftVoxelFace(packet.voxel, info, packet.flags & protocol::packets::VoxelDefFace::TRANSPARENT_BIT);
         }
     },
     {

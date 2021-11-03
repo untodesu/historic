@@ -81,7 +81,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
                     facep.face = face.face;
                     facep.flags = 0;
                     if(it->second.transparency.find(face.face) != it->second.transparency.cend())
-                        facep.flags |= protocol::packets::VoxelDefFace::TRANSPARENT;
+                        facep.flags |= protocol::packets::VoxelDefFace::TRANSPARENT_BIT;
                     facep.texture = face.texture;
                     util::sendPacket(session->peer, facep, 0, 0);
                 }

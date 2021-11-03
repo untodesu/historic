@@ -10,7 +10,7 @@
 namespace protocol::packets
 {
 struct VoxelDefFace final : public ServerPacket<0x003> {
-    static constexpr const uint8_t TRANSPARENT = (1 << 0);
+    constexpr static const uint8_t TRANSPARENT_BIT = (1 << 0);
     voxel_t voxel;
     VoxelFace face;
     uint8_t flags;
