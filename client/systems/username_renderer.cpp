@@ -33,10 +33,6 @@ void username_renderer::drawImgui()
         for(const auto [entity, creature, player] : group.each()) {
             const ClientSession *session = network::findSession(player.session_id);
             if(session && session != &globals::session) {
-                // Practice shows that when a whatever point is
-                // out of the clip distance, the Z value in the
-                // normalized device space becomes greater than 1.0
-                // Linear algebra sure is weird!
                 const float3 ndc = math::worldToDevice(wts, creature.position);
                 if(ndc.z < 1.0f) {
                     const float2 sp = math::deviceToScreen(ndc, ss);
