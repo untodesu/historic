@@ -155,7 +155,6 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
             protocol::packets::PlayerInfoEntry packet;
             protocol::deserialize(payload, packet);
             network::createSession(packet.session_id);
-            spdlog::info("PlayerInfoEntry({})", packet.session_id);
         }
     },
     {

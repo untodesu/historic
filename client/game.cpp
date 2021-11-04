@@ -8,12 +8,14 @@
 #include <exception>
 #include <client/components/camera.hpp>
 #include <client/components/local_player.hpp>
+#include <client/console.hpp>
 #include <client/systems/chunk_mesher.hpp>
 #include <client/systems/player_look.hpp>
 #include <client/systems/player_move.hpp>
 #include <client/systems/proj_view.hpp>
 #include <client/render/atlas.hpp>
 #include <client/systems/chunk_renderer.hpp>
+#include <client/systems/username_renderer.hpp>
 #include <client/deferred_pass.hpp>
 #include <client/render/gbuffer.hpp>
 #include <client/util/screenshots.hpp>
@@ -41,6 +43,8 @@ static ChronoClock<std::chrono::system_clock> tick_clock;
 
 void cl_game::init()
 {
+    console::init();
+
     chunk_renderer::init();
     deferred_pass::init();
 
@@ -51,7 +55,7 @@ void cl_game::init()
 
 void cl_game::postInit()
 {
-    network::connect("192.168.1.215", protocol::DEFAULT_PORT);
+    network::connect("localhost", protocol::DEFAULT_PORT);
     tick_clock.restart();
 }
 
@@ -98,6 +102,8 @@ void cl_game::update()
         }
     }
 
+    console::update();
+
     input::enableCursor(!is_playing);
 }
 
@@ -118,34 +124,11 @@ void cl_game::draw()
     deferred_pass::draw();
 }
 
-#include <imgui.h>
-constexpr static const ImGuiWindowFlags WINDOW_FLAGS = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar;
-
 void cl_game::drawImgui()
 {
-    // This is just a quick-and-dirty way
-    // for me to see if the client recognizes
-    // other players that join. Nothing more.
-    if(ImGui::Begin("kludge", nullptr, WINDOW_FLAGS)) {
-        const float2 &ss = screen::getSize();
-        ImGui::SetWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
-        ImGui::SetWindowSize(ImVec2(ss.x, ss.y), ImGuiCond_Always);
-        const float4x4 &pv = proj_view::matrix();
-        const auto group = globals::registry.group(entt::get<CreatureComponent, PlayerComponent>, entt::exclude<LocalPlayerComponent>);
-        for(const auto [entity, creature, player] : group.each()) {
-            float4 clip = pv * float4(creature.position, 1.0f);
-            float3 ndc = float3(clip) / clip.w;
-            float2 scr = (float2(ndc) + 1.0f) * 0.5f;
-            scr.y = 1.0 - scr.y;
-            scr *= ss;
-            ImGui::SetCursorPos(ImVec2(scr.x, scr.y));
-            ClientSession *session = network::findSession(player.session_id);
-            ImGui::Text("%s (%u)", session ? session->username.c_str() : "UNNAMED", player.session_id);
-        }
-        ImGui::End();
-    }
-
-    debug_overlay::draw();
+    username_renderer::drawImgui();
+    debug_overlay::drawImgui();
+    console::drawImgui();
 }
 
 void cl_game::postDraw()

@@ -116,8 +116,8 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
                 util::sendPacket(session->peer, namep, 0, 0);
                 
                 if(it->first == session->id) {
-                    util::broadcastPacket(globals::host, entryp, 0, 0);
-                    util::broadcastPacket(globals::host, namep, 0, 0); 
+                    util::broadcastPacket(globals::host, entryp, 0, 0, session->peer);
+                    util::broadcastPacket(globals::host, namep, 0, 0, session->peer);
                 }
 
                 if(globals::registry.valid(it->second.player_entity)) {

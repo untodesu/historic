@@ -10,13 +10,14 @@
 #include <iostream>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+#include <common/util/spdlog.hpp>
 
 int main(int argc, char **argv)
 {
     try {
         spdlog::logger *lp = spdlog::default_logger_raw();
         lp->sinks().clear();
-        lp->sinks().push_back(std::make_shared<spdlog::sinks::stderr_color_sink_mt>());
+        lp->sinks().push_back(util::createSink<spdlog::sinks::stderr_color_sink_mt>());
         lp->set_pattern("[%H:%M:%S] %^[%L]%$ %v");
         lp->set_level(spdlog::level::trace);
     }
