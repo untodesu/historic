@@ -19,6 +19,7 @@ ClientSession cl_globals::session;
 GLFWwindow *cl_globals::window = nullptr;
 Atlas cl_globals::solid_textures;
 GBuffer cl_globals::solid_gbuffer;
+bool cl_globals::ui_grabs_input = false;
 
 // World
 uint32_t cl_globals::local_player_network_id = 0;

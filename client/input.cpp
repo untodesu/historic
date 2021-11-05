@@ -47,14 +47,18 @@ static void onKey(GLFWwindow *window, int key, int scancode, int action, int mod
         }
     }
 
-    // ImGui passthrough
-    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+    if(globals::ui_grabs_input) {
+        // ImGui passthrough
+        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+    }
 }
 
 static void onChar(GLFWwindow *window, unsigned int unicode)
 {
-    // ImGui passthrough
-    ImGui_ImplGlfw_CharCallback(window, unicode);
+    if(globals::ui_grabs_input) {
+        // ImGui passthrough
+        ImGui_ImplGlfw_CharCallback(window, unicode);
+    }
 }
 
 static void onMouseButton(GLFWwindow *window, int button, int action, int mods)
@@ -70,14 +74,18 @@ static void onMouseButton(GLFWwindow *window, int button, int action, int mods)
             break;
     }
 
-    // ImGui passthrough
-    ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+    if(globals::ui_grabs_input) {
+        // ImGui passthrough
+        ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+    }
 }
 
 static void onCursorEnter(GLFWwindow *window, int state)
 {
-    // ImGui passthrough
-    ImGui_ImplGlfw_CursorEnterCallback(window, state);
+    if(globals::ui_grabs_input) {
+        // ImGui passthrough
+        ImGui_ImplGlfw_CursorEnterCallback(window, state);
+    }
 }
 
 static void onCursorPos(GLFWwindow *window, double x, double y)
@@ -97,8 +105,10 @@ static void onScroll(GLFWwindow *window, double dx, double dy)
     scroll_delta.x = static_cast<float>(dx);
     scroll_delta.y = static_cast<float>(dy);
 
-    // ImGui passthrough
-    ImGui_ImplGlfw_ScrollCallback(window, dx, dy);
+    if(globals::ui_grabs_input) {
+        // ImGui passthrough
+        ImGui_ImplGlfw_ScrollCallback(window, dx, dy);
+    }
 }
 
 void input::init()

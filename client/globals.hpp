@@ -25,6 +25,7 @@ extern ClientSession session;
 extern GLFWwindow *window;
 extern Atlas solid_textures;
 extern GBuffer solid_gbuffer;
+extern bool ui_grabs_input;
 
 // World
 extern uint32_t local_player_network_id;

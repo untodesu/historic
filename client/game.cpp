@@ -80,10 +80,12 @@ void cl_game::modeChange(int width, int height)
 
 void cl_game::update()
 {
-    proj_view::update();
+    globals::ui_grabs_input = false;
 
-    bool is_playing = (globals::session.state == SessionState::PLAYING);
-    if(is_playing) {
+    console::update();
+
+    const bool playing = !globals::ui_grabs_input && (globals::session.state == SessionState::PLAYING);
+    if(playing) {
         // NOTENOTE: when the new chunks arrive (during the login stage
         // when clientside receives some important data like voxel info)
         // sometimes shit gets fucked and one side of a chunk becomes
@@ -95,6 +97,8 @@ void cl_game::update()
         player_look::update();
         player_move::update();
 
+        proj_view::update();
+
         if(util::seconds<float>(tick_clock.elapsed()) >= TICK_DT) {
             player_look::send();
             player_move::send();
@@ -102,9 +106,7 @@ void cl_game::update()
         }
     }
 
-    console::update();
-
-    input::enableCursor(!is_playing);
+    input::enableCursor(!playing);
 }
 
 void cl_game::draw()
