@@ -20,7 +20,7 @@ struct ChunkMesherData final {
     std::unordered_map<chunkpos_t, ClientChunk> data;
     const size_t trySetChunk(const chunkpos_t &cp);
     const bool hasVoxel(const chunkpos_t &cp, const localpos_t &lp, voxel_t voxel);
-    const bool hasFace(const chunkpos_t &cp, const localpos_t &lp, VoxelFace face);
+    const bool hasFace(const chunkpos_t &cp, const localpos_t &lp, voxel_face_t face);
 };
 
 inline const size_t ChunkMesherData::trySetChunk(const chunkpos_t &cp)
@@ -42,14 +42,19 @@ inline const bool ChunkMesherData::hasVoxel(const chunkpos_t &cp, const localpos
     return false;
 }
 
-inline const bool ChunkMesherData::hasFace(const chunkpos_t &cp, const localpos_t &lp, VoxelFace face)
+inline const bool ChunkMesherData::hasFace(const chunkpos_t &cp, const localpos_t &lp, voxel_face_t face)
 {
     const voxelpos_t vp = toVoxelPos(cp, lp);
     const auto it = data.find(toChunkPos(vp));
     if(it != data.cend()) {
         if(voxel_t voxel = it->second.data.at(toVoxelIdx(toLocalPos(vp)))) {
-            if(const VoxelInfo *info = globals::voxels.tryGet(voxel))
-                return info->transparency.find(face) == info->transparency.cend();
+            if(const VoxelDefEntry *entry = globals::voxels.find(voxel)) {
+                const auto fit = entry->faces.find(face);
+                if(fit != entry->faces.cend())
+                    return !fit->second.transparent;
+                return false;
+            }
+
             return false;
         }
     }
@@ -58,6 +63,7 @@ inline const bool ChunkMesherData::hasFace(const chunkpos_t &cp, const localpos_
 }
 
 using ChunkMeshBuilder = MeshBuilder<uint16_t, Vertex>;
+
 static inline void pushQuad(ChunkMeshBuilder *builder, uint16_t &base, const Vertex data[4])
 {
     for(int i = 0; i < 4; i++)
@@ -71,24 +77,24 @@ static inline void pushQuad(ChunkMeshBuilder *builder, uint16_t &base, const Ver
     base += 4;
 }
 
-static void greedyFace(ChunkMeshBuilder *builder, ChunkMesherData *data, const chunkpos_t &cp, const VoxelInfo &info, const AtlasNode *node, voxel_t voxel, VoxelFace face, uint16_t &base)
+static void greedyFace(ChunkMeshBuilder *builder, ChunkMesherData *data, const chunkpos_t &cp, const VoxelDefEntry &entry, const AtlasNode *node, voxel_t voxel, voxel_face_t face, uint16_t &base)
 {
-    const VoxelFace back_face = backVoxelFace(face);
+    const voxel_face_t flip_face = flipVoxelFace(face);
 
     std::array<bool, CHUNK_AREA> mask;
 
     int16_t d = 0;
     switch(face) {
-        case VoxelFace::LF:
-        case VoxelFace::RT:
+        case VOXEL_FACE_LF:
+        case VOXEL_FACE_RT:
             d = 0;
             break;
-        case VoxelFace::UP:
-        case VoxelFace::DN:
+        case VOXEL_FACE_UP:
+        case VOXEL_FACE_DN:
             d = 1;
             break;
-        case VoxelFace::FT:
-        case VoxelFace::BK:
+        case VOXEL_FACE_FT:
+        case VOXEL_FACE_BK:
             d = 2;
             break;
         default:
@@ -99,7 +105,7 @@ static void greedyFace(ChunkMeshBuilder *builder, ChunkMesherData *data, const c
     const int16_t v = (d + 2) % 3;
     localpos_t x = localpos_t(0, 0, 0);
     localpos_t q = localpos_t(0, 0, 0);
-    q[d] = -voxelFaceNormal(face);
+    q[d] = static_cast<int16_t>(voxelFaceNormal(flip_face));
 
     // Go through each slice of the chunk
     constexpr const int16_t CHUNK_SIZE_I16 = static_cast<int16_t>(CHUNK_SIZE);
@@ -112,7 +118,7 @@ static void greedyFace(ChunkMeshBuilder *builder, ChunkMesherData *data, const c
             for(x[u] = 0; x[u] < CHUNK_SIZE_I16; x[u]++) {
                 // We set the mask only if the current voxel is the one
                 // and if the next present (by direction) has a solid face.
-                mask[maskpos++] = data->hasVoxel(cp, x, voxel) && !data->hasFace(cp, x + q, back_face);
+                mask[maskpos++] = data->hasVoxel(cp, x, voxel) && !data->hasFace(cp, x + q, flip_face);
             }
         }
 
@@ -146,43 +152,43 @@ static void greedyFace(ChunkMeshBuilder *builder, ChunkMesherData *data, const c
                     x[v] = j;
 
                     float3 position = float3(x.x, x.y, x.z);
-                    if(isBackVoxelFace(face))
+                    if(face & VOXEL_FACE_MASK_INV)
                         position[d] += q[d];
 
                     float2 texcoords[4];
                     float2 tc = float2(qw, qh) * node->max_uv;
                     switch(face) {
-                        case VoxelFace::LF:
+                        case VOXEL_FACE_LF:
                             texcoords[0] = float2(0.0f, 0.0f);
                             texcoords[1] = float2(tc.y, 0.0f);
                             texcoords[2] = float2(tc.y, tc.x);
                             texcoords[3] = float2(0.0f, tc.x);
                             break;
-                        case VoxelFace::RT:
+                        case VOXEL_FACE_RT:
                             texcoords[0] = float2(tc.y, 0.0f);
                             texcoords[1] = float2(tc.y, tc.x);
                             texcoords[2] = float2(0.0f, tc.x);
                             texcoords[3] = float2(0.0f, 0.0f);
                             break;
-                        case VoxelFace::FT:
+                        case VOXEL_FACE_FT:
                             texcoords[0] = float2(tc.x, 0.0f);
                             texcoords[1] = float2(tc.x, tc.y);
                             texcoords[2] = float2(0.0f, tc.y);
                             texcoords[3] = float2(0.0f, 0.0f);
                             break;
-                        case VoxelFace::BK:
+                        case VOXEL_FACE_BK:
                             texcoords[0] = float2(0.0f, 0.0f);
                             texcoords[1] = float2(tc.x, 0.0f);
                             texcoords[2] = float2(tc.x, tc.y);
                             texcoords[3] = float2(0.0f, tc.y);
                             break;
-                        case VoxelFace::UP:
+                        case VOXEL_FACE_UP:
                             texcoords[0] = float2(0.0f, tc.x);
                             texcoords[1] = float2(0.0f, 0.0f);
                             texcoords[2] = float2(tc.y, 0.0f);
                             texcoords[3] = float2(tc.y, tc.x);
                             break;
-                        case VoxelFace::DN:
+                        case VOXEL_FACE_DN:
                             texcoords[0] = float2(tc.y, tc.x);
                             texcoords[1] = float2(0.0f, tc.x);
                             texcoords[2] = float2(0.0f, 0.0f);
@@ -200,7 +206,7 @@ static void greedyFace(ChunkMeshBuilder *builder, ChunkMesherData *data, const c
                     normal[d] = voxelFaceNormal(face);
 
                     Vertex verts[4];
-                    if(isBackVoxelFace(face)) {
+                    if(face & VOXEL_FACE_MASK_INV) {
                         verts[0] = Vertex { position, normal, texcoords[0], node->index };
                         verts[1] = Vertex { position + dv, normal, texcoords[1], node->index };
                         verts[2] = Vertex { position + du + dv, normal, texcoords[2], node->index };
@@ -245,10 +251,10 @@ static void genMesh(ChunkMeshBuilder *builder, ChunkMesherData *data, const chun
 {
     uint16_t base = 0;
     for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
-        if(it->second.type == VoxelType::SOLID) {
-            for(const VoxelFaceInfo &face : it->second.faces) {
-                if(const AtlasNode *node = globals::solid_textures.getNode(face.texture)) {
-                    greedyFace(builder, data, cp, it->second, node, it->first, face.face, base);
+        if(it->second.type == VOXEL_SOLID) {
+            for(const auto face : it->second.faces) {
+                if(const AtlasNode *node = globals::solid_textures.getNode(face.second.texture)) {
+                    greedyFace(builder, data, cp, it->second, node, it->first, face.first, base);
                     if(cancel_meshing) {
                         builder->clear();
                         return;

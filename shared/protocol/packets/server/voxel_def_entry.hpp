@@ -11,7 +11,7 @@ namespace protocol::packets
 {
 struct VoxelDefEntry final : public ServerPacket<0x002> {
     voxel_t voxel;
-    VoxelType type;
+    voxel_type_t type;
 
     template<typename S>
     inline void serialize(S &s)

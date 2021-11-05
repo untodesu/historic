@@ -38,7 +38,6 @@
 struct NetIDComponent final { uint32_t id; };
 static std::unordered_map<uint32_t, entt::entity> network_entities;
 static std::unordered_map<uint32_t, ClientSession> sessions;
-static std::unordered_map<voxel_t, VoxelInfo> voxeldef_draft;
 
 static void clearNetworkEntities()
 {
@@ -46,44 +45,6 @@ static void clearNetworkEntities()
     for(const auto [entity, netid] : view.each())
         globals::registry.destroy(entity);
     network_entities.clear();
-}
-
-static void draftVoxelEntry(voxel_t voxel, VoxelType type)
-{
-    if(voxel != NULL_VOXEL) {
-        auto it = voxeldef_draft.find(voxel);
-        VoxelInfo &info = (it != voxeldef_draft.end()) ? it->second : (voxeldef_draft[voxel] = VoxelInfo());
-        info.type = type;
-        info.transparency.clear();
-        info.faces.clear();
-    }
-}
-
-static void draftVoxelFace(voxel_t voxel, const VoxelFaceInfo &face, bool transparent)
-{
-    if(voxel != NULL_VOXEL) {
-        auto it = voxeldef_draft.find(voxel);
-        VoxelInfo &info = (it != voxeldef_draft.end()) ? it->second : (voxeldef_draft[voxel] = VoxelInfo());
-
-        if(transparent)
-            info.transparency.insert(face.face);
-            
-        for(VoxelFaceInfo &it : info.faces) {
-            if(it.face == face.face) {
-                it.texture = face.texture;
-                return;
-            }
-        }
-
-        info.faces.push_back(face);
-    }
-}
-
-static void draftSubmit()
-{
-    globals::voxels.clear();
-    for(const auto it : voxeldef_draft)
-        globals::voxels.set(it.first, it.second);
 }
 
 static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)> packets = {
@@ -101,7 +62,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
         [](const std::vector<uint8_t> &payload) {
             protocol::packets::VoxelDefEntry packet;
             protocol::deserialize(payload, packet);
-            draftVoxelEntry(packet.voxel, packet.type);
+            globals::voxels.build(packet.voxel).type(packet.type).submit();
         }
     },
     {
@@ -109,12 +70,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
         [](const std::vector<uint8_t> &payload) {
             protocol::packets::VoxelDefFace packet;
             protocol::deserialize(payload, packet);
-
-            VoxelFaceInfo info = {};
-            info.face = packet.face;
-            info.texture = packet.texture;
-
-            draftVoxelFace(packet.voxel, info, packet.flags & protocol::packets::VoxelDefFace::TRANSPARENT_BIT);
+            globals::voxels.build(packet.voxel).face(packet.face).transparent(packet.flags & packet.TRANSPARENT_BIT).texture(packet.texture).endFace().submit();
         }
     },
     {
@@ -122,8 +78,6 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
         [](const std::vector<uint8_t> &payload) {
             protocol::packets::VoxelDefChecksum packet;
             protocol::deserialize(payload, packet);
-
-            draftSubmit();
 
             uint64_t client_checksum = globals::voxels.getChecksum();
             if(client_checksum != packet.checksum) {
@@ -135,8 +89,8 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
 
             globals::solid_textures.create(32, 32, MAX_VOXELS);
             for(VoxelDef::const_iterator it = globals::voxels.cbegin(); it != globals::voxels.cend(); it++) {
-                for(const VoxelFaceInfo &face : it->second.faces)
-                    globals::solid_textures.push(face.texture);
+                for(const auto face : it->second.faces)
+                    globals::solid_textures.push(face.second.texture);
             }
             globals::solid_textures.submit();
         }

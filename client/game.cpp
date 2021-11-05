@@ -55,7 +55,7 @@ void cl_game::init()
 
 void cl_game::postInit()
 {
-    network::connect("192.168.1.215", protocol::DEFAULT_PORT);
+    network::connect("localhost", protocol::DEFAULT_PORT);
     tick_clock.restart();
 }
 

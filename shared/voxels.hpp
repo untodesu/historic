@@ -4,83 +4,139 @@
  * All Rights Reserved.
  */
 #pragma once
+#include <common/filesystem.hpp>
 #include <shared/world.hpp>
 #include <unordered_map>
 #include <unordered_set>
 
-enum class VoxelType : uint8_t {
-    GAS = 0,            // Kind of a liquid voxel, but in reverse. Reserved.
-    SOLID = 1,          // A solid voxel. Rendered through chunk_renderer.
-    SOLID_ENTITY = 2,   // A solid voxel entity. Reserved.
-    SOLID_FLORA = 3,    // A solid voxel flora. Reserved.
-    LIQUID = 4,         // A liquid voxel. Reserved.
-};
+using voxel_type_t = uint8_t;
+constexpr static const voxel_type_t VOXEL_NULL_TYPE = 0x00;
+constexpr static const voxel_type_t VOXEL_GAS       = 0x01;
+constexpr static const voxel_type_t VOXEL_SOLID     = 0x02;
+constexpr static const voxel_type_t VOXEL_LIQUID    = 0x03;
 
-enum class VoxelFace : uint8_t {
-    LF = 0, // west
-    RT = 1, // east
-    FT = 2, // south
-    BK = 3, // north
-    UP = 4, // up
-    DN = 5, // down
-};
+using voxel_face_t = uint8_t;
+constexpr static const voxel_face_t VOXEL_FACE_LF   = 0x01;
+constexpr static const voxel_face_t VOXEL_FACE_FT   = 0x02;
+constexpr static const voxel_face_t VOXEL_FACE_DN   = 0x03;
+constexpr static const voxel_face_t VOXEL_FACE_RT   = 0x10;
+constexpr static const voxel_face_t VOXEL_FACE_BK   = 0x20;
+constexpr static const voxel_face_t VOXEL_FACE_UP   = 0x30;
 
-constexpr static inline const VoxelFace backVoxelFace(const VoxelFace face)
+// The game should support up to 16 different voxel faces
+// with each capable of being inverted. Thus we can
+// have a single byte to represent any possible face
+// with most significant bits for regular faces and
+// least significant bits for inverted faces. A face
+// index that contains both parts is either reserved or
+// a face that can't be inverted (like those diagonal
+// faces for plants or whatever I'd add in future).
+constexpr static const voxel_face_t VOXEL_FACE_MASK_REG = 0xF0;
+constexpr static const voxel_face_t VOXEL_FACE_MASK_INV = 0x0F;
+
+constexpr static inline const voxel_face_t flipVoxelFace(const voxel_face_t face)
 {
-    if(face == VoxelFace::LF)
-        return VoxelFace::RT;
-    if(face == VoxelFace::RT)
-        return VoxelFace::LF;
-    if(face == VoxelFace::FT)
-        return VoxelFace::BK;
-    if(face == VoxelFace::BK)
-        return VoxelFace::FT;
-    if(face == VoxelFace::UP)
-        return VoxelFace::DN;
-    if(face == VoxelFace::DN)
-        return VoxelFace::UP;
-    return VoxelFace::LF;
+    if(face & VOXEL_FACE_MASK_REG)
+        return (face >> 4) & VOXEL_FACE_MASK_INV;
+    return (face << 4) & VOXEL_FACE_MASK_REG;
 }
 
-constexpr static inline const int16_t voxelFaceNormal(const VoxelFace face)
+constexpr static inline const float voxelFaceNormal(const voxel_face_t face)
 {
-    if(face == VoxelFace::LF)
-        return 1;
-    if(face == VoxelFace::FT)
-        return 1;
-    if(face == VoxelFace::DN)
-        return 1;
-    if(face == VoxelFace::RT)
-        return -1;
-    if(face == VoxelFace::BK)
-        return -1;
-    if(face == VoxelFace::UP)
-        return -1;
-    return 0;
+    if(face & VOXEL_FACE_MASK_INV)
+        return 1.0f;
+    if(face & VOXEL_FACE_MASK_REG)
+        return -1.0f;
+    return 0.0f;
 }
 
-constexpr static inline const bool isBackVoxelFace(const VoxelFace face)
-{
-    if(face == VoxelFace::LF)
-        return true;
-    if(face == VoxelFace::FT)
-        return true;
-    if(face == VoxelFace::DN)
-        return true;
-    return false;
-}
+struct VoxelDefEntry final {
+    struct Face final {
+        bool transparent { false };
+        std::string texture;
+    };
 
-struct VoxelFaceInfo final {
-    VoxelFace face;
-    std::string texture;
+    voxel_type_t type { VOXEL_NULL_TYPE };
+    std::unordered_map<voxel_face_t, Face> faces;
 };
 
-struct VoxelInfo final {
-    VoxelType type;
-    std::unordered_set<VoxelFace> transparency;
-    std::vector<VoxelFaceInfo> faces;
+class VoxelDef final {
+public:
+    class FaceBuilder;
+    class EntryBuilder final {
+        friend class FaceBuilder;
+
+    public:
+        EntryBuilder(VoxelDef *owner, voxel_t id);
+        EntryBuilder(const EntryBuilder &rhs) = delete;
+        EntryBuilder(EntryBuilder &&rhs) = delete;
+
+        EntryBuilder &operator=(const EntryBuilder &rhs) = delete;
+        EntryBuilder &operator=(EntryBuilder &&rhs) = delete;
+
+        EntryBuilder &type(voxel_type_t type);
+        FaceBuilder face(voxel_face_t face);
+        FaceBuilder face(voxel_face_t copy, voxel_face_t face);
+
+        void submit();
+
+    private:
+        VoxelDefEntry entry;
+        VoxelDef *owner;
+        voxel_t id;
+    };
+
+    class FaceBuilder final {
+    public:
+        FaceBuilder(EntryBuilder *parent, voxel_face_t face, const VoxelDefEntry::Face &entry = VoxelDefEntry::Face());
+        FaceBuilder(const FaceBuilder &rhs) = delete;
+        FaceBuilder(FaceBuilder &&rhs) = delete;
+
+        FaceBuilder &operator=(const FaceBuilder &rhs) = delete;
+        FaceBuilder &operator=(FaceBuilder &&rhs) = delete;
+
+        FaceBuilder &transparent(bool flag);
+        FaceBuilder &texture(const std::string &path);
+
+        EntryBuilder &endFace();
+
+    private:
+        VoxelDefEntry::Face entry;
+        EntryBuilder *parent;
+        voxel_face_t face;
+    };
+
+public:
+    using map_type = std::unordered_map<voxel_t, VoxelDefEntry>;
+    using const_iterator = map_type::const_iterator;
+
+public:
+    void clear();
+    const VoxelDefEntry *find(voxel_t id) const;
+    EntryBuilder build(voxel_t id);
+
+    inline uint64_t getChecksum() const
+    {
+        return checksum;
+    }
+
+    inline const_iterator cbegin() const
+    {
+        return voxels.cbegin();
+    }
+
+    inline const_iterator cend() const
+    {
+        return voxels.cend();
+    }
+
+private:
+    uint64_t checksum { 0 };
+    map_type voxels;
 };
 
+
+#if 0
 class VoxelDef final {
 public:
     using map_type = std::unordered_map<voxel_t, VoxelInfo>;
@@ -112,3 +168,4 @@ private:
     uint64_t checksum;
     map_type def;
 };
+#endif

@@ -76,14 +76,14 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
                 entryp.type = it->second.type;
                 util::sendPacket(session->peer, entryp, 0, 0);
 
-                for(const VoxelFaceInfo &face : it->second.faces) {
+                for(const auto face : it->second.faces) {
                     protocol::packets::VoxelDefFace facep = {};
                     facep.voxel = it->first;
-                    facep.face = face.face;
+                    facep.face = face.first;
                     facep.flags = 0;
-                    if(it->second.transparency.find(face.face) != it->second.transparency.cend())
-                        facep.flags |= protocol::packets::VoxelDefFace::TRANSPARENT_BIT;
-                    facep.texture = face.texture;
+                    if(face.second.transparent)
+                        facep.flags |= facep.TRANSPARENT_BIT;
+                    facep.texture = face.second.texture;
                     util::sendPacket(session->peer, facep, 0, 0);
                 }
             }

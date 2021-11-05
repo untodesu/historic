@@ -56,43 +56,52 @@ void sv_game::init()
 void sv_game::postInit()
 {
     // Stone
-    {
-        VoxelInfo vinfo = {};
-        vinfo.type = VoxelType::SOLID;
-        vinfo.faces.push_back({ VoxelFace::LF, "textures/stone.png" });
-        vinfo.faces.push_back({ VoxelFace::RT, "textures/stone.png" });
-        vinfo.faces.push_back({ VoxelFace::FT, "textures/stone.png" });
-        vinfo.faces.push_back({ VoxelFace::BK, "textures/stone.png" });
-        vinfo.faces.push_back({ VoxelFace::UP, "textures/stone.png" });
-        vinfo.faces.push_back({ VoxelFace::DN, "textures/stone.png" });
-        globals::voxels.set(0x01, vinfo);
-    }
+    globals::voxels.build(0x01)
+        .type(VOXEL_SOLID)
+        .face(VOXEL_FACE_LF)
+            .transparent(false)
+            .texture("textures/stone.png")
+            .endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_RT).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_FT).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_BK).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_UP).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_DN).endFace()
+        .submit();
 
     // Dirt
-    {
-        VoxelInfo vinfo = {};
-        vinfo.type = VoxelType::SOLID;
-        vinfo.faces.push_back({ VoxelFace::LF, "textures/dirt.png" });
-        vinfo.faces.push_back({ VoxelFace::RT, "textures/dirt.png" });
-        vinfo.faces.push_back({ VoxelFace::FT, "textures/dirt.png" });
-        vinfo.faces.push_back({ VoxelFace::BK, "textures/dirt.png" });
-        vinfo.faces.push_back({ VoxelFace::UP, "textures/dirt.png" });
-        vinfo.faces.push_back({ VoxelFace::DN, "textures/dirt.png" });
-        globals::voxels.set(0x02, vinfo);
-    }
+    globals::voxels.build(0x02)
+        .type(VOXEL_SOLID)
+        .face(VOXEL_FACE_LF)
+            .transparent(false)
+            .texture("textures/dirt.png")
+            .endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_RT).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_FT).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_BK).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_UP).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_DN).endFace()
+        .submit();
 
     // Grass
-    {
-        VoxelInfo vinfo = {};
-        vinfo.type = VoxelType::SOLID;
-        vinfo.faces.push_back({ VoxelFace::LF, "textures/grass_side.png" });
-        vinfo.faces.push_back({ VoxelFace::RT, "textures/grass_side.png" });
-        vinfo.faces.push_back({ VoxelFace::FT, "textures/grass_side.png" });
-        vinfo.faces.push_back({ VoxelFace::BK, "textures/grass_side.png" });
-        vinfo.faces.push_back({ VoxelFace::UP, "textures/grass.png" });
-        vinfo.faces.push_back({ VoxelFace::DN, "textures/dirt.png" });
-        globals::voxels.set(0x03, vinfo);
-    }
+    globals::voxels.build(0x03)
+        .type(VOXEL_SOLID)
+        .face(VOXEL_FACE_LF)
+            .transparent(false)
+            .texture("textures/grass_side.png")
+            .endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_RT).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_FT).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_BK).endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_UP)
+            .transparent(false)
+            .texture("textures/grass.png")
+            .endFace()
+        .face(VOXEL_FACE_LF, VOXEL_FACE_DN)
+            .transparent(false)
+            .texture("textures/dirt.png")
+            .endFace()
+        .submit();
 
     uint64_t seed = static_cast<uint64_t>(std::time(nullptr));
     spdlog::info("Generating ({})...", seed);
