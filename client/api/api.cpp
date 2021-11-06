@@ -58,8 +58,8 @@ void cl_api::init()
     luaL_openlibs(globals::lua);
 
     cl_api::expose("print", &apiPrint);
-    cl_api::expose("cvarGet", &apiCVarGet);
-    cl_api::expose("cvarSet", &apiCVarSet);
+    cl_api::expose("cvar_get", &apiCVarGet);
+    cl_api::expose("cvar_set", &apiCVarSet);
 }
 
 void cl_api::shutdown()

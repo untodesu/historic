@@ -7,6 +7,7 @@
 #include <client/api/api.hpp>
 #include <client/render/gl/context.hpp>
 #include <client/client_app.hpp>
+#include <client/fontlib.hpp>
 #include <client/game.hpp>
 #include <client/globals.hpp>
 #include <client/input.hpp>
@@ -25,9 +26,16 @@ static void glfwOnError(int code, const char *message)
     spdlog::error("GLFW ({}): {}", code, message);
 }
 
+static int apiQuit(lua_State *)
+{
+    glfwSetWindowShouldClose(globals::window, GLFW_TRUE);
+    return 0;
+}
+
 void client_app::run()
 {
     api::init();
+    api::expose("quit", &apiQuit);
 
     glfwSetErrorCallback(glfwOnError);
     if(!glfwInit()) {
@@ -60,6 +68,8 @@ void client_app::run()
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(globals::window, false);
     ImGui_ImplOpenGL3_Init("#version 460 core");
+
+    fontlib::init();
 
     game::postInit();
 
@@ -107,6 +117,12 @@ void client_app::run()
     game::shutdown();
     
     spdlog::info("Client shutdown after {} frames. Avg. dt: {:.03f} ms ({:.02f} FPS)", globals::frame_count, globals::avg_frametime * 1000.0f, 1.0f / globals::avg_frametime);
+
+    fontlib::shutdown();
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwDestroyWindow(globals::window);
     glfwTerminate();

@@ -7,6 +7,7 @@
 #include <common/math/math.hpp>
 #include <exception>
 #include <client/components/local_player.hpp>
+#include <client/api/api.hpp>
 #include <client/api/console.hpp>
 #include <client/systems/chunk_mesher.hpp>
 #include <client/systems/player_look.hpp>
@@ -20,6 +21,7 @@
 #include <client/util/screenshots.hpp>
 #include <client/chunks.hpp>
 #include <client/debug_overlay.hpp>
+#include <client/fontlib.hpp>
 #include <client/game.hpp>
 #include <client/globals.hpp>
 #include <client/input.hpp>
@@ -57,6 +59,13 @@ void cl_game::init()
 
 void cl_game::postInit()
 {
+    fontlib::build("Console")
+        .file("fonts/RobotoMono-Regular.ttf")
+            .range(ImGui::GetIO().Fonts->GetGlyphRangesCyrillic())
+            .size(24.0f)
+            .endFile()
+        .submit();
+
     tick_clock.restart();
 }
 
@@ -83,8 +92,7 @@ void cl_game::update()
 {
     console::update();
 
-    const bool playing = !globals::ui_grabs_input && (globals::session.state == SessionState::PLAYING);
-    if(playing) {
+    if(globals::session.state == SessionState::PLAYING) {
         // NOTENOTE: when the new chunks arrive (during the login stage
         // when clientside receives some important data like voxel info)
         // sometimes shit gets fucked and one side of a chunk becomes
@@ -93,8 +101,11 @@ void cl_game::update()
         // when mesher will start to skip actual geometry leaving holes.
         chunk_mesher::update();
 
-        player_look::update();
-        player_move::update();
+        // Input-dependent game systems
+        if(!globals::ui_grabs_input) {
+            player_look::update();
+            player_move::update();
+        }
 
         proj_view::update();
 
@@ -105,7 +116,7 @@ void cl_game::update()
         }
     }
 
-    input::enableCursor(!playing);
+    input::enableCursor(globals::ui_grabs_input || globals::session.state != SessionState::PLAYING);
 }
 
 void cl_game::draw()

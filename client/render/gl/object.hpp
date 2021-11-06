@@ -4,6 +4,7 @@
  * All Rights Reserved.
  */
 #pragma once
+#include <common/traits.hpp>
 #include <glad/gl.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -12,11 +13,9 @@
 namespace gl
 {
 template<typename T>
-class Object {
+class Object : public NonCopyable {
 public:
     Object() = default;
-    Object(const Object &) = delete;
-    Object &operator=(const Object &) = delete;
     virtual ~Object();
     void create();
     void destroy();

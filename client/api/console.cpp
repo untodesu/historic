@@ -6,6 +6,7 @@
 #include <client/api/api.hpp>
 #include <client/api/console.hpp>
 #include <client/screen.hpp>
+#include <client/fontlib.hpp>
 #include <client/globals.hpp>
 #include <client/input.hpp>
 #include <client/render/imgui_ext/window.hpp>
@@ -20,6 +21,7 @@ static std::deque<std::string> console_deque;
 static imgui_ext::Window console_window("Console", "console", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
 static bool scroll_to_bottom = true;
 static std::string input_buffer;
+static ImFont *font = nullptr;
 
 class ConsoleSink final : public spdlog::sinks::base_sink<std::mutex> {
 protected:
@@ -37,15 +39,23 @@ protected:
     }
 };
 
+static int apiClear(lua_State *)
+{
+    console_deque.clear();
+    return 0;
+}
+
 void console::init()
 {
+    font = nullptr;
     input_buffer.clear();
     spdlog::default_logger_raw()->sinks().push_back(util::createSink<ConsoleSink>());
+    api::expose("clear", &apiClear);
 }
 
 void console::update()
 {
-    if(input::isKeyJustPressed(GLFW_KEY_GRAVE_ACCENT))
+    if(input::isKeyPressed(GLFW_KEY_F3) && input::isKeyJustPressed(GLFW_KEY_C))
         console_window.toggle();
     while(console_deque.size() > MAX_CONSOLE_SIZE)
         console_deque.pop_front();
@@ -54,11 +64,12 @@ void console::update()
 
 void console::drawImgui()
 {
+    ImGui::PushFont(font ? font : (font = fontlib::find("Console")));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
     if(console_window.begin()) {
         const float2 &ss = screen::getSize();
-        
+
         ImGui::SetWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
         ImGui::SetWindowSize(ImVec2(ss.x, ss.y), ImGuiCond_Always);
 
@@ -81,11 +92,13 @@ void console::drawImgui()
         if(ImGui::InputText("###input", &input_buffer, ImGuiInputTextFlags_EnterReturnsTrue)) {
             api::run(input_buffer);
             input_buffer.clear();
-            ImGui::SetKeyboardFocusHere(-1);
         }
+
+        ImGui::SetKeyboardFocusHere(-1);
 
         console_window.end();
     }
 
     ImGui::PopStyleVar();
+    ImGui::PopFont();
 }

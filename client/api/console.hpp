@@ -9,6 +9,7 @@
 namespace console
 {
 void init();
+void postInit();
 void update();
 void drawImgui();
 } // namespace console

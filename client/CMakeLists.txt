@@ -7,6 +7,7 @@ target_sources(client PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/client_app.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/debug_overlay.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/deferred_pass.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/fontlib.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/game.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/globals.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/input.cpp"
