@@ -4,6 +4,7 @@
  * All Rights Reserved.
  */
 #pragma once
+#include <common/filesystem.hpp>
 
 namespace console
 {

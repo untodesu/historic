@@ -1,7 +1,7 @@
 add_library(client STATIC "")
 target_compile_definitions(client PUBLIC GLFW_INCLUDE_NONE)
 target_include_directories(client PUBLIC "${GIT_REPO_ROOT}")
-target_link_libraries(client PUBLIC common shared glad glfw imgui stb)
+target_link_libraries(client PUBLIC common shared glad glfw imgui lua stb)
 target_sources(client PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/chunks.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/client_app.cpp"
@@ -13,6 +13,7 @@ target_sources(client PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/input.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/network.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/screen.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/script_engine.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/shadow_manager.cpp")
 add_subdirectory(render)
 add_subdirectory(systems)

@@ -9,3 +9,8 @@ if(WIN32)
     # Windows.h conflicts with std::numeric_limits<T>
     target_compile_definitions(common PUBLIC NOMINMAX)
 endif()
+
+if(MSVC)
+    # MSVC pee pee poo poo C functions are dangerous
+    target_compile_definitions(common PUBLIC _CRT_SECURE_NO_WARNINGS)
+endif()

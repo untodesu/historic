@@ -4,15 +4,16 @@
  * All Rights Reserved.
  */
 #include <client/console.hpp>
-#include <client/input.hpp>
 #include <client/screen.hpp>
+#include <client/script_engine.hpp>
 #include <client/globals.hpp>
+#include <client/input.hpp>
 #include <client/render/imgui_ext/window.hpp>
+#include <imgui_stdlib.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/base_sink.h>
 #include <common/util/spdlog.hpp>
 #include <deque>
-#include <imgui_stdlib.h>
 
 static constexpr const size_t MAX_CONSOLE_SIZE = 128;
 static std::deque<std::string> console_deque;
@@ -78,7 +79,7 @@ void console::drawImgui()
         ImGui::Separator();
         ImGui::SetNextItemWidth(-1.0f * ImGui::GetStyle().ItemSpacing.x);
         if(ImGui::InputText("###input", &input_buffer, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            spdlog::info("Console input: {}", input_buffer);
+            script_engine::runString(input_buffer);
             input_buffer.clear();
             ImGui::SetKeyboardFocusHere(-1);
         }

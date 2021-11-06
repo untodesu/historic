@@ -37,6 +37,7 @@
 #include <shared/voxels.hpp>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
+#include <imgui.h>
 
 static constexpr const float TICK_DT = 1.0f / protocol::DEFAULT_TICKRATE;
 static ChronoClock<std::chrono::system_clock> tick_clock;
@@ -55,7 +56,6 @@ void cl_game::init()
 
 void cl_game::postInit()
 {
-    network::connect("localhost", protocol::DEFAULT_PORT);
     tick_clock.restart();
 }
 
@@ -80,8 +80,6 @@ void cl_game::modeChange(int width, int height)
 
 void cl_game::update()
 {
-    globals::ui_grabs_input = false;
-
     console::update();
 
     const bool playing = !globals::ui_grabs_input && (globals::session.state == SessionState::PLAYING);

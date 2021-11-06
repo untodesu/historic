@@ -10,6 +10,7 @@
 #include <client/render/atlas.hpp>
 #include <client/components/camera.hpp>
 #include <client/components/local_player.hpp>
+#include <client/script_engine.hpp>
 #include <shared/components/creature.hpp>
 #include <shared/components/head.hpp>
 #include <shared/components/player.hpp>
@@ -241,6 +242,24 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
     }
 };
 
+static int scriptConnect(lua_State *L)
+{
+    const int argc = lua_gettop(L);
+    if(argc < 1 || argc > 2)
+        return luaL_error(L, "argument mismatch (required: 1-2, received: %d)", argc);
+    uint16_t port = protocol::DEFAULT_PORT;
+    if(argc == 2)
+        port = static_cast<uint16_t>(strtoul(luaL_tolstring(L, 2, nullptr), nullptr, 10));
+    network::connect(luaL_tolstring(L, 1, nullptr), port);
+    return 0;
+}
+
+static int scriptDisconnect(lua_State *)
+{
+    network::disconnect("Disconnected by User");
+    return 0;
+}
+
 void cl_network::init()
 {
     globals::host = enet_host_create(nullptr, 1, 2, 0, 0);
@@ -250,6 +269,9 @@ void cl_network::init()
     }
 
     globals::session.state = SessionState::DISCONNECTED;
+
+    script_engine::addFunc("connect", &scriptConnect);
+    script_engine::addFunc("disconnect", &scriptDisconnect);
 }
 
 void cl_network::shutdown()
@@ -331,9 +353,21 @@ void cl_network::disconnect(const std::string &reason)
         }
 
         enet_peer_reset(globals::session.peer);
+
+        globals::session.id = 0;
         globals::session.peer = nullptr;
+        globals::session.player_entity = entt::null;
+        globals::session.player_entity_id = 0;
+        globals::session.state = SessionState::DISCONNECTED;
 
         clearNetworkEntities();
+        
+        sessions.clear();
+
+        globals::chunks.clear();
+        globals::voxels.clear();
+
+        globals::registry.clear();
     }
 }
 

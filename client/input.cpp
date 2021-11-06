@@ -57,7 +57,7 @@ static void onChar(GLFWwindow *window, unsigned int unicode)
 {
     if(globals::ui_grabs_input) {
         // ImGui passthrough
-        ImGui_ImplGlfw_CharCallback(window, unicode);
+        ImGui::GetIO().AddInputCharacter(unicode);
     }
 }
 

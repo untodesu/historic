@@ -28,6 +28,9 @@ entt::registry cl_globals::registry;
 ClientChunkManager cl_globals::chunks;
 VoxelDef cl_globals::voxels;
 
+// Scripting
+lua_State *cl_globals::script_runtime = nullptr;
+
 // Stats
 float cl_globals::curtime = 0.0f;
 float cl_globals::frametime = 0.0f;

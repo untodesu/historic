@@ -10,6 +10,7 @@
 
 struct ClientSession;
 struct GLFWwindow;
+struct lua_State;
 class ClientChunkManager;
 class VoxelDef;
 class Atlas;
@@ -33,6 +34,9 @@ extern entt::entity local_player;
 extern entt::registry registry;
 extern ClientChunkManager chunks;
 extern VoxelDef voxels;
+
+// Scripting
+extern lua_State *script_runtime;
 
 // Stats
 extern float curtime;
