@@ -6,9 +6,8 @@
 #include <common/math/const.hpp>
 #include <common/math/math.hpp>
 #include <exception>
-#include <client/components/camera.hpp>
 #include <client/components/local_player.hpp>
-#include <client/console.hpp>
+#include <client/api/console.hpp>
 #include <client/systems/chunk_mesher.hpp>
 #include <client/systems/player_look.hpp>
 #include <client/systems/player_move.hpp>
@@ -45,6 +44,8 @@ static ChronoClock<std::chrono::system_clock> tick_clock;
 void cl_game::init()
 {
     console::init();
+
+    proj_view::init();
 
     chunk_renderer::init();
     deferred_pass::init();

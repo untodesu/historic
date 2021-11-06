@@ -8,6 +8,7 @@
 #include <client/globals.hpp>
 #include <client/render/atlas.hpp>
 #include <client/render/gbuffer.hpp>
+#include <shared/cvar.hpp>
 #include <shared/session.hpp>
 #include <shared/voxels.hpp>
 
@@ -28,8 +29,9 @@ entt::registry cl_globals::registry;
 ClientChunkManager cl_globals::chunks;
 VoxelDef cl_globals::voxels;
 
-// Scripting
-lua_State *cl_globals::script_runtime = nullptr;
+// Scripting & configuration
+CVarList cl_globals::cvars;
+lua_State *cl_globals::lua = nullptr;
 
 // Stats
 float cl_globals::curtime = 0.0f;

@@ -1,5 +1,5 @@
 /*
- * script_engine.hpp
+ * api.hpp
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
@@ -13,11 +13,13 @@ extern "C"
 #include <lauxlib.h>
 }
 
-namespace script_engine
+namespace cl_api
 {
 void init();
 void shutdown();
-void addFunc(const std::string &name, lua_CFunction func);
-void runFile(const stdfs::path &path);
-void runString(const std::string &str);
-} // namespace script_engine
+void expose(const std::string &entry, lua_CFunction func);
+void run(const std::string &source);
+void run(const stdfs::path &path);
+} // namespace cl_api
+
+namespace api = cl_api;

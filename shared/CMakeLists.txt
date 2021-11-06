@@ -2,6 +2,7 @@ add_library(shared STATIC "")
 target_include_directories(shared PUBLIC "${GIT_REPO_ROOT}")
 target_link_libraries(shared PUBLIC bitsery EnTT common enet)
 target_sources(shared PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}/cvar.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/voxels.cpp")
 
 if(MSVC)

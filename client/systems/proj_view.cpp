@@ -3,7 +3,6 @@
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
-#include <client/components/camera.hpp>
 #include <client/components/local_player.hpp>
 #include <client/systems/proj_view.hpp>
 #include <client/globals.hpp>
@@ -13,6 +12,7 @@
 #include <shared/components/creature.hpp>
 #include <shared/components/head.hpp>
 #include <shared/components/player.hpp>
+#include <shared/cvar.hpp>
 #include <shared/world.hpp>
 #include <spdlog/spdlog.h>
 #include <shared/session.hpp>
@@ -23,16 +23,21 @@ static float4x4 pv_matrix = FLOAT4X4_IDENTITY;
 static float4x4 pv_matrix_shadow = FLOAT4X4_IDENTITY;
 static Frustum pv_frustum, pv_frustum_shadow;
 
+static CVar r_fov("r.fov", "90.0");
+static CVar r_znear("r.znear", "0.01");
+static CVar r_zfar("r.zfar", "1024.0");
+
+void proj_view::init()
+{
+    globals::cvars.insert(r_fov);
+    globals::cvars.insert(r_znear);
+    globals::cvars.insert(r_zfar);
+}
+
 void proj_view::update()
 {
     pv_position = FLOAT3_ZERO;
-    pv_matrix = FLOAT4X4_IDENTITY;
-
-    const auto cg = globals::registry.group<ActiveCameraComponent>(entt::get<CameraComponent>);
-    for(const auto [entity, camera] : cg.each()) {
-        pv_matrix *= glm::perspective(camera.fov, screen::getAspectRatio(), camera.z_near, camera.z_far);
-        break;
-    }
+    pv_matrix = glm::perspective(glm::radians(r_fov.getFloat()), screen::getAspectRatio(), r_znear.getFloat(), r_zfar.getFloat());
 
     const auto hg = globals::registry.group(entt::get<HeadComponent, PlayerComponent, LocalPlayerComponent>);
     for(const auto [entity, head, player] : hg.each()) {

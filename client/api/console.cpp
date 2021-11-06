@@ -3,9 +3,9 @@
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
-#include <client/console.hpp>
+#include <client/api/api.hpp>
+#include <client/api/console.hpp>
 #include <client/screen.hpp>
-#include <client/script_engine.hpp>
 #include <client/globals.hpp>
 #include <client/input.hpp>
 #include <client/render/imgui_ext/window.hpp>
@@ -79,7 +79,7 @@ void console::drawImgui()
         ImGui::Separator();
         ImGui::SetNextItemWidth(-1.0f * ImGui::GetStyle().ItemSpacing.x);
         if(ImGui::InputText("###input", &input_buffer, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            script_engine::runString(input_buffer);
+            api::run(input_buffer);
             input_buffer.clear();
             ImGui::SetKeyboardFocusHere(-1);
         }

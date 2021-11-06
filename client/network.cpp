@@ -4,13 +4,12 @@
  * All Rights Reserved.
  */
 #include <exception>
+#include <client/api/api.hpp>
 #include <client/chunks.hpp>
 #include <client/globals.hpp>
 #include <client/network.hpp>
 #include <client/render/atlas.hpp>
-#include <client/components/camera.hpp>
 #include <client/components/local_player.hpp>
-#include <client/script_engine.hpp>
 #include <shared/components/creature.hpp>
 #include <shared/components/head.hpp>
 #include <shared/components/player.hpp>
@@ -169,13 +168,6 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
 
                         if(player->session_id == globals::session.id) {
                             globals::registry.emplace<LocalPlayerComponent>(entity);
-                            globals::registry.emplace<ActiveCameraComponent>(entity);
-
-                            CameraComponent &camera = globals::registry.emplace<CameraComponent>(entity);
-                            camera.fov = glm::radians(90.0f);
-                            camera.z_near = 0.01f;
-                            camera.z_far = 1024.0f;
-
                             globals::session.state = SessionState::PLAYING;
                         }
 
@@ -242,7 +234,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
     }
 };
 
-static int scriptConnect(lua_State *L)
+static int apiConnect(lua_State *L)
 {
     const int argc = lua_gettop(L);
     if(argc < 1 || argc > 2)
@@ -254,7 +246,7 @@ static int scriptConnect(lua_State *L)
     return 0;
 }
 
-static int scriptDisconnect(lua_State *)
+static int apiDisconnect(lua_State *)
 {
     network::disconnect("Disconnected by User");
     return 0;
@@ -270,8 +262,8 @@ void cl_network::init()
 
     globals::session.state = SessionState::DISCONNECTED;
 
-    script_engine::addFunc("connect", &scriptConnect);
-    script_engine::addFunc("disconnect", &scriptDisconnect);
+    api::expose("connect", &apiConnect);
+    api::expose("disconnect", &apiDisconnect);
 }
 
 void cl_network::shutdown()

@@ -4,6 +4,7 @@
  * All Rights Reserved.
  */
 #include <exception>
+#include <client/api/api.hpp>
 #include <client/render/gl/context.hpp>
 #include <client/client_app.hpp>
 #include <client/game.hpp>
@@ -11,7 +12,6 @@
 #include <client/input.hpp>
 #include <client/network.hpp>
 #include <client/screen.hpp>
-#include <client/script_engine.hpp>
 #include <shared/util/clock.hpp>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -27,7 +27,7 @@ static void glfwOnError(int code, const char *message)
 
 void client_app::run()
 {
-    script_engine::init();
+    api::init();
 
     glfwSetErrorCallback(glfwOnError);
     if(!glfwInit()) {
@@ -113,5 +113,5 @@ void client_app::run()
 
     network::shutdown();
 
-    script_engine::shutdown();
+    api::shutdown();
 }
