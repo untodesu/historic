@@ -40,15 +40,13 @@ protected:
     }
 };
 
-namespace api
-{
-static duk_ret_t consoleClear(duk_context *)
+static duk_ret_t onConsoleClear(duk_context *)
 {
     console_deque.clear();
     return 0;
 }
 
-static duk_ret_t consolePrint(duk_context *ctx)
+static duk_ret_t onConsolePrint(duk_context *ctx)
 {
     const duk_idx_t argc = duk_get_top(ctx);
     if(argc) {
@@ -60,13 +58,12 @@ static duk_ret_t consolePrint(duk_context *ctx)
 
     return 0;
 }
-} // namespace api
 
 void console::preInit()
 {
     globals::script.build("Console")
-        .function("clear", &api::consoleClear, 0)
-        .function("print", &api::consolePrint, DUK_VARARGS)
+        .function("clear", &onConsoleClear, 0)
+        .function("print", &onConsolePrint, DUK_VARARGS)
         .submit();
     spdlog::default_logger_raw()->sinks().push_back(util::createSink<ConsoleSink>());
 }
