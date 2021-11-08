@@ -4,7 +4,6 @@
  * All Rights Reserved.
  */
 #include <exception>
-#include <client/api/api.hpp>
 #include <client/chunks.hpp>
 #include <client/globals.hpp>
 #include <client/network.hpp>
@@ -29,6 +28,7 @@
 #include <shared/protocol/packets/shared/disconnect.hpp>
 #include <shared/protocol/packets/shared/update_creature.hpp>
 #include <shared/protocol/packets/shared/update_head.hpp>
+#include <shared/script_engine.hpp>
 #include <shared/util/enet.hpp>
 #include <shared/voxels.hpp>
 #include <spdlog/spdlog.h>
@@ -234,22 +234,29 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
     }
 };
 
-static int apiConnect(lua_State *L)
+namespace api
 {
-    const int argc = lua_gettop(L);
-    if(argc < 1 || argc > 2)
-        return luaL_error(L, "argument mismatch (required: 1-2, received: %d)", argc);
-    uint16_t port = protocol::DEFAULT_PORT;
-    if(argc == 2)
-        port = static_cast<uint16_t>(strtoul(luaL_tolstring(L, 2, nullptr), nullptr, 10));
-    network::connect(luaL_tolstring(L, 1, nullptr), port);
+static duk_ret_t netConnect(duk_context *ctx)
+{
+    cl_network::connect(duk_safe_to_string(ctx, 0), duk_to_uint16(ctx, 1));
     return 0;
 }
 
-static int apiDisconnect(lua_State *)
+static duk_ret_t netDisconnect(duk_context *)
 {
-    network::disconnect("Disconnected by User");
+    cl_network::disconnect("Disconnected by User");
     return 0;
+}
+} // namespace api
+
+void cl_network::preInit()
+{
+    globals::script.object("Net")
+        .constant("DEFAULT_PORT", static_cast<int>(protocol::DEFAULT_PORT))
+        .constant("LOCALHOST", "localhost")
+        .function("connect", &api::netConnect, 2)
+        .function("disconnect", &api::netDisconnect, 0)
+        .submit();
 }
 
 void cl_network::init()
@@ -261,9 +268,6 @@ void cl_network::init()
     }
 
     globals::session.state = SessionState::DISCONNECTED;
-
-    api::expose("connect", &apiConnect);
-    api::expose("disconnect", &apiDisconnect);
 }
 
 void cl_network::shutdown()

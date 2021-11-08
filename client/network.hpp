@@ -11,6 +11,7 @@
 
 namespace cl_network
 {
+void preInit();
 void init();
 void shutdown();
 bool connect(const std::string &host, uint16_t port);

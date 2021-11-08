@@ -7,8 +7,7 @@
 #include <common/math/math.hpp>
 #include <exception>
 #include <client/components/local_player.hpp>
-#include <client/api/api.hpp>
-#include <client/api/console.hpp>
+#include <client/console.hpp>
 #include <client/systems/chunk_mesher.hpp>
 #include <client/systems/player_look.hpp>
 #include <client/systems/player_move.hpp>
@@ -43,11 +42,15 @@
 static constexpr const float TICK_DT = 1.0f / protocol::DEFAULT_TICKRATE;
 static ChronoClock<std::chrono::system_clock> tick_clock;
 
+void cl_game::preInit()
+{
+    console::preInit();
+    proj_view::preInit();
+}
+
 void cl_game::init()
 {
     console::init();
-
-    proj_view::init();
 
     chunk_renderer::init();
     deferred_pass::init();

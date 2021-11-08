@@ -27,7 +27,7 @@ static CVar r_fov("r.fov", "90.0");
 static CVar r_znear("r.znear", "0.01");
 static CVar r_zfar("r.zfar", "1024.0");
 
-void proj_view::init()
+void proj_view::preInit()
 {
     globals::cvars.insert(r_fov);
     globals::cvars.insert(r_znear);

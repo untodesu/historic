@@ -5,32 +5,32 @@
  */
 #include <shared/voxels.hpp>
 
-VoxelDef::EntryBuilder::EntryBuilder(VoxelDef *owner, voxel_t id)
+detail::VoxelDefEntryBuilder::VoxelDefEntryBuilder(VoxelDef *owner, voxel_t id)
     : entry(), owner(owner), id(id)
 {
 
 }
 
-VoxelDef::EntryBuilder &VoxelDef::EntryBuilder::type(voxel_type_t type)
+detail::VoxelDefEntryBuilder &detail::VoxelDefEntryBuilder::type(voxel_type_t type)
 {
     entry.type = type;
     return *this;
 }
 
-VoxelDef::FaceBuilder VoxelDef::EntryBuilder::face(voxel_face_t face)
+detail::VoxelDefFaceBuilder detail::VoxelDefEntryBuilder::face(voxel_face_t face)
 {
-    return VoxelDef::FaceBuilder(this, face);
+    return detail::VoxelDefFaceBuilder(this, face);
 }
 
-VoxelDef::FaceBuilder VoxelDef::EntryBuilder::face(voxel_face_t copy, voxel_face_t face)
+detail::VoxelDefFaceBuilder detail::VoxelDefEntryBuilder::face(voxel_face_t copy, voxel_face_t face)
 {
     const auto it = entry.faces.find(copy);
     if(it != entry.faces.cend())
-        return VoxelDef::FaceBuilder(this, face, it->second);
-    return VoxelDef::FaceBuilder(this, face);
+        return detail::VoxelDefFaceBuilder(this, face, it->second);
+    return detail::VoxelDefFaceBuilder(this, face);
 }
 
-void VoxelDef::EntryBuilder::submit()
+void detail::VoxelDefEntryBuilder::submit()
 {
     auto owner_entry = owner->voxels.find(id);
     if(owner_entry != owner->voxels.end()) {
@@ -47,25 +47,25 @@ void VoxelDef::EntryBuilder::submit()
     owner->checksum += entry.faces.size();
 }
 
-VoxelDef::FaceBuilder::FaceBuilder(EntryBuilder *parent, voxel_face_t face, const VoxelDefEntry::Face &entry)
+detail::VoxelDefFaceBuilder::VoxelDefFaceBuilder(detail::VoxelDefEntryBuilder *parent, voxel_face_t face, const VoxelDefEntry::Face &entry)
     : entry(entry), parent(parent), face(face)
 {
 
 }
 
-VoxelDef::FaceBuilder &VoxelDef::FaceBuilder::transparent(bool flag)
+detail::VoxelDefFaceBuilder &detail::VoxelDefFaceBuilder::transparent(bool flag)
 {
     entry.transparent = flag;
     return *this;
 }
 
-VoxelDef::FaceBuilder &VoxelDef::FaceBuilder::texture(const std::string &path)
+detail::VoxelDefFaceBuilder &detail::VoxelDefFaceBuilder::texture(const std::string &path)
 {
     entry.texture = path;
     return *this;
 }
 
-VoxelDef::EntryBuilder &VoxelDef::FaceBuilder::endFace()
+detail::VoxelDefEntryBuilder &detail::VoxelDefFaceBuilder::endFace()
 {
     parent->entry.faces[face] = entry;
     return *parent;
@@ -85,7 +85,7 @@ const VoxelDefEntry *VoxelDef::find(voxel_t id) const
     return nullptr;
 }
 
-VoxelDef::EntryBuilder VoxelDef::build(voxel_t id)
+detail::VoxelDefEntryBuilder VoxelDef::build(voxel_t id)
 {
-    return VoxelDef::EntryBuilder(this, id);
+    return detail::VoxelDefEntryBuilder(this, id);
 }

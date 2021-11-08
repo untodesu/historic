@@ -8,12 +8,16 @@
 #include <entt/entt.hpp>
 #include <common/math/types.hpp>
 
+class CVarList;
 class ServerChunkManager;
 class VoxelDef;
 struct Session;
+class ScriptEngine;
 
 namespace sv_globals
 {
+extern bool running;
+
 // Networking
 extern ENetHost *host;
 
@@ -21,6 +25,10 @@ extern ENetHost *host;
 extern entt::registry registry;
 extern ServerChunkManager chunks;
 extern VoxelDef voxels;
+
+// Scripting & configuration
+extern CVarList cvars;
+extern ScriptEngine script;
 
 // Stats
 extern float curtime;

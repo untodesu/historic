@@ -48,6 +48,11 @@ static void generate(uint64_t seed = 0)
     }
 }
 
+void sv_game::preInit()
+{
+
+}
+
 void sv_game::init()
 {
 

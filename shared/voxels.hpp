@@ -5,6 +5,7 @@
  */
 #pragma once
 #include <common/filesystem.hpp>
+#include <common/traits.hpp>
 #include <shared/world.hpp>
 #include <unordered_map>
 #include <unordered_set>
@@ -60,51 +61,47 @@ struct VoxelDefEntry final {
     std::unordered_map<voxel_face_t, Face> faces;
 };
 
+class VoxelDef;
+namespace detail
+{
+class VoxelDefFaceBuilder;
+class VoxelDefEntryBuilder final : public NonCopyable, public NonMovable {
+    friend class VoxelDefFaceBuilder;
+
+public:
+    VoxelDefEntryBuilder(VoxelDef *owner, voxel_t id);
+
+    VoxelDefEntryBuilder &type(voxel_type_t type);
+    VoxelDefFaceBuilder face(voxel_face_t face);
+    VoxelDefFaceBuilder face(voxel_face_t copy, voxel_face_t face);
+
+    void submit();
+
+private:
+    VoxelDefEntry entry;
+    VoxelDef *owner;
+    voxel_t id;
+};
+
+class VoxelDefFaceBuilder final {
+public:
+    VoxelDefFaceBuilder(VoxelDefEntryBuilder *parent, voxel_face_t face, const VoxelDefEntry::Face &entry = VoxelDefEntry::Face());
+
+    VoxelDefFaceBuilder &transparent(bool flag);
+    VoxelDefFaceBuilder &texture(const std::string &path);
+
+    VoxelDefEntryBuilder &endFace();
+
+private:
+    VoxelDefEntry::Face entry;
+    VoxelDefEntryBuilder *parent;
+    voxel_face_t face;
+};
+} // namespace detail
+
 class VoxelDef final {
 public:
-    class FaceBuilder;
-    class EntryBuilder final {
-        friend class FaceBuilder;
-
-    public:
-        EntryBuilder(VoxelDef *owner, voxel_t id);
-        EntryBuilder(const EntryBuilder &rhs) = delete;
-        EntryBuilder(EntryBuilder &&rhs) = delete;
-
-        EntryBuilder &operator=(const EntryBuilder &rhs) = delete;
-        EntryBuilder &operator=(EntryBuilder &&rhs) = delete;
-
-        EntryBuilder &type(voxel_type_t type);
-        FaceBuilder face(voxel_face_t face);
-        FaceBuilder face(voxel_face_t copy, voxel_face_t face);
-
-        void submit();
-
-    private:
-        VoxelDefEntry entry;
-        VoxelDef *owner;
-        voxel_t id;
-    };
-
-    class FaceBuilder final {
-    public:
-        FaceBuilder(EntryBuilder *parent, voxel_face_t face, const VoxelDefEntry::Face &entry = VoxelDefEntry::Face());
-        FaceBuilder(const FaceBuilder &rhs) = delete;
-        FaceBuilder(FaceBuilder &&rhs) = delete;
-
-        FaceBuilder &operator=(const FaceBuilder &rhs) = delete;
-        FaceBuilder &operator=(FaceBuilder &&rhs) = delete;
-
-        FaceBuilder &transparent(bool flag);
-        FaceBuilder &texture(const std::string &path);
-
-        EntryBuilder &endFace();
-
-    private:
-        VoxelDefEntry::Face entry;
-        EntryBuilder *parent;
-        voxel_face_t face;
-    };
+    friend class detail::VoxelDefEntryBuilder;
 
 public:
     using map_type = std::unordered_map<voxel_t, VoxelDefEntry>;
@@ -113,7 +110,7 @@ public:
 public:
     void clear();
     const VoxelDefEntry *find(voxel_t id) const;
-    EntryBuilder build(voxel_t id);
+    detail::VoxelDefEntryBuilder build(voxel_t id);
 
     inline uint64_t getChecksum() const
     {
@@ -134,38 +131,3 @@ private:
     uint64_t checksum { 0 };
     map_type voxels;
 };
-
-
-#if 0
-class VoxelDef final {
-public:
-    using map_type = std::unordered_map<voxel_t, VoxelInfo>;
-    using const_iterator = map_type::const_iterator;
-
-public:
-    VoxelDef();
-
-    void clear();
-    bool set(voxel_t voxel, const VoxelInfo &info);
-    const VoxelInfo *tryGet(voxel_t voxel) const;
-
-    inline uint64_t getChecksum() const
-    {
-        return checksum;
-    }
-
-    inline const_iterator cbegin() const
-    {
-        return def.cbegin();
-    }
-
-    inline const_iterator cend() const
-    {
-        return def.cend();
-    }
-
-private:
-    uint64_t checksum;
-    map_type def;
-};
-#endif

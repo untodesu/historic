@@ -8,6 +8,7 @@
 
 namespace sv_network
 {
+void preInit();
 void init();
 void shutdown();
 void update();

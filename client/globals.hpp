@@ -10,12 +10,12 @@
 
 struct ClientSession;
 struct GLFWwindow;
-struct lua_State;
 class ClientChunkManager;
 class CVarList;
 class VoxelDef;
 class Atlas;
 class GBuffer;
+class ScriptEngine;
 
 namespace cl_globals
 {
@@ -38,7 +38,7 @@ extern VoxelDef voxels;
 
 // Scripting & configuration
 extern CVarList cvars;
-extern lua_State *lua;
+extern ScriptEngine script;
 
 // Stats
 extern float curtime;

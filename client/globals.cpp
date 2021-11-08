@@ -9,6 +9,7 @@
 #include <client/render/atlas.hpp>
 #include <client/render/gbuffer.hpp>
 #include <shared/cvar.hpp>
+#include <shared/script_engine.hpp>
 #include <shared/session.hpp>
 #include <shared/voxels.hpp>
 
@@ -31,7 +32,7 @@ VoxelDef cl_globals::voxels;
 
 // Scripting & configuration
 CVarList cl_globals::cvars;
-lua_State *cl_globals::lua = nullptr;
+ScriptEngine cl_globals::script;
 
 // Stats
 float cl_globals::curtime = 0.0f;

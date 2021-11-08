@@ -1,17 +1,16 @@
 /*
- * game.hpp
+ * console.hpp
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
 #pragma once
+#include <common/filesystem.hpp>
 
-namespace sv_game
+namespace console
 {
 void preInit();
 void init();
 void postInit();
-void shutdown();
 void update();
-} // namespace sv_game
-
-namespace game = sv_game;
+void drawImgui();
+} // namespace console

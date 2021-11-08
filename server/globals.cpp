@@ -5,7 +5,11 @@
  */
 #include <server/chunks.hpp>
 #include <server/globals.hpp>
+#include <shared/cvar.hpp>
+#include <shared/script_engine.hpp>
 #include <shared/voxels.hpp>
+
+bool sv_globals::running = false;
 
 // Networking
 ENetHost *sv_globals::host = nullptr;
@@ -14,6 +18,10 @@ ENetHost *sv_globals::host = nullptr;
 entt::registry sv_globals::registry;
 ServerChunkManager sv_globals::chunks;
 VoxelDef sv_globals::voxels;
+
+// Scripting & configuration
+CVarList sv_globals::cvars;
+ScriptEngine sv_globals::script;
 
 // Stats
 float sv_globals::curtime = 0.0f;
