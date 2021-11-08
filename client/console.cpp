@@ -17,13 +17,8 @@
 #include <deque>
 #include <sstream>
 
-struct DequeEntry final {
-    spdlog::level::level_enum level;
-    std::string message;
-};
-
 static constexpr const size_t MAX_CONSOLE_SIZE = 128;
-static std::deque<DequeEntry> console_deque;
+static std::deque<std::string> console_deque;
 static imgui_ext::Window console_window("Console", "console", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
 static bool scroll_to_bottom = true;
 static std::string input_buffer;
@@ -35,10 +30,7 @@ protected:
     {
         spdlog::memory_buf_t buffer;
         formatter_->format(msg, buffer);
-        DequeEntry entry;
-        entry.level = msg.level;
-        entry.message = fmt::to_string(buffer);
-        console_deque.push_back(entry);
+        console_deque.push_back(fmt::to_string(buffer));
         scroll_to_bottom = true;
     }
 
@@ -63,32 +55,12 @@ static duk_ret_t consolePrint(duk_context *ctx)
         std::stringstream ss;
         for(duk_idx_t i = 0; i < argc; i++)
             ss << duk_safe_to_string(ctx, i);
-        DequeEntry entry;
-        entry.level = spdlog::level::trace;
-        entry.message = ss.str();
-        console_deque.push_back(entry);
+        console_deque.push_back(ss.str());
     }
 
     return 0;
 }
 } // namespace api
-
-static inline const ImVec4 getTextColor(spdlog::level::level_enum level)
-{
-    switch(level) {
-        case spdlog::level::err:
-        case spdlog::level::critical:
-            return ImVec4(1.000f, 0.780f, 0.780f, 1.000f);
-        case spdlog::level::warn:
-            return ImVec4(1.000f, 0.968f, 0.721f, 1.000f);
-        case spdlog::level::info:
-            return ImVec4(0.745f, 1.000f, 0.721f, 1.000f);
-        case spdlog::level::debug:
-            return ImVec4(0.721f, 0.901f, 1.000f, 1.000f);
-        default:
-            return ImGui::GetStyleColorVec4(ImGuiCol_Text);
-    }
-}
 
 void console::preInit()
 {
@@ -129,7 +101,7 @@ void console::drawImgui()
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 1.0f));
         
         for(auto it = console_deque.cbegin(); it != console_deque.cend(); it++)
-            ImGui::TextColored(getTextColor(it->level), "%s", it->message.c_str());
+            ImGui::TextUnformatted(it->c_str());
 
         if(scroll_to_bottom) {
             ImGui::SetScrollHereY(1.0f);
