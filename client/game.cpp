@@ -65,7 +65,7 @@ void cl_game::postInit()
     fontlib::build("Console")
         .file("fonts/RobotoMono-Regular.ttf")
             .range(ImGui::GetIO().Fonts->GetGlyphRangesCyrillic())
-            .size(24.0f)
+            .size(20.0f)
             .endFile()
         .submit();
 

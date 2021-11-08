@@ -9,7 +9,7 @@
 #include <client/globals.hpp>
 #include <client/input.hpp>
 #include <client/render/imgui_ext/window.hpp>
-#include <shared/script_engine.hpp>
+#include <shared/script/script_engine.hpp>
 #include <imgui_stdlib.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/base_sink.h>
@@ -64,7 +64,7 @@ static duk_ret_t consolePrint(duk_context *ctx)
 
 void console::preInit()
 {
-    globals::script.object("Console")
+    globals::script.build("Console")
         .function("clear", &api::consoleClear, 0)
         .function("print", &api::consolePrint, DUK_VARARGS)
         .submit();

@@ -12,7 +12,8 @@
 #include <shared/components/creature.hpp>
 #include <shared/components/head.hpp>
 #include <shared/components/player.hpp>
-#include <shared/cvar.hpp>
+#include <shared/script/cvars.hpp>
+#include <shared/script/cvar_numeric.hpp>
 #include <shared/world.hpp>
 #include <spdlog/spdlog.h>
 #include <shared/session.hpp>
@@ -23,21 +24,21 @@ static float4x4 pv_matrix = FLOAT4X4_IDENTITY;
 static float4x4 pv_matrix_shadow = FLOAT4X4_IDENTITY;
 static Frustum pv_frustum, pv_frustum_shadow;
 
-static CVar r_fov("r.fov", "90.0");
-static CVar r_znear("r.znear", "0.01");
-static CVar r_zfar("r.zfar", "1024.0");
+static CVarNumeric<float> r_fov("r.fov", 90.0f, FCVAR_ARCHIVE, 54.0f, 150.0f);
+static CVarNumeric<float> r_znear("r.znear", 0.01f, FCVAR_ARCHIVE, 0.01f, 5120.0f);
+static CVarNumeric<float> r_zfar("r.zfar", 1024.0f, FCVAR_ARCHIVE, 0.01f, 5120.0f);
 
 void proj_view::preInit()
 {
-    globals::cvars.insert(r_fov);
-    globals::cvars.insert(r_znear);
-    globals::cvars.insert(r_zfar);
+    cvars::insert(r_fov);
+    cvars::insert(r_znear);
+    cvars::insert(r_zfar);
 }
 
 void proj_view::update()
 {
     pv_position = FLOAT3_ZERO;
-    pv_matrix = glm::perspective(glm::radians(r_fov.getFloat()), screen::getAspectRatio(), r_znear.getFloat(), r_zfar.getFloat());
+    pv_matrix = glm::perspective(glm::radians(r_fov.getValue()), screen::getAspectRatio(), r_znear.getValue(), r_zfar.getValue());
 
     const auto hg = globals::registry.group(entt::get<HeadComponent, PlayerComponent, LocalPlayerComponent>);
     for(const auto [entity, head, player] : hg.each()) {

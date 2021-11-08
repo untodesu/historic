@@ -8,8 +8,7 @@
 #include <client/globals.hpp>
 #include <client/render/atlas.hpp>
 #include <client/render/gbuffer.hpp>
-#include <shared/cvar.hpp>
-#include <shared/script_engine.hpp>
+#include <shared/script/script_engine.hpp>
 #include <shared/session.hpp>
 #include <shared/voxels.hpp>
 
@@ -31,7 +30,6 @@ ClientChunkManager cl_globals::chunks;
 VoxelDef cl_globals::voxels;
 
 // Scripting & configuration
-CVarList cl_globals::cvars;
 ScriptEngine cl_globals::script;
 
 // Stats

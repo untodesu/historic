@@ -8,46 +8,20 @@
 #include <server/globals.hpp>
 #include <server/server_app.hpp>
 #include <server/network.hpp>
-#include <shared/cvar.hpp>
 #include <shared/protocol/protocol.hpp>
-#include <shared/script_engine.hpp>
+#include <shared/script/cvars.hpp>
+#include <shared/script/script_engine.hpp>
 #include <shared/util/clock.hpp>
 #include <spdlog/spdlog.h>
 #include <thread>
 
 constexpr const float TICK_DT = 1.0f / protocol::DEFAULT_TICKRATE;
 
-namespace api
-{
-static duk_ret_t appExit(duk_context *)
+static duk_ret_t onAppExit(duk_context *)
 {
     globals::running = false;
     return 0;
 }
-
-static duk_ret_t cvarGet(duk_context *ctx)
-{
-    const auto it = globals::cvars.find(duk_safe_to_string(ctx, 0));
-    if(it != globals::cvars.cend()) {
-        duk_push_string(ctx, it->second->getString().c_str());
-        return 1;
-    }
-
-    duk_push_null(ctx);
-    return 1;
-}
-
-static duk_ret_t cvarSet(duk_context *ctx)
-{
-    auto it = globals::cvars.find(duk_safe_to_string(ctx, 0));
-    if(it != globals::cvars.end()) {
-        it->second->set(duk_safe_to_string(ctx, 1));
-        duk_push_true(ctx);
-    }
-
-    return 0;
-}
-} // namespace api
 
 static void onSIGINT(int)
 {
@@ -57,15 +31,10 @@ static void onSIGINT(int)
 
 void server_app::run()
 {
-    globals::script.object("App")
+    globals::script.build("App")
         .constant("CLIENT", 0)
         .constant("SERVER", 1)
-        .function("exit", &api::appExit, 0)
-        .submit();
-
-    globals::script.object("CVar")
-        .function("get", &api::cvarGet, 1)
-        .function("set", &api::cvarSet, 2)
+        .function("exit", &onAppExit, 0)
         .submit();
 
     network::preInit();
@@ -83,10 +52,10 @@ void server_app::run()
     const stdfs::path user_path = js_subdir / stdfs::path("user.js");
     stdfs::create_directories(fs::getWritePath(js_subdir));
 
-    globals::cvars.unmaskWrite(FCVAR_INIT_ONLY);
+    cvars::setInitMode(true);
     globals::script.exec(init_path);
     globals::script.exec(user_path);
-    globals::cvars.maskWrite(FCVAR_INIT_ONLY);
+    cvars::setInitMode(false);
 
     game::postInit();
 
@@ -125,5 +94,5 @@ void server_app::run()
     network::shutdown();
 
     spdlog::debug("Writing {}", init_path.string());
-    fs::writeText(init_path, globals::cvars.dump(CVarDumpMode::SCRIPT_SOURCE));
+    fs::writeText(init_path, cvars::dump());
 }

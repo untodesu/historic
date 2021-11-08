@@ -28,7 +28,7 @@
 #include <shared/protocol/packets/shared/disconnect.hpp>
 #include <shared/protocol/packets/shared/update_creature.hpp>
 #include <shared/protocol/packets/shared/update_head.hpp>
-#include <shared/script_engine.hpp>
+#include <shared/script/script_engine.hpp>
 #include <shared/util/enet.hpp>
 #include <shared/voxels.hpp>
 #include <spdlog/spdlog.h>
@@ -234,28 +234,25 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
     }
 };
 
-namespace api
-{
-static duk_ret_t netConnect(duk_context *ctx)
+static duk_ret_t onNetConnect(duk_context *ctx)
 {
     cl_network::connect(duk_safe_to_string(ctx, 0), duk_to_uint16(ctx, 1));
     return 0;
 }
 
-static duk_ret_t netDisconnect(duk_context *)
+static duk_ret_t onNetDisconnect(duk_context *)
 {
     cl_network::disconnect("Disconnected by User");
     return 0;
 }
-} // namespace api
 
 void cl_network::preInit()
 {
-    globals::script.object("Net")
+    globals::script.build("Net")
         .constant("DEFAULT_PORT", static_cast<int>(protocol::DEFAULT_PORT))
         .constant("LOCALHOST", "localhost")
-        .function("connect", &api::netConnect, 2)
-        .function("disconnect", &api::netDisconnect, 0)
+        .function("connect", &onNetConnect, 2)
+        .function("disconnect", &onNetDisconnect, 0)
         .submit();
 }
 

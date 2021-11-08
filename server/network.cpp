@@ -9,8 +9,6 @@
 #include <server/chunks.hpp>
 #include <server/globals.hpp>
 #include <server/network.hpp>
-#include <shared/cvar.hpp>
-#include <shared/script_engine.hpp>
 #include <shared/components/chunk.hpp>
 #include <shared/components/creature.hpp>
 #include <shared/components/head.hpp>
@@ -32,6 +30,8 @@
 #include <shared/protocol/packets/shared/update_creature.hpp>
 #include <shared/protocol/packets/shared/update_head.hpp>
 #include <shared/protocol/protocol.hpp>
+#include <shared/script/cvars.hpp>
+#include <shared/script/cvar_numeric.hpp>
 #include <shared/util/enet.hpp>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
@@ -212,22 +212,22 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
     }
 };
 
-static CVar net_port("net.port", std::to_string(protocol::DEFAULT_PORT), FCVAR_ARCHIVE | FCVAR_INIT_ONLY);
-static CVar net_maxplayers("net.maxplayers", "16", FCVAR_ARCHIVE | FCVAR_INIT_ONLY);
+static CVarNumeric<uint16_t> net_port("net.port", protocol::DEFAULT_PORT, FCVAR_ARCHIVE | FCVAR_READONLY);
+static CVarNumeric<size_t> net_maxplayers("net.maxplayers", 16, FCVAR_ARCHIVE | FCVAR_READONLY);
 
 void sv_network::preInit()
 {
-    globals::cvars.insert(net_port);
-    globals::cvars.insert(net_maxplayers);
+    cvars::insert(net_port);
+    cvars::insert(net_maxplayers);
 }
 
 void sv_network::init()
 {
     ENetAddress address;
     address.host = ENET_HOST_ANY;
-    address.port = static_cast<uint16_t>(net_port.getInt());
+    address.port = net_port.getValue();
 
-    globals::host = enet_host_create(&address, static_cast<size_t>(net_maxplayers.getInt()), 2, 0, 0);
+    globals::host = enet_host_create(&address, net_maxplayers.getValue(), 2, 0, 0);
     if(!globals::host) {
         spdlog::error("Unable to create a server host object.");
         std::terminate();

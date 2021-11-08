@@ -8,7 +8,6 @@
 #include <entt/entt.hpp>
 #include <common/math/types.hpp>
 
-class CVarList;
 class ServerChunkManager;
 class VoxelDef;
 struct Session;
@@ -27,7 +26,6 @@ extern ServerChunkManager chunks;
 extern VoxelDef voxels;
 
 // Scripting & configuration
-extern CVarList cvars;
 extern ScriptEngine script;
 
 // Stats

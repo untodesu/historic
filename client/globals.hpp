@@ -11,7 +11,6 @@
 struct ClientSession;
 struct GLFWwindow;
 class ClientChunkManager;
-class CVarList;
 class VoxelDef;
 class Atlas;
 class GBuffer;
@@ -37,7 +36,6 @@ extern ClientChunkManager chunks;
 extern VoxelDef voxels;
 
 // Scripting & configuration
-extern CVarList cvars;
 extern ScriptEngine script;
 
 // Stats
