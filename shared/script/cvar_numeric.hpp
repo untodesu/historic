@@ -50,7 +50,11 @@ CVarNumeric<T>::CVarNumeric(const std::string &name, const T default_value, cons
 template<typename T>
 void CVarNumeric<T>::touch(const std::string &value)
 {
-    CVarBase::touch(value);
     std::stringstream(value) >> this->value;
-    this->value = math::clamp<T>(this->value, min, max);
+    CVarBase::touch(std::to_string(this->value = math::clamp<T>(this->value, min, max)));
 }
+
+using CVarFloat = CVarNumeric<float>;
+using CVarInt   = CVarNumeric<int>;
+using CVarShort = CVarNumeric<short>;
+using CVarSizeT = CVarNumeric<size_t>;

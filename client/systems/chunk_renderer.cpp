@@ -138,7 +138,6 @@ void chunk_renderer::draw()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-
     GBuffer_UBO0 gbuffer_ubo_0 = {};
     gbuffer_ubo_0.proj_view = proj_view::matrix();
     gbuffer_ubo_0.proj_view_shadow = proj_view::matrixShadow();
@@ -169,36 +168,36 @@ void chunk_renderer::draw()
         }
     }
 
+    if(r_shadows.getValue()) {
+        Shadow_UBO0 shadow_ubo_0 = {};
+        shadow_ubo_0.proj_view = proj_view::matrixShadow();
+        shadow_ctx.ubo_0.write(0, sizeof(Shadow_UBO0), &shadow_ubo_0);
 
-    Shadow_UBO0 shadow_ubo_0 = {};
-    shadow_ubo_0.proj_view = proj_view::matrixShadow();
-    shadow_ctx.ubo_0.write(0, sizeof(Shadow_UBO0), &shadow_ubo_0);
+        const Frustum &shadow_frustum = proj_view::frustumShadow();
 
-    const Frustum &shadow_frustum = proj_view::frustumShadow();
+        shadow_ctx.pipeline.bind();
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, shadow_ctx.ubo_0.get());
+        shadow_manager::getShadowMap().getFBO().bind();
 
-    shadow_ctx.pipeline.bind();
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, shadow_ctx.ubo_0.get());
-    shadow_manager::getShadowMap().getFBO().bind();
+        shadow_manager::getShadowMap().getSize(width, height);
+        glViewport(0, 0, width, height);
 
-    shadow_manager::getShadowMap().getSize(width, height);
-    glViewport(0, 0, width, height);
+        const float2 &off = shadow_manager::getPolygonOffset();
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(off.x, off.y);
 
-    const float2 &off = shadow_manager::getPolygonOffset();
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(off.x, off.y);
+        glDisable(GL_CULL_FACE);
 
-    glClearDepthf(1.0f);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    for(const auto [entity, mesh, chunk] : group.each()) {
-        if(isInFrustum(shadow_frustum, FLOAT3_ZERO, chunk.position)) {
-            shadow_ubo_0.chunk_pos = float4(toWorldPos(chunk.position), 0.0f);
-            shadow_ctx.ubo_0.write(offsetof(Shadow_UBO0, chunk_pos), sizeof(float4), &shadow_ubo_0.chunk_pos);
-            mesh.vao.bind();
-            mesh.cmd.invoke();
-            globals::vertices_drawn += mesh.cmd.size();
+        for(const auto [entity, mesh, chunk] : group.each()) {
+            if(isInFrustum(shadow_frustum, FLOAT3_ZERO, chunk.position)) {
+                shadow_ubo_0.chunk_pos = float4(toWorldPos(chunk.position), 0.0f);
+                shadow_ctx.ubo_0.write(offsetof(Shadow_UBO0, chunk_pos), sizeof(float4), &shadow_ubo_0.chunk_pos);
+                mesh.vao.bind();
+                mesh.cmd.invoke();
+                globals::vertices_drawn += mesh.cmd.size();
+            }
         }
-    }
 
-    glDisable(GL_POLYGON_OFFSET_FILL);
+        glDisable(GL_POLYGON_OFFSET_FILL);
+    }
 }

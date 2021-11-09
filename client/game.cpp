@@ -31,6 +31,7 @@
 #include <shared/components/creature.hpp>
 #include <shared/components/head.hpp>
 #include <shared/components/player.hpp>
+#include <shared/script/script_engine.hpp>
 #include <shared/session.hpp>
 #include <shared/util/clock.hpp>
 #include <shared/util/enet.hpp>
@@ -46,6 +47,7 @@ void cl_game::preInit()
 {
     console::preInit();
     proj_view::preInit();
+    shadow_manager::preInit();
 }
 
 void cl_game::init()
@@ -55,9 +57,14 @@ void cl_game::init()
     chunk_renderer::init();
     deferred_pass::init();
 
-    shadow_manager::init(8192, 8192);
-    shadow_manager::setLightOrientation(floatquat(glm::radians(float3(45.0f, 0.0f, 45.0f))));
-    shadow_manager::setPolygonOffset(float2(3.0f, 0.5f));
+    shadow_manager::init();
+    shadow_manager::setPolygonOffset(float2(3.0f, 0.25f));
+
+    // Aside from 45 degrees azimuth, this should
+    // approximately look like a solstice in Moscow.
+    //shadow_manager::setLightOrientation(floatquat(glm::radians(float3(60.0f, 45.0f, 0.0f))));
+
+    shadow_manager::setLightOrientation(floatquat(glm::radians(float3(45.0f, 45.0f, 0.0f))));
 }
 
 void cl_game::postInit()
@@ -124,16 +131,21 @@ void cl_game::update()
 
 void cl_game::draw()
 {
+    // Clear shadowmap(s)
+    shadow_manager::getShadowMap().getFBO().bind();
+    glClearDepthf(1.0f);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    
     // Draw things to GBuffers
     chunk_renderer::draw();
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
 
     int width, height;
     screen::getSize(width, height);
     glViewport(0, 0, width, height);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     // Draw things to the main framebuffer
     deferred_pass::draw();

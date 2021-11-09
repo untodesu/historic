@@ -10,7 +10,6 @@ in VS_OUTPUT {
     vec3 normal;
     vec3 position;
     vec4 shadow_projcoord;
-    float side_shade;
 } vert;
 
 layout(location = 0) out vec4 albedo;

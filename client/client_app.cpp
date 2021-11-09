@@ -51,6 +51,14 @@ void client_app::run()
     network::preInit();
     game::preInit();
 
+    const stdfs::path js_subdir = stdfs::path("scripts") / stdfs::path("client");
+    const stdfs::path init_path = js_subdir / stdfs::path("init.js");
+    const stdfs::path user_path = js_subdir / stdfs::path("user.js");
+    stdfs::create_directories(fs::getWritePath(js_subdir));
+
+    cvars::setInitMode(true);
+    globals::script.exec(init_path);
+
     glfwSetErrorCallback(&glfwOnError);
     if(!glfwInit()) {
         spdlog::error("glfwInit() failed.");
@@ -83,16 +91,9 @@ void client_app::run()
 
     fontlib::init();
 
-    const stdfs::path js_subdir = stdfs::path("scripts") / stdfs::path("client");
-    const stdfs::path init_path = js_subdir / stdfs::path("init.js");
-    const stdfs::path user_path = js_subdir / stdfs::path("user.js");
-    stdfs::create_directories(fs::getWritePath(js_subdir));
-
-    cvars::setInitMode(true);
-    globals::script.exec(init_path);
     globals::script.exec(user_path);
     cvars::setInitMode(false);
-
+    
     game::postInit();
 
     globals::curtime = 0.0f;

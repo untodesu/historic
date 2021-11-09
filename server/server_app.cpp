@@ -44,9 +44,6 @@ void server_app::run()
 
     std::signal(SIGINT, &onSIGINT);
 
-    network::init();
-    game::init();
-    
     const stdfs::path js_subdir = stdfs::path("scripts") / stdfs::path("server");
     const stdfs::path init_path = js_subdir / stdfs::path("init.js");
     const stdfs::path user_path = js_subdir / stdfs::path("user.js");
@@ -54,6 +51,10 @@ void server_app::run()
 
     cvars::setInitMode(true);
     globals::script.exec(init_path);
+
+    network::init();
+    game::init();
+    
     globals::script.exec(user_path);
     cvars::setInitMode(false);
 
