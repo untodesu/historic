@@ -93,6 +93,13 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
             checksump.checksum = globals::voxels.getChecksum();
             util::sendPacket(session->peer, checksump, 0, 0);
 
+            // FIXME: for now we are sending all the chunks to the client.
+            // This will no longer be a thing when I implement a good world format.
+            // Having the whole world being loaded at the same time can affect the
+            // performance in a very bad way for the client and also have some negative
+            // impact on the server, so some algorithms for efficient chunk loading/unloading
+            // need to be implemented. My idea is to use either a sphere or a circle with some
+            // height (say, a circle-ish of R=4 cu with height of H=2 cu)
             const auto view = globals::registry.view<ChunkComponent>();
             for(const auto [entity, chunk] : view.each()) {
                 protocol::packets::ChunkVoxels chunkp = {};
