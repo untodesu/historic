@@ -20,6 +20,7 @@
 #include <shared/world.hpp>
 #include <client/screen.hpp>
 #include <client/shadow_manager.hpp>
+#include <client/config.hpp>
 
 struct alignas(16) Shadow_UBO0 final {
     float4x4 proj_view;
@@ -168,7 +169,7 @@ void chunk_renderer::draw()
         }
     }
 
-    if(r_shadows.getValue()) {
+    if(globals::config.render.draw_shadows) {
         Shadow_UBO0 shadow_ubo_0 = {};
         shadow_ubo_0.proj_view = proj_view::matrixShadow();
         shadow_ctx.ubo_0.write(0, sizeof(Shadow_UBO0), &shadow_ubo_0);

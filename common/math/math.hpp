@@ -28,6 +28,31 @@ constexpr static inline const T ceil(const F x)
 }
 
 template<typename T>
+constexpr static inline const T pow2(const T x)
+{
+    T value = 1;
+    while(value < x)
+        value *= 2;
+    return value;
+}
+
+template<typename T>
+constexpr static inline const T min(const T x, const T y)
+{
+    if(x > y)
+        return y;
+    return x;
+}
+
+template<typename T>
+constexpr static inline const T max(const T x, const T y)
+{
+    if(x < y)
+        return y;
+    return x;
+}
+
+template<typename T>
 constexpr static inline const T clamp(const T x, const T min, const T max)
 {
     if(x < min)

@@ -3,9 +3,9 @@
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
+#include <server/config.hpp>
 #include <server/chunks.hpp>
 #include <server/globals.hpp>
-#include <shared/script/script_engine.hpp>
 #include <shared/voxels.hpp>
 
 bool sv_globals::running = false;
@@ -19,7 +19,7 @@ ServerChunkManager sv_globals::chunks;
 VoxelDef sv_globals::voxels;
 
 // Scripting & configuration
-ScriptEngine sv_globals::script;
+ServerConfig sv_globals::config;
 
 // Stats
 float sv_globals::curtime = 0.0f;

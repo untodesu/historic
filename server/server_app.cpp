@@ -4,24 +4,17 @@
  * All Rights Reserved.
  */
 #include <csignal>
+#include <server/config.hpp>
 #include <server/game.hpp>
 #include <server/globals.hpp>
 #include <server/server_app.hpp>
 #include <server/network.hpp>
 #include <shared/protocol/protocol.hpp>
-#include <shared/script/cvars.hpp>
-#include <shared/script/script_engine.hpp>
-#include <shared/util/clock.hpp>
+#include <common/util/clock.hpp>
 #include <spdlog/spdlog.h>
 #include <thread>
 
 constexpr const float TICK_DT = 1.0f / protocol::DEFAULT_TICKRATE;
-
-static duk_ret_t onAppExit(duk_context *)
-{
-    globals::running = false;
-    return 0;
-}
 
 static void onSIGINT(int)
 {
@@ -31,33 +24,15 @@ static void onSIGINT(int)
 
 void server_app::run()
 {
-    globals::script.build("App")
-        .constant("CLIENT", 0)
-        .constant("SERVER", 1)
-        .function("exit", &onAppExit, 0)
-        .submit();
-
-    network::preInit();
-    game::preInit();
+    globals::config.read("server.toml");
 
     globals::running = true;
 
     std::signal(SIGINT, &onSIGINT);
 
-    const stdfs::path js_subdir = stdfs::path("scripts") / stdfs::path("server");
-    const stdfs::path init_path = js_subdir / stdfs::path("init.js");
-    const stdfs::path user_path = js_subdir / stdfs::path("user.js");
-    stdfs::create_directories(fs::getWritePath(js_subdir));
-
-    cvars::setInitMode(true);
-    globals::script.exec(init_path);
-
     network::init();
     game::init();
     
-    globals::script.exec(user_path);
-    cvars::setInitMode(false);
-
     game::postInit();
 
     globals::curtime = 0.0f;
@@ -68,6 +43,9 @@ void server_app::run()
 
     ChronoClock<std::chrono::system_clock> clock;
     std::chrono::system_clock::time_point time_accum = clock.now();
+
+    spdlog::info("net.maxplayers = {}", globals::config.net.maxplayers);
+    spdlog::info("net.port = {}", globals::config.net.port);
 
     while(globals::running) {
         std::chrono::system_clock::time_point time_now = clock.now();
@@ -94,6 +72,5 @@ void server_app::run()
 
     network::shutdown();
 
-    spdlog::debug("Writing {}", init_path.string());
-    fs::writeText(init_path, cvars::dump());
+    globals::config.write("server.toml");
 }

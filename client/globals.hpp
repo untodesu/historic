@@ -10,6 +10,7 @@
 
 struct ClientSession;
 struct GLFWwindow;
+class ClientConfig;
 class ClientChunkManager;
 class VoxelDef;
 class Atlas;
@@ -35,8 +36,8 @@ extern entt::registry registry;
 extern ClientChunkManager chunks;
 extern VoxelDef voxels;
 
-// Scripting & configuration
-extern ScriptEngine script;
+// Configuration
+extern ClientConfig config;
 
 // Stats
 extern float curtime;

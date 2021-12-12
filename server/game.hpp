@@ -7,7 +7,6 @@
 
 namespace sv_game
 {
-void preInit();
 void init();
 void postInit();
 void shutdown();

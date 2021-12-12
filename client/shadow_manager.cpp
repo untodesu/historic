@@ -3,20 +3,18 @@
  * Copyright (c) 2021, Kirill GPRB.
  * All Rights Reserved.
  */
-#include <client/shadow_manager.hpp>
 #include <common/math/const.hpp>
 #include <spdlog/spdlog.h>
+#include <client/config.hpp>
 #include <client/input.hpp>
-#include <shared/script/cvars.hpp>
+#include <client/globals.hpp>
+#include <client/shadow_manager.hpp>
 
 static floatquat light_orientation = FLOATQUAT_IDENTITY;
 static float3 light_direction = FLOAT3_ZERO;
 static float3 light_color = FLOAT3_IDENTITY;
 static float2 polygon_offset = FLOAT2_ZERO;
 static ShadowMap shadowmap;
-
-CVarInt r_shadowmapres("r.shadowmapres", 8192, FCVAR_ARCHIVE | FCVAR_READONLY, 16);
-CVarShort r_shadows("r.shadows", 1, FCVAR_ARCHIVE, 0, 1);
 
 static inline void calculateDirection()
 {
@@ -27,15 +25,9 @@ static inline void calculateDirection()
     light_direction = light_orientation * FLOAT3_FORWARD * -1.0f;
 }
 
-void shadow_manager::preInit()
-{
-    cvars::insert(r_shadowmapres);
-    cvars::insert(r_shadows);
-}
-
 void shadow_manager::init()
 {
-    const int size = r_shadowmapres.getValue();
+    const int size = globals::config.render.shadowmapres;
     light_orientation = FLOATQUAT_IDENTITY;
     light_color = FLOAT3_IDENTITY;
     polygon_offset = FLOAT2_ZERO;

@@ -11,7 +11,7 @@
 class ServerChunkManager;
 class VoxelDef;
 struct Session;
-class ScriptEngine;
+class ServerConfig;
 
 namespace sv_globals
 {
@@ -25,8 +25,8 @@ extern entt::registry registry;
 extern ServerChunkManager chunks;
 extern VoxelDef voxels;
 
-// Scripting & configuration
-extern ScriptEngine script;
+// Configuration
+extern ServerConfig config;
 
 // Stats
 extern float curtime;

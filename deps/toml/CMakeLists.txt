@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+project(tomlplusplus LANGUAGES CXX VERSION 2.5.0)
+add_library(toml STATIC "${CMAKE_CURRENT_LIST_DIR}/toml.cpp")
+target_compile_definitions(toml PUBLIC TOML_HEADER_ONLY=0)
+target_include_directories(toml PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
