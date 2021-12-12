@@ -30,8 +30,7 @@
 #include <shared/protocol/packets/shared/update_creature.hpp>
 #include <shared/protocol/packets/shared/update_head.hpp>
 #include <shared/protocol/protocol.hpp>
-#include <shared/script/cvars.hpp>
-#include <shared/script/cvar_numeric.hpp>
+#include <server/config.hpp>
 #include <shared/util/enet.hpp>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
@@ -212,22 +211,13 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
     }
 };
 
-static CVarNumeric<uint16_t> net_port("net.port", protocol::DEFAULT_PORT, FCVAR_ARCHIVE | FCVAR_READONLY);
-static CVarNumeric<size_t> net_maxplayers("net.maxplayers", 16, FCVAR_ARCHIVE | FCVAR_READONLY);
-
-void sv_network::preInit()
-{
-    cvars::insert(net_port);
-    cvars::insert(net_maxplayers);
-}
-
 void sv_network::init()
 {
     ENetAddress address;
     address.host = ENET_HOST_ANY;
-    address.port = net_port.getValue();
+    address.port = globals::config.net.port;
 
-    globals::host = enet_host_create(&address, net_maxplayers.getValue(), 2, 0, 0);
+    globals::host = enet_host_create(&address, globals::config.net.maxplayers, 2, 0, 0);
     if(!globals::host) {
         spdlog::error("Unable to create a server host object.");
         std::terminate();

@@ -1,0 +1,16 @@
+[autoconnect]
+enable = true
+host = 'localhost'
+port = 43103
+
+[render]
+draw_shadows = true
+fov = 90.0
+shadowmapres = 2048
+z_far = 512.0
+
+[window]
+fullscreen = false
+height = 648
+vsync = true
+width = 1152

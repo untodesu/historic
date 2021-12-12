@@ -5,10 +5,10 @@
  */
 #include <common/math/const.hpp>
 #include <client/chunks.hpp>
+#include <client/config.hpp>
 #include <client/globals.hpp>
 #include <client/render/atlas.hpp>
 #include <client/render/gbuffer.hpp>
-#include <shared/script/script_engine.hpp>
 #include <shared/session.hpp>
 #include <shared/voxels.hpp>
 
@@ -29,8 +29,8 @@ entt::registry cl_globals::registry;
 ClientChunkManager cl_globals::chunks;
 VoxelDef cl_globals::voxels;
 
-// Scripting & configuration
-ScriptEngine cl_globals::script;
+// Configuration
+ClientConfig cl_globals::config;
 
 // Stats
 float cl_globals::curtime = 0.0f;

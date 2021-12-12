@@ -8,7 +8,6 @@
 
 namespace proj_view
 {
-void preInit();
 void update();
 const float2 &angles();
 const float3 &position();

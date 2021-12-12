@@ -16,6 +16,7 @@ NEW SHARED ID 0x000
 008 SpawnEntity
 009 RemoveEntity
 00A SpawnPlayer
+00B UnloadChunk
 
 000 Disconnect
 001 ChatMessage

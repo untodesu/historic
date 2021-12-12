@@ -6,15 +6,10 @@
 #pragma once
 #include <common/math/types.hpp>
 #include <client/render/shadowmap.hpp>
-#include <shared/script/cvar_numeric.hpp>
-
-extern CVarInt r_shadowmapres;
-extern CVarShort r_shadows;
 
 // Let me speak to your shadow manager!
 namespace shadow_manager
 {
-void preInit();
 void init();
 void shutdown();
 void rotateLight(float angle, const float3 &axis);
