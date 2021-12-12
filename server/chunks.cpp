@@ -14,9 +14,12 @@ void ServerChunkManager::implOnClear()
         globals::registry.destroy(entity);
 }
 
-void ServerChunkManager::implOnRemove(const chunkpos_t &cp, const ServerChunk &data)
+bool ServerChunkManager::implOnRemove(const chunkpos_t &cp, ServerChunk &data)
 {
+    if(--data.refcount > 1)
+        return false;
     globals::registry.destroy(data.entity);
+    return true;
 }
 
 ServerChunk ServerChunkManager::implOnCreate(const chunkpos_t &cp, voxel_set_flags_t)
@@ -25,6 +28,7 @@ ServerChunk ServerChunkManager::implOnCreate(const chunkpos_t &cp, voxel_set_fla
     data.entity = globals::registry.create();
     globals::registry.emplace<ChunkComponent>(data.entity, ChunkComponent(cp));
     data.data.fill(NULL_VOXEL);
+    data.refcount = 1;
     return std::move(data);
 }
 

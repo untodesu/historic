@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+using double3 = glm::vec<3, double, glm::packed_highp>;
 using float2 = glm::vec<2, float, glm::packed_highp>;
 using float3 = glm::vec<3, float, glm::packed_highp>;
 using float4 = glm::vec<4, float, glm::packed_highp>;

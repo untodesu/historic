@@ -31,7 +31,7 @@ public:
 
     // Implementations define:
     //  void implOnClear();
-    //  void implOnRemove(const chunkpos_t &, const chunk_type &);
+    //  bool implOnRemove(const chunkpos_t &, chunk_type &);
     //  chunk_type implOnCreate(const chunkpos_t &, chunk_create_flags_t);
     //  voxel_t implGetVoxel(const chunk_type &, const localpos_t &) const;
     //  void implSetVoxel(chunk_type *, const chunkpos_t &, const localpos_t &, voxel_t, voxel_set_flags_t);
@@ -51,10 +51,8 @@ template<typename chunk_type, typename T>
 inline void ChunkManager<chunk_type, T>::remove(const chunkpos_t &cp)
 {
     const auto it = chunks.find(cp);
-    if(it != chunks.cend()) {
-        static_cast<T *>(this)->implOnRemove(cp, it->second);
+    if(it != chunks.cend() && static_cast<T *>(this)->implOnRemove(cp, it->second))
         chunks.erase(it);
-    }
 }
 
 template<typename chunk_type, typename T>

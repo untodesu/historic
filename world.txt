@@ -34,3 +34,10 @@ world.toml values, must make this chunk present and broadcast
 this event to all the clients in render distance.
 
 
+CHUNK LOADING PROCESS:
+    1. Try to find an existing chunk.
+    2. If succeeded, increase refcount then return.
+    3. Create a voxel array
+    4. Try to load the chunk from file
+    5. If failed, generate
+    6. Create the chunk with refcount=1

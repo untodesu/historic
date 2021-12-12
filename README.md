@@ -1,7 +1,7 @@
 # Voxelius
 Voxelius is a work-in-progress FOSS multiplayer voxel-based (actually it will be block-based like Minecraft) game written in C++17.  
 My goal is to resemble as much of generic Minecraft gameplay as possible but with some core changes like cubic chunks.  
-> Voxelius is _heavily_ inspired by [OpenBuilder](https://github.com/Hopson97/open-builder) (I am literally using OB's netcode as a reference to implement my protocol).
+> Voxelius's multiplayer design is heavily inspired by [OpenBuilder](https://github.com/Hopson97/open-builder) although still different and more Minecraft-like.
 
 ## Features
 * ECS-based design (some things are managed outside of the ECS because it simply helps to not bloat the code).

@@ -7,8 +7,10 @@
 #include <enet/enet.h>
 #include <entt/entt.hpp>
 #include <shared/voxels.hpp>
+#include <shared/world.hpp>
 #include <string>
 #include <deque>
+#include <unordered_set>
 
 enum class SessionState {
     DISCONNECTED,
@@ -36,4 +38,10 @@ struct Session {
 struct ClientSession final : public Session {
     // server-side entity ID
     uint32_t player_entity_id { 0 };
+};
+
+struct ServerSession final : public Session {
+    // When we disconnect we must reduce
+    // the reference count of these chunks
+    std::unordered_set<chunkpos_t> loaded_chunks;
 };

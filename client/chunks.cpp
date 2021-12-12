@@ -15,9 +15,10 @@ void ClientChunkManager::implOnClear()
         globals::registry.destroy(entity);
 }
 
-void ClientChunkManager::implOnRemove(const chunkpos_t &cp, const ClientChunk &data)
+bool ClientChunkManager::implOnRemove(const chunkpos_t &cp, const ClientChunk &data)
 {
     globals::registry.destroy(data.entity);
+    return true;
 }
 
 ClientChunk ClientChunkManager::implOnCreate(const chunkpos_t &cp, chunk_create_flags_t flags)

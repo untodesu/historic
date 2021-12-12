@@ -13,20 +13,22 @@
 template<typename T>
 class BaseConfig {
 public:
-    void read(const stdfs::path &path);
+    bool read(const stdfs::path &path);
     void write(const stdfs::path &path);
 
     // Implementations define:
     //  void implPostRead()
     //  void implPreWrite()
 
-protected:
+public:
     toml::table toml;
 };
 
 template<typename T>
-inline void BaseConfig<T>::read(const stdfs::path &path)
+inline bool BaseConfig<T>::read(const stdfs::path &path)
 {
+    bool success = true;
+
     try {
         std::string source;
         if(!fs::readText(path, source))
@@ -36,9 +38,11 @@ inline void BaseConfig<T>::read(const stdfs::path &path)
     catch(const std::exception &ex) {
         spdlog::error("Parsing {} failed: {}", path.string(), ex.what());
         toml = toml::table();
+        success = false;
     }
 
     static_cast<T *>(this)->implPostRead();
+    return success;
 }
 
 template<typename T>
