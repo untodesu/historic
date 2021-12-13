@@ -22,6 +22,7 @@
 #include <shared/protocol/packets/server/remove_entity.hpp>
 #include <shared/protocol/packets/server/spawn_entity.hpp>
 #include <shared/protocol/packets/server/spawn_player.hpp>
+#include <shared/protocol/packets/server/unload_chunk.hpp>
 #include <shared/protocol/packets/server/voxel_def_checksum.hpp>
 #include <shared/protocol/packets/server/voxel_def_entry.hpp>
 #include <shared/protocol/packets/server/voxel_def_face.hpp>
@@ -93,22 +94,6 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
             checksump.checksum = globals::voxels.getChecksum();
             util::sendPacket(session->peer, checksump, 0, 0);
 
-            const int32_t sim_dist = globals::config.simulation_distance;
-            for(int32_t x = -sim_dist; x < sim_dist; x++) {
-                for(int32_t y = -sim_dist; y < sim_dist; y++) {
-                    for(int32_t z = -sim_dist; z < sim_dist; z++) {
-                        const chunkpos_t cp = chunkpos_t(x, y, z);
-                        if(ServerChunk *sc = globals::chunks.load(cp)) {
-                            session->loaded_chunks.insert(cp);
-                            protocol::packets::ChunkVoxels chunkp = {};
-                            math::vecToArray(cp, chunkp.position);
-                            chunkp.data = sc->data;
-                            util::sendPacket(session->peer, chunkp, 0, 0);
-                        }
-                    }
-                }
-            }
-
             session->player_entity = globals::registry.create();
             globals::registry.emplace<CreatureComponent>(session->player_entity).position = FLOAT3_ZERO;
             globals::registry.emplace<HeadComponent>(session->player_entity).angles = FLOAT2_ZERO;
@@ -172,6 +157,22 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
             playerp.session_id = session->id;
             util::broadcastPacket(globals::host, playerp, 0, 0);
 
+            const int32_t sim_dist = globals::config.simulation_distance;
+            for(int32_t x = -sim_dist; x < sim_dist; x++) {
+                for(int32_t y = -sim_dist; y < sim_dist; y++) {
+                    for(int32_t z = -sim_dist; z < sim_dist; z++) {
+                        const chunkpos_t cp = chunkpos_t(x, y, z);
+                        if(ServerChunk *sc = globals::chunks.load(cp)) {
+                            session->loaded_chunks.insert(cp);
+                            protocol::packets::ChunkVoxels chunkp = {};
+                            math::vecToArray(cp, chunkp.position);
+                            chunkp.data = sc->data;
+                            util::sendPacket(session->peer, chunkp, 0, 0);
+                        }
+                    }
+                }
+            }
+
             session->state = SessionState::PLAYING;
         }
     },
@@ -209,7 +210,60 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
         [](const std::vector<uint8_t> &payload, ServerSession *session) {
             protocol::packets::UpdateCreature packet;
             protocol::deserialize(payload, packet);
-            util::broadcastPacket(globals::host, packet, 0, 0, session->peer);
+            entt::entity entity = static_cast<entt::entity>(packet.entity_id);
+            if(globals::registry.valid(entity)) {
+                const float3 new_position = math::arrayToVec<float3>(packet.position);
+                CreatureComponent &creature = globals::registry.get_or_emplace<CreatureComponent>(entity);
+                const chunkpos_t old_cp = toChunkPos(creature.position);
+                const chunkpos_t new_cp = toChunkPos(creature.position = new_position);
+
+                if(entity == session->player_entity && new_cp != old_cp) {
+                    spdlog::info("PLM: [{}, {}, {}] -> [{}, {}, {}]", old_cp.x, old_cp.y, old_cp.z, new_cp.x, new_cp.y, new_cp.z);
+
+                    // Build ranges
+                    const int32_t sim_dist = globals::config.simulation_distance;
+                    std::unordered_set<chunkpos_t> old_range, new_range;
+                    for(int32_t x = -sim_dist; x < sim_dist; x++) {
+                        for(int32_t y = -sim_dist; y < sim_dist; y++) {
+                            for(int32_t z = -sim_dist; z < sim_dist; z++) {
+                                old_range.insert(old_cp + chunkpos_t(x, y, z));
+                                new_range.insert(new_cp + chunkpos_t(x, y, z));
+                            }
+                        }
+                    }
+
+                    // Build load/free lists
+                    std::unordered_set<chunkpos_t> to_free, to_load;
+                    for(const chunkpos_t &icp : old_range) {
+                        const auto it = new_range.find(icp);
+                        if(it != new_range.cend()) {
+                            if(ServerChunk *sc = globals::chunks.load(icp)) {
+                                protocol::packets::ChunkVoxels loadp = {};
+                                math::vecToArray(icp, loadp.position);
+                                loadp.data = sc->data;
+                                spdlog::trace("send [{}, {}, {}]", icp.x, icp.y, icp.z);
+                                util::sendPacket(session->peer, loadp, 0, 0);
+                                to_load.insert(icp);
+                            }
+                        }
+                        else {
+                            protocol::packets::UnloadChunk unloadp = {};
+                            math::vecToArray(icp, unloadp.position);
+                            util::sendPacket(session->peer, unloadp, 0, 0);
+                            globals::chunks.free(icp);
+                            to_free.insert(icp);
+                        }
+                    }
+
+                    // Modify the list
+                    for(const chunkpos_t &icp : to_load)
+                        session->loaded_chunks.insert(icp);
+                    for(const chunkpos_t &icp : to_free)
+                        session->loaded_chunks.erase(icp);
+                }
+
+                util::broadcastPacket(globals::host, packet, 0, 0, session->peer);
+            }
         }
     },
     {

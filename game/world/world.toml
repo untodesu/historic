@@ -1,5 +1,5 @@
 base = 0
-height = 1
+height = 4
 
 [generator]
 seed = 'voxelius'

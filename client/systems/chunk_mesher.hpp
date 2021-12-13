@@ -11,5 +11,4 @@ namespace chunk_mesher
 {
 void shutdown();
 void update();
-size_t memory();
 } // namespace chunk_mesher

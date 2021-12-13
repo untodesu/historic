@@ -21,6 +21,7 @@
 #include <shared/protocol/packets/server/remove_entity.hpp>
 #include <shared/protocol/packets/server/spawn_entity.hpp>
 #include <shared/protocol/packets/server/spawn_player.hpp>
+#include <shared/protocol/packets/server/unload_chunk.hpp>
 #include <shared/protocol/packets/server/voxel_def_checksum.hpp>
 #include <shared/protocol/packets/server/voxel_def_entry.hpp>
 #include <shared/protocol/packets/server/voxel_def_face.hpp>
@@ -100,6 +101,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
             protocol::packets::ChunkVoxels packet;
             protocol::deserialize(payload, packet);
             globals::chunks.create(math::arrayToVec<chunkpos_t>(packet.position), CHUNK_CREATE_UPDATE_NEIGHBOURS)->data = packet.data;
+            spdlog::info("receive [{}, {}, {}]", packet.position[0], packet.position[1], packet.position[2]);
         }
     },
     {
@@ -178,6 +180,14 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
             // At this point player entities must be valid
             // and if they aren't it's just a red flag for us.
             network::disconnect("Protocol mishmash");
+        }
+    },
+    {
+        protocol::packets::UnloadChunk::id,
+        [](const std::vector<uint8_t> &payload) {
+            protocol::packets::UnloadChunk packet;
+            protocol::deserialize(payload, packet);
+            globals::chunks.remove(math::arrayToVec<chunkpos_t>(packet.position));
         }
     },
     {
