@@ -37,12 +37,12 @@
 #include <vector>
 
 static uint32_t session_id_base = 0;
-static std::unordered_map<uint32_t, Session> sessions;
+static std::unordered_map<uint32_t, ServerSession> sessions;
 
-static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, Session *)> packet_handlers = {
+static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, ServerSession *)> packet_handlers = {
     {
         protocol::packets::Handshake::id,
-        [](const std::vector<uint8_t> &payload, Session *session) {
+        [](const std::vector<uint8_t> &payload, ServerSession *session) {
             protocol::packets::Handshake packet;
             protocol::deserialize(payload, packet);
 
@@ -56,7 +56,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
     },
     {
         protocol::packets::LoginStart::id,
-        [](const std::vector<uint8_t> &payload, Session *session) {
+        [](const std::vector<uint8_t> &payload, ServerSession *session) {
             protocol::packets::LoginStart packet;
             protocol::deserialize(payload, packet);
 
@@ -93,19 +93,20 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
             checksump.checksum = globals::voxels.getChecksum();
             util::sendPacket(session->peer, checksump, 0, 0);
 
-            // FIXME: for now we are sending all the chunks to the client.
-            // This will no longer be a thing when I implement a good world format.
-            // Having the whole world being loaded at the same time can affect the
-            // performance in a very bad way for the client and also have some negative
-            // impact on the server, so some algorithms for efficient chunk loading/unloading
-            // need to be implemented. My idea is to use either a sphere or a circle with some
-            // height (say, a circle-ish of R=4 cu with height of H=2 cu)
-            const auto view = globals::registry.view<ChunkComponent>();
-            for(const auto [entity, chunk] : view.each()) {
-                protocol::packets::ChunkVoxels chunkp = {};
-                math::vecToArray(chunk.position, chunkp.position);
-                chunkp.data = globals::chunks.find(chunk.position)->data;
-                util::sendPacket(session->peer, chunkp, 0, 0);
+            const int32_t sim_dist = globals::config.simulation_distance;
+            for(int32_t x = -sim_dist; x < sim_dist; x++) {
+                for(int32_t y = -sim_dist; y < sim_dist; y++) {
+                    for(int32_t z = -sim_dist; z < sim_dist; z++) {
+                        const chunkpos_t cp = chunkpos_t(x, y, z);
+                        if(ServerChunk *sc = globals::chunks.load(cp)) {
+                            session->loaded_chunks.insert(cp);
+                            protocol::packets::ChunkVoxels chunkp = {};
+                            math::vecToArray(cp, chunkp.position);
+                            chunkp.data = sc->data;
+                            util::sendPacket(session->peer, chunkp, 0, 0);
+                        }
+                    }
+                }
             }
 
             session->player_entity = globals::registry.create();
@@ -176,7 +177,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
     },
     {
         protocol::packets::ChatMessage::id,
-        [](const std::vector<uint8_t> &payload, Session *session) {
+        [](const std::vector<uint8_t> &payload, ServerSession *session) {
             protocol::packets::ChatMessage packet;
             protocol::deserialize(payload, packet);
             util::broadcastPacket(globals::host, packet, 0, 0);
@@ -184,7 +185,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
     },
     {
         protocol::packets::Disconnect::id,
-        [](const std::vector<uint8_t> &payload, Session *session) {
+        [](const std::vector<uint8_t> &payload, ServerSession *session) {
             protocol::packets::Disconnect packet;
             protocol::deserialize(payload, packet);
 
@@ -197,12 +198,15 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
                 globals::registry.destroy(session->player_entity);
             }
 
+            for(const chunkpos_t &cp : session->loaded_chunks)
+                globals::chunks.free(cp);
+
             enet_peer_disconnect(session->peer, 0);
         }
     },
     {
         protocol::packets::UpdateCreature::id,
-        [](const std::vector<uint8_t> &payload, Session *session) {
+        [](const std::vector<uint8_t> &payload, ServerSession *session) {
             protocol::packets::UpdateCreature packet;
             protocol::deserialize(payload, packet);
             util::broadcastPacket(globals::host, packet, 0, 0, session->peer);
@@ -210,7 +214,7 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
     },
     {
         protocol::packets::UpdateHead::id,
-        [](const std::vector<uint8_t> &payload, Session *session) {
+        [](const std::vector<uint8_t> &payload, ServerSession *session) {
             protocol::packets::UpdateHead packet;
             protocol::deserialize(payload, packet);
             util::broadcastPacket(globals::host, packet, 0, 0, session->peer);
@@ -243,7 +247,7 @@ void sv_network::update()
     ENetEvent event;
     while(enet_host_service(globals::host, &event, 0) > 0) {
         if(event.type == ENET_EVENT_TYPE_CONNECT) {
-            Session *session = network::createSession();
+            ServerSession *session = network::createSession();
             session->peer = event.peer;
             session->state = SessionState::CONNECTED;
             event.peer->data = session;
@@ -251,12 +255,12 @@ void sv_network::update()
         }
 
         if(event.type == ENET_EVENT_TYPE_DISCONNECT) {
-            network::destroySession(reinterpret_cast<Session *>(event.peer->data));
+            network::destroySession(reinterpret_cast<ServerSession *>(event.peer->data));
             continue;
         }
 
         if(event.type == ENET_EVENT_TYPE_RECEIVE) {
-            Session *session = reinterpret_cast<Session *>(event.peer->data);
+            ServerSession *session = reinterpret_cast<ServerSession *>(event.peer->data);
 
             const std::vector<uint8_t> pbuf = std::vector<uint8_t>(event.packet->data, event.packet->data + event.packet->dataLength);
             enet_packet_destroy(event.packet);
@@ -279,14 +283,14 @@ void sv_network::update()
     }
 }
 
-Session *sv_network::createSession()
+ServerSession *sv_network::createSession()
 {
-    Session session = {};
+    ServerSession session = {};
     session.id = session_id_base++;
     return &(sessions[session.id] = session);
 }
 
-Session *sv_network::findSession(uint32_t session_id)
+ServerSession *sv_network::findSession(uint32_t session_id)
 {
     const auto it = sessions.find(session_id);
     if(it != sessions.cend())
@@ -294,19 +298,21 @@ Session *sv_network::findSession(uint32_t session_id)
     return nullptr;
 }
 
-void sv_network::destroySession(Session *session)
+void sv_network::destroySession(ServerSession *session)
 {
     for(auto it = sessions.cbegin(); it != sessions.cend(); it++) {
         if(&it->second == session) {
             if(globals::registry.valid(it->second.player_entity))
                 globals::registry.destroy(session->player_entity);
+            for(const chunkpos_t &cp : session->loaded_chunks)
+                globals::chunks.free(cp);
             sessions.erase(it);
             return;
         }
     }
 }
 
-void sv_network::kick(Session *session, const std::string &reason)
+void sv_network::kick(ServerSession *session, const std::string &reason)
 {
     if(session) {
         if(session->peer) {

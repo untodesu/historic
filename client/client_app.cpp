@@ -69,14 +69,18 @@ void client_app::run()
     globals::avg_frametime = 0.0f;
     globals::frame_count = 0;
 
-    ChronoClock<std::chrono::high_resolution_clock> clock;
+    ChronoClock<std::chrono::high_resolution_clock> clock, avg_clock;
     while(!glfwWindowShouldClose(globals::window)) {
         globals::curtime = util::seconds<float>(clock.now().time_since_epoch());
         globals::frametime = util::seconds<float>(clock.restart());
-        globals::avg_frametime += globals::frametime;
-        globals::avg_frametime *= 0.5f;
         globals::vertices_drawn = 0;
         globals::ui_grabs_input = false;
+
+        if(util::seconds<float>(avg_clock.elapsed()) >= 0.0625f) {
+            globals::avg_frametime += globals::frametime;
+            globals::avg_frametime *= 0.5f;
+            avg_clock.restart();
+        }
 
         network::update();
         game::update();

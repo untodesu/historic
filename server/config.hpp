@@ -13,6 +13,7 @@ public:
     void implPreWrite();
 
 public:
+    int32_t simulation_distance;
     struct {
         size_t maxplayers;
         uint16_t port;

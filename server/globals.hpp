@@ -12,6 +12,7 @@ class ServerChunkManager;
 class VoxelDef;
 struct Session;
 class ServerConfig;
+class WorldConfig;
 
 namespace sv_globals
 {
@@ -27,6 +28,7 @@ extern VoxelDef voxels;
 
 // Configuration
 extern ServerConfig config;
+extern WorldConfig world_config;
 
 // Stats
 extern float curtime;

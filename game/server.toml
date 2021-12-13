@@ -1,3 +1,5 @@
+simulation_distance = 2
+
 [net]
-maxplayers = 16
+maxplayers = 4
 port = 43103

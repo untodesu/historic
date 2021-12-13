@@ -35,7 +35,7 @@ this event to all the clients in render distance.
 
 
 CHUNK LOADING PROCESS:
-    1. Try to find an existing chunk.
+    1. Try to find a loaded chunk.
     2. If succeeded, increase refcount then return.
     3. Create a voxel array
     4. Try to load the chunk from file

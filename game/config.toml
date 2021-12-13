@@ -4,7 +4,7 @@ host = 'localhost'
 port = 43103
 
 [render]
-draw_shadows = true
+draw_shadows = false
 fov = 90.0
 shadowmapres = 2048
 z_far = 512.0

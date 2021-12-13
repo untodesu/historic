@@ -18,8 +18,9 @@ entt::registry sv_globals::registry;
 ServerChunkManager sv_globals::chunks;
 VoxelDef sv_globals::voxels;
 
-// Scripting & configuration
+// Configuration
 ServerConfig sv_globals::config;
+WorldConfig sv_globals::world_config;
 
 // Stats
 float sv_globals::curtime = 0.0f;

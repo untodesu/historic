@@ -7,4 +7,5 @@ target_sources(server PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/game.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/globals.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/network.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/server_app.cpp")
+    "${CMAKE_CURRENT_LIST_DIR}/server_app.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/vgen.cpp")

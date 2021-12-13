@@ -11,10 +11,10 @@ namespace sv_network
 void init();
 void shutdown();
 void update();
-Session *createSession();
-Session *findSession(uint32_t session_id);
-void destroySession(Session *session);
-void kick(Session *session, const std::string &reason);
+ServerSession *createSession();
+ServerSession *findSession(uint32_t session_id);
+void destroySession(ServerSession *session);
+void kick(ServerSession *session, const std::string &reason);
 void kickAll(const std::string &reason);
 } // namespace sv_network
 
