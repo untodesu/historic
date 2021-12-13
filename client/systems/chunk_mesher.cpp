@@ -22,9 +22,15 @@ using ChunkMeshBuilder = MeshBuilder<uint16_t, Vertex>;
 class ThreadedMeshWorker final {
 public:
     ThreadedMeshWorker(const chunkpos_t &cp, entt::entity owner)
-        : builder(), cancel(false), cp(cp), owner(owner)
+        : builder(), cancelled(false), done(false), cp(cp), owner(owner)
     {
-
+        trySetChunk(cp);
+        trySetChunk(cp + chunkpos_t(0, 0, 1));
+        trySetChunk(cp - chunkpos_t(0, 0, 1));
+        trySetChunk(cp + chunkpos_t(0, 1, 0));
+        trySetChunk(cp - chunkpos_t(0, 1, 0));
+        trySetChunk(cp + chunkpos_t(1, 0, 0));
+        trySetChunk(cp - chunkpos_t(1, 0, 0));
     }
 
     void thread()
@@ -35,12 +41,16 @@ public:
                 for(const auto face : it->second.faces) {
                     if(const AtlasNode *node = globals::solid_textures.getNode(face.second.texture)) {
                         greedyFace(it->second, node, it->first, face.first, base);
-                        if(cancel)
+                        if(cancelled || done) {
+                            done = true;
                             return;
+                        }
                     }
                 }
             }
         }
+
+        done = true;
     }
 
     void update()
@@ -50,7 +60,7 @@ public:
         // or marked for meshing once again.
         if(globals::registry.valid(owner) && !globals::registry.all_of<ChunkFlaggedForMeshingComponent>(owner))
             return;
-        cancel = true;
+        cancelled = true;
     }
 
 private:
@@ -93,9 +103,6 @@ private:
             maskpos = 0;
             for(x[v] = 0; x[v] < CHUNK_SIZE_I16; x[v]++) {
                 for(x[u] = 0; x[u] < CHUNK_SIZE_I16; x[u]++) {
-                    // Cancellation check
-                    if(cancel)
-                        return;
                     // We set the mask only if the current voxel is the one
                     // and if the next present (by direction) has a solid face.
                     mask[maskpos++] = hasVoxel(cp, x, voxel) && !hasFace(cp, x + q, flip_face);
@@ -237,16 +244,18 @@ private:
     inline const bool hasVoxel(const chunkpos_t &cp, const localpos_t &lp, voxel_t voxel)
     {
         const voxelpos_t vp = toVoxelPos(cp, lp);
-        if(const ClientChunk *chunk = globals::chunks.find(toChunkPos(vp)))
-            return chunk->data.at(toVoxelIdx(toLocalPos(vp))) == voxel;
+        const auto it = data.find(toChunkPos(vp));
+        if(it != data.cend())
+            return it->second.data.at(toVoxelIdx(toLocalPos(vp))) == voxel;
         return false;
     }
 
     inline const bool hasFace(const chunkpos_t &cp, const localpos_t &lp, voxel_face_t face)
     {
         const voxelpos_t vp = toVoxelPos(cp, lp);
-        if(const ClientChunk *chunk = globals::chunks.find(toChunkPos(vp))) {
-            if(voxel_t voxel = chunk->data.at(toVoxelIdx(toLocalPos(vp)))) {
+        const auto it = data.find(toChunkPos(vp));
+        if(it != data.cend()) {
+            if(voxel_t voxel = it->second.data.at(toVoxelIdx(toLocalPos(vp)))) {
                 if(const VoxelDefEntry *entry = globals::voxels.find(voxel)) {
                     const auto fit = entry->faces.find(face);
                     if(fit != entry->faces.cend())
@@ -261,12 +270,22 @@ private:
         return false;
     }
 
+    size_t trySetChunk(const chunkpos_t &pos)
+    {
+        if(ClientChunk *cc = globals::chunks.find(pos)) {
+            data[pos] = *cc;
+            return CHUNK_VOLUME * sizeof(voxel_t);
+        }
+        
+        return 0;
+    }
+
 public:
-    bool cancel;
     chunkpos_t cp;
     entt::entity owner;
-    std::shared_future<bool> future;
+    bool cancelled, done;
     ChunkMeshBuilder builder;
+    std::unordered_map<chunkpos_t, ClientChunk> data;
 };
 
 using ThreadedMeshWorkerList = std::vector<ThreadedMeshWorker>;
@@ -286,7 +305,7 @@ void chunk_mesher::update()
     // X 2.1. Go through workers list and find cancelled and completed workers
     // X 2.2. Generate meshes for those workers
     // X 2.3. Remove the worker...
-    //   3. QUEUE NEW WORKERS
+    // X 3. QUEUE NEW WORKERS
     // This ensures we don't have duplicate workers
 
     for(ThreadedMeshWorker &worker : mesher_workers) {
@@ -296,7 +315,7 @@ void chunk_mesher::update()
     }
 
     for(ThreadedMeshWorkerList::const_iterator it = mesher_workers.cbegin(); it != mesher_workers.cend();) {
-        if(it->future.valid() && it->future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        if(it->done) {
             if(!it->builder.empty() && globals::registry.valid(it->owner)) {
                 ChunkMeshComponent *mesh = globals::registry.try_get<ChunkMeshComponent>(it->owner);
                 if(!mesh) {
@@ -353,7 +372,7 @@ void chunk_mesher::update()
         globals::registry.remove<ChunkFlaggedForMeshingComponent>(entity);
         if(ClientChunk *cc = globals::chunks.find(chunk.position)) {
             ThreadedMeshWorker &worker = mesher_workers.emplace_back(chunk.position, entity);
-            worker.future = mesher_threads.submit(std::bind(&ThreadedMeshWorker::thread, &worker));
+            mesher_threads.push_task(std::bind(&ThreadedMeshWorker::thread, worker));
         }
     }
 }

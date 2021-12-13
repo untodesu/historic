@@ -49,5 +49,7 @@ template<typename T>
 inline void BaseConfig<T>::write(const stdfs::path &path)
 {
     static_cast<T *>(this)->implPreWrite();
-    fs::writeText(path, (std::stringstream() << toml).str());
+    std::stringstream ss;
+    ss << toml;
+    fs::writeText(path, ss.str());
 }
