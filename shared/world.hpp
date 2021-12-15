@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-constexpr static const size_t CHUNK_SIZE = 32;
+constexpr static const size_t CHUNK_SIZE = 16;
 constexpr static const size_t CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE;
 constexpr static const size_t CHUNK_VOLUME = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 constexpr static const size_t CHUNK_BITSHIFT = math::log2(CHUNK_SIZE);

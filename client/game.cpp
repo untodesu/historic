@@ -74,6 +74,8 @@ void cl_game::postInit()
 
 void cl_game::shutdown()
 {
+    chunk_mesher::shutdown();
+
     globals::registry.clear();
 
     globals::solid_textures.destroy();
@@ -117,7 +119,7 @@ void cl_game::update()
         }
     }
 
-    //input::enableCursor(globals::ui_grabs_input || globals::session.state != SessionState::PLAYING);
+    input::enableCursor(globals::ui_grabs_input || globals::session.state != SessionState::PLAYING);
 }
 
 void cl_game::draw()

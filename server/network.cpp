@@ -232,34 +232,29 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &, 
                         }
                     }
 
-                    // Build load/free lists
                     std::unordered_set<chunkpos_t> to_free, to_load;
                     for(const chunkpos_t &icp : old_range) {
                         const auto it = new_range.find(icp);
-                        if(it != new_range.cend()) {
-                            if(ServerChunk *sc = globals::chunks.load(icp)) {
-                                protocol::packets::ChunkVoxels loadp = {};
-                                math::vecToArray(icp, loadp.position);
-                                loadp.data = sc->data;
-                                spdlog::trace("send [{}, {}, {}]", icp.x, icp.y, icp.z);
-                                util::sendPacket(session->peer, loadp, 0, 0);
-                                to_load.insert(icp);
-                            }
-                        }
-                        else {
-                            protocol::packets::UnloadChunk unloadp = {};
-                            math::vecToArray(icp, unloadp.position);
-                            util::sendPacket(session->peer, unloadp, 0, 0);
-                            globals::chunks.free(icp);
-                            to_free.insert(icp);
+                        (*((it != new_range.cend()) ? &to_load : &to_free)).insert(icp);
+                    }
+
+                    for(const chunkpos_t &icp : to_load) {
+                        if(ServerChunk *sc = globals::chunks.load(icp)) {
+                            protocol::packets::ChunkVoxels loadp = {};
+                            math::vecToArray(icp, loadp.position);
+                            loadp.data = sc->data;
+                            util::sendPacket(session->peer, loadp, 0, 0);
+                            session->loaded_chunks.insert(icp);
                         }
                     }
 
-                    // Modify the list
-                    for(const chunkpos_t &icp : to_load)
-                        session->loaded_chunks.insert(icp);
-                    for(const chunkpos_t &icp : to_free)
+                    for(const chunkpos_t &icp : to_free) {
+                        protocol::packets::UnloadChunk unloadp = {};
+                        math::vecToArray(icp, unloadp.position);
+                        //util::sendPacket(session->peer, unloadp, 0, 0);
+                        globals::chunks.free(icp);
                         session->loaded_chunks.erase(icp);
+                    }
                 }
 
                 util::broadcastPacket(globals::host, packet, 0, 0, session->peer);

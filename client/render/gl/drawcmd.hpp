@@ -5,7 +5,7 @@
  */
 #pragma once
 #include <client/render/gl/object.hpp>
-
+#include <spdlog/spdlog.h>
 namespace gl
 {
 struct DrawArraysCmd final {

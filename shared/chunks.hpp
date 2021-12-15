@@ -7,9 +7,6 @@
 #include <shared/world.hpp>
 #include <unordered_map>
 
-using chunk_create_flags_t = uint16_t;
-constexpr const chunk_create_flags_t CHUNK_CREATE_UPDATE_NEIGHBOURS = (1 << 0);
-
 using voxel_set_flags_t = uint16_t;
 constexpr const voxel_set_flags_t VOXEL_SET_FORCE = (1 << 0);
 constexpr const voxel_set_flags_t VOXEL_SET_UPDATE_NEIGHBOURS = (1 << 1);
@@ -23,7 +20,7 @@ public:
     void remove(const chunkpos_t &cp);
 
     chunk_type *find(const chunkpos_t &cp);
-    chunk_type *create(const chunkpos_t &cp, chunk_create_flags_t flags);
+    chunk_type *create(const chunkpos_t &cp);
 
     voxel_t get(const voxelpos_t &vp) const;
     voxel_t get(const chunkpos_t &cp, const localpos_t &lp) const;
@@ -32,7 +29,7 @@ public:
     // Implementations define:
     //  void implOnClear();
     //  bool implOnRemove(const chunkpos_t &, chunk_type &);
-    //  chunk_type implOnCreate(const chunkpos_t &, chunk_create_flags_t);
+    //  chunk_type implOnCreate(const chunkpos_t &);
     //  voxel_t implGetVoxel(const chunk_type &, const localpos_t &) const;
     //  void implSetVoxel(chunk_type *, const chunkpos_t &, const localpos_t &, voxel_t, voxel_set_flags_t);
 
@@ -65,12 +62,12 @@ inline chunk_type *ChunkManager<chunk_type, T>::find(const chunkpos_t &cp)
 }
 
 template<typename chunk_type, typename T>
-inline chunk_type *ChunkManager<chunk_type, T>::create(const chunkpos_t &cp, chunk_create_flags_t flags)
+inline chunk_type *ChunkManager<chunk_type, T>::create(const chunkpos_t &cp)
 {
     auto it = chunks.find(cp);
     if(it != chunks.end())
         return &it->second;
-    return &(chunks[cp] = static_cast<T *>(this)->implOnCreate(cp, flags));
+    return &(chunks[cp] = static_cast<T *>(this)->implOnCreate(cp));
 }
 
 template<typename chunk_type, typename T>

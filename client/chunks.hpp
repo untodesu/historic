@@ -16,7 +16,7 @@ class ClientChunkManager final : public ChunkManager<ClientChunk, ClientChunkMan
 public:
     void implOnClear();
     bool implOnRemove(const chunkpos_t &cp, const ClientChunk &data);
-    ClientChunk implOnCreate(const chunkpos_t &cp, chunk_create_flags_t flags);
+    ClientChunk implOnCreate(const chunkpos_t &cp);
     voxel_t implGetVoxel(const ClientChunk &data, const localpos_t &lp) const;
     void implSetVoxel(ClientChunk *data, const chunkpos_t &cp, const localpos_t &lp, voxel_t voxel, voxel_set_flags_t flags);
 };

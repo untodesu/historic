@@ -1,4 +1,4 @@
-simulation_distance = 2
+simulation_distance = 8
 
 [net]
 maxplayers = 4

@@ -100,7 +100,8 @@ static const std::unordered_map<uint16_t, void(*)(const std::vector<uint8_t> &)>
         [](const std::vector<uint8_t> &payload) {
             protocol::packets::ChunkVoxels packet;
             protocol::deserialize(payload, packet);
-            globals::chunks.create(math::arrayToVec<chunkpos_t>(packet.position), CHUNK_CREATE_UPDATE_NEIGHBOURS)->data = packet.data;
+            globals::chunks.create(math::arrayToVec<chunkpos_t>(packet.position))->data = packet.data;
+            spdlog::info("RECEIVED [{}, {}, {}]", packet.position[0], packet.position[1], packet.position[2]);
         }
     },
     {

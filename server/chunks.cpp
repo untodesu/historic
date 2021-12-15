@@ -51,7 +51,7 @@ bool ServerChunkManager::implOnRemove(const chunkpos_t &cp, ServerChunk &data)
     return true;
 }
 
-ServerChunk ServerChunkManager::implOnCreate(const chunkpos_t &cp, voxel_set_flags_t)
+ServerChunk ServerChunkManager::implOnCreate(const chunkpos_t &cp)
 {
     ServerChunk data;
     data.entity = globals::registry.create();
@@ -111,11 +111,11 @@ ServerChunk *ServerChunkManager::load(const chunkpos_t &cp)
         std::copy(buffer.cbegin(), buffer.cend(), chunk.begin());
     }
     else if(!vgen.generate(cp, chunk)) {
-        spdlog::debug("null chunk at [{}, {}, {}]", cp.x, cp.y, cp.z);
+        //spdlog::debug("null chunk at [{}, {}, {}]", cp.x, cp.y, cp.z);
         return nullptr;
     }
 
-    ServerChunk *sc = create(cp, 0);
+    ServerChunk *sc = create(cp);
     sc->data = chunk;
     return sc;
 }
