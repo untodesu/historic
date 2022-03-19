@@ -1,4 +1,6 @@
 # Voxelius
+**THIS NEEDS SIGNIFICANT REWRITE POSSIBLY FROM SCRATCH - THE MULTIPLAYER IMPLEMENTATION PUSHED THE PROJECT SIDEWAYS - EXPECT SEGFAULTS AND UNDEFINED BEHAVIOUR**
+
 Voxelius is a work-in-progress FOSS multiplayer voxel-based (actually it will be block-based like Minecraft) game written in C++17.  
 My goal is to resemble as much of generic Minecraft gameplay as possible but with some core changes like cubic chunks.  
 > Voxelius's multiplayer design is heavily inspired by [OpenBuilder](https://github.com/Hopson97/open-builder) although still different and more Minecraft-like.
