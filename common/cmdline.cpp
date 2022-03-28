@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <core/cmdline.hpp>
+#include <common/cmdline.hpp>
 #include <unordered_map>
 
 static std::unordered_map<std::string, std::string> cmdline_map;

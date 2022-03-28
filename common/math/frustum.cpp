@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <core/math/frustum.hpp>
+#include <common/math/frustum.hpp>
 
 using plane_t = unsigned short;
 constexpr static const plane_t PLANE_LF = 0;

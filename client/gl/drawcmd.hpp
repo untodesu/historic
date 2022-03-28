@@ -40,10 +40,10 @@ public:
     size_t size() const;
 
 private:
-    bool indexed { false };
-    GLenum mode { 0 };
-    GLenum type { 0 };
-    size_t nv { 0 };
+    bool indexed {false};
+    GLenum mode {0};
+    GLenum type {0};
+    size_t nv {0};
 };
 } // namespace gl
 

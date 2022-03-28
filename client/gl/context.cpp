@@ -36,6 +36,7 @@ void gl::initialize()
     }
 
     glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(debugCallback, nullptr);
 
     // NVIDIA drivers really like to flood the

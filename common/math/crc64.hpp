@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <core/types.hpp>
+#include <common/types.hpp>
 #include <string>
 
 namespace math

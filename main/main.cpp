@@ -7,10 +7,10 @@
 #include <algorithm>
 #include <cctype>
 #include <client/client_app.hpp>
-#include <core/cmdline.hpp>
-#include <core/fs.hpp>
-#include <core/math/constexpr.hpp>
-#include <core/util/spdlog_sinks.hpp>
+#include <common/cmdline.hpp>
+#include <common/fs.hpp>
+#include <common/math/constexpr.hpp>
+#include <common/util/spdlog_sinks.hpp>
 #include <enet/enet.h>
 #include <iostream>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -31,19 +31,24 @@ int main(int argc, char **argv)
 
     cmdline::initialize(argc, argv);
 
-    // allow custom log levels
-    std::string log_level_str;
-    if(cmdline::find("log_level", log_level_str)) {
-        spdlog::warn("cmdline: setting log level to {}", log_level_str);
-        spdlog::set_level(spdlog::level::from_str(log_level_str));
+#if defined(NDEBUG)
+    const bool is_debug = cmdline::find("debug");
+#else
+    const bool is_debug = true;
+#endif
+
+    spdlog::set_level(spdlog::level::info);
+    if(cmdline::find("trace")) {
+        spdlog::set_level(spdlog::level::trace);
+        spdlog::info("setting log_level to TRACE (cmdline)");
+    }
+    else if(is_debug) {
+        spdlog::set_level(spdlog::level::debug);
+        spdlog::info("setting log_level to DEBUG");
     }
 
-    fs::initialize();
-
-    std::string search_root = "res";
-    cmdline::find("root", search_root);
-    if(!fs::setSearchRoot(search_root)) {
-        spdlog::critical("fs: unable to setup new search root: {}", search_root);
+    if(!fs::setSearchRoot("res")) {
+        spdlog::error("fs: unable to find or create search root directory");
         std::terminate();
     }
 
@@ -52,10 +57,16 @@ int main(int argc, char **argv)
         std::terminate();
     }
 
+#if defined(VGAME_CLIENT)
     client_app::run();
+#else
+#error Amogus
+#endif
 
     enet_deinitialize();
+
     fs::shutdown();
+
     cmdline::shutdown();
 
     return 0;

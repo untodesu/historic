@@ -6,7 +6,7 @@
  */
 #pragma once
 #include <array>
-#include <core/types.hpp>
+#include <common/types.hpp>
 
 namespace math
 {

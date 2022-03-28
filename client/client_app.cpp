@@ -8,12 +8,12 @@
 #include <client/config.hpp>
 #include <client/globals.hpp>
 #include <client/gl/context.hpp>
-#include <core/cmdline.hpp>
+#include <common/cmdline.hpp>
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
 // TEST
-#include <core/types.hpp>
+#include <common/types.hpp>
 #include <client/gl/drawcmd.hpp>
 #include <client/gl/pipeline.hpp>
 #include <client/gl/vertex_array.hpp>

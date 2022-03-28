@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <core/math/constexpr.hpp>
+#include <common/math/constexpr.hpp>
 #include <random>
 #include <string>
 

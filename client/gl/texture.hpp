@@ -7,7 +7,7 @@
 #pragma once
 #include <client/gl/object.hpp>
 #include <client/gl/pixel_format.hpp>
-#include <core/math/constexpr.hpp>
+#include <common/math/constexpr.hpp>
 
 namespace gl
 {

@@ -24,7 +24,7 @@ public:
     constexpr GLbitfield stageBit() const;
 
 private:
-    GLbitfield bit { 0 };
+    GLbitfield bit {0};
 };
 } // namespace gl
 

@@ -5,8 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <core/mixin.hpp>
-#include <core/types.hpp>
+#include <common/mixin.hpp>
+#include <common/types.hpp>
 #include <glad/gl.h>
 
 namespace gl
@@ -22,7 +22,7 @@ public:
     constexpr GLuint get() const;
 
 protected:
-    GLuint handle;
+    GLuint handle {0};
 };
 } // namespace gl
 
