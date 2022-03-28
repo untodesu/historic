@@ -1,123 +1,132 @@
 /*
- * client_app.cpp
- * Copyright (c) 2021, Kirill GPRB.
- * All Rights Reserved.
+ * Copyright (c) 2022 Kirill GPRB
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <exception>
-#include <client/render/gl/context.hpp>
 #include <client/client_app.hpp>
 #include <client/config.hpp>
-#include <client/fontlib.hpp>
-#include <client/game.hpp>
 #include <client/globals.hpp>
-#include <client/input.hpp>
-#include <client/network.hpp>
-#include <client/screen.hpp>
-#include <common/util/clock.hpp>
-#include <glad/gl.h>
+#include <client/gl/context.hpp>
+#include <core/cmdline.hpp>
 #include <GLFW/glfw3.h>
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
 #include <spdlog/spdlog.h>
 
-static void glfwOnError(int code, const char *message)
+// TEST
+#include <core/types.hpp>
+#include <client/gl/drawcmd.hpp>
+#include <client/gl/pipeline.hpp>
+#include <client/gl/vertex_array.hpp>
+
+static void onGlfwError(int code, const char *message)
 {
-    spdlog::error("GLFW ({}): {}", code, message);
+    spdlog::error("glfw: {}", message);
 }
 
 void client_app::run()
 {
     globals::config.read("config.toml");
 
-    glfwSetErrorCallback(&glfwOnError);
+    glfwSetErrorCallback(&onGlfwError);
     if(!glfwInit()) {
-        spdlog::error("glfwInit() failed.");
+        spdlog::error("glfwInit() failed");
         std::terminate();
     }
 
-    gl::setHints();
+    gl::preInitialize();
+
+    // don't do that for now
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     globals::window = glfwCreateWindow(globals::config.window.width, globals::config.window.height, "Client", globals::config.window.fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr);
     if(!globals::window) {
-        spdlog::error("glfwCreateWindow() failed.");
+        spdlog::error("GLFW: unable to create window");
         std::terminate();
     }
 
     glfwMakeContextCurrent(globals::window);
 
-    gl::init();
-    network::init();
-    game::init();
-    input::init();
-    screen::init();
+    gl::initialize();
 
-    glfwSwapInterval(globals::config.window.vsync ? 1 : 0);    
+    struct vertex final {
+        vector2f_t position;
+        vector2f_t uv;
+    };
 
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(globals::window, false);
-    ImGui_ImplOpenGL3_Init("#version 460 core");
+    const vertex vtxs[3] = {
+        vertex { { -0.5f, -0.5f }, { 0.0f, 0.0f } },
+        vertex { {  0.0f,  0.5f }, { 0.5f, 1.0f } },
+        vertex { {  0.5f, -0.5f }, { 1.0f, 0.0f } }
+    };
 
-    fontlib::init();
-    
-    game::postInit();
+    gl::Buffer vbo;
+    vbo.create();
+    vbo.storage(sizeof(vtxs), vtxs, 0);
 
-    globals::curtime = 0.0f;
-    globals::frametime = 0.0f;
-    globals::avg_frametime = 0.0f;
-    globals::frame_count = 0;
+    gl::VertexArray vao;
+    vao.create();
+    vao.setVertexBuffer(0, vbo, sizeof(vertex));
+    vao.enableAttribute(0, true);
+    vao.enableAttribute(1, true);
+    vao.setAttributeFormat(0, GL_FLOAT, 2, offsetof(vertex, position), false);
+    vao.setAttributeFormat(1, GL_FLOAT, 2, offsetof(vertex, uv), false);
+    vao.setAttributeBinding(0, 0);
+    vao.setAttributeBinding(1, 0);
 
-    ChronoClock<std::chrono::high_resolution_clock> clock, avg_clock;
-    while(!glfwWindowShouldClose(globals::window)) {
-        globals::curtime = util::seconds<float>(clock.now().time_since_epoch());
-        globals::frametime = util::seconds<float>(clock.restart());
-        globals::vertices_drawn = 0;
-        globals::ui_grabs_input = false;
+    gl::DrawCommand cmd(GL_TRIANGLES, 3, 1, 0, 0);
 
-        if(util::seconds<float>(avg_clock.elapsed()) >= 0.0625f) {
-            globals::avg_frametime += globals::frametime;
-            globals::avg_frametime *= 0.5f;
-            avg_clock.restart();
+    gl::Shader shaders[2];
+
+    shaders[0].create();
+    shaders[0].glsl(GL_VERTEX_SHADER, R"(
+        #version 460 core
+        layout(location = 0) in vec2 position;
+        layout(location = 1) in vec2 uv;
+        layout(location = 0) out vec2 out_uv;
+        out gl_PerVertex { vec4 gl_Position; };
+        void main()
+        {
+            out_uv = uv;
+            gl_Position = vec4(position, 0.0, 1.0);
         }
+    )");
 
-        network::update();
-        game::update();
+    shaders[1].create();
+    shaders[1].glsl(GL_FRAGMENT_SHADER, R"(
+        #version 460 core
+        layout(location = 0) in vec2 uv;
+        layout(location = 0) out vec4 color;
+        void main()
+        {
+            color = vec4(uv, 1.0, 1.0);
+        }
+    )");
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    gl::Pipeline pipeline;
+    pipeline.create();
+    pipeline.stage(shaders[0]);
+    pipeline.stage(shaders[1]);
+
+    while(!glfwWindowShouldClose(globals::window)) {
+        glUseProgram(0);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        game::draw();
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        game::drawImgui();
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-
-        game::postDraw();
-
-        input::update();
+        pipeline.bind();
+        glBindVertexArray(vao.get());
+        cmd.invoke();
 
         glfwSwapBuffers(globals::window);
-        glfwPollEvents();
 
-        globals::frame_count++;
+        glfwPollEvents();
     }
 
-    spdlog::info("Client shutdown after {} frames. Avg. dt: {:.03f} ms ({:.02f} FPS)", globals::frame_count, globals::avg_frametime * 1000.0f, 1.0f / globals::avg_frametime);
-
-    fontlib::shutdown();
-    game::shutdown();
-    network::shutdown();
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    pipeline.destroy();
+    shaders[1].destroy();
+    shaders[0].destroy();
+    vao.destroy();
+    vbo.destroy();
 
     glfwDestroyWindow(globals::window);
     glfwTerminate();

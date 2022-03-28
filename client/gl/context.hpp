@@ -6,7 +6,8 @@
  */
 #pragma once
 
-namespace client_app
+namespace gl
 {
-void run();
-} // namespace client_app
+void preInitialize();
+void initialize();
+} // namespace gl

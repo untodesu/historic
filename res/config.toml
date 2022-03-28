@@ -1,0 +1,5 @@
+[window]
+fullscreen = false
+height = 480
+vsync = true
+width = 640

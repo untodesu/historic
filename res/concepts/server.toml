@@ -1,0 +1,40 @@
+# The server.toml file defines all the
+# necessary options for the server part
+# of VGame to function normally.
+
+# Common options
+#   max_players     - maximum amount of players
+#   port            - network port to listen to
+#   sim_dist        - simulation distance in chunks
+#   spw_center      - spawn area center
+#   spw_radius      - spawn area radius in chunks
+#   gamemode        - nuff said
+[common]
+max_players = 4
+port = 43103
+sim_dist = 4
+spw_center = [0,0,0]
+spw_radius = 4
+gamemode = "default"
+
+# RCON options
+# RCON is an unprotected TCP-based text
+# protocol initially used in GoldSrc/Source
+# engine by Valve. Allows accessing the server
+# console without physical access to the machine.
+#   enabled         - enables the RCON support
+#   port            - network port to listen to
+#   password        - RCON password
+#   access_level    - RCON console access level
+[rcon]
+enabled = true
+port = 43113
+password = "ooga booga"
+access_level = 0
+
+# AutoSave options
+#   enabled         - enables the autosaving
+#   interval        - autosaving interval in minutes
+[autosave]
+enabled = true
+interval = 5

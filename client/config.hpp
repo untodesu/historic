@@ -1,30 +1,23 @@
 /*
- * config.hpp
- * Author: Kirill GPRB
- * Created: Sun Dec 12 2021 16:03:08
+ * Copyright (c) 2022 Kirill GPRB
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <common/math/types.hpp>
-#include <shared/config.hpp>
+#include <core/config.hpp>
+#include <core/types.hpp>
 
-class ClientConfig final : public BaseConfig<ClientConfig> {
+class ClientConfig final : public TomlConfig<ClientConfig> {
 public:
-    void implPostRead();
-    void implPreWrite();
+    void impl_postRead();
+    void impl_preWrite();
 
 public:
     struct {
-        bool enable;
-        std::string host;
-        uint16_t port;
-    } autoconnect;
-    struct {
-        float fov, z_far;
-        int shadowmapres;
-        bool draw_shadows;
-    } render;
-    struct {
-        int width, height;
-        bool vsync, fullscreen;
+        int width {640};
+        int height {480};
+        bool fullscreen {false};
+        bool vsync {true};
     } window;
 };

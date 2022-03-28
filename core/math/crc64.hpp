@@ -5,8 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <core/types.hpp>
+#include <string>
 
-namespace client_app
+namespace math
 {
-void run();
-} // namespace client_app
+hash_t crc64(const void *s, size_t n);
+hash_t crc64(const std::string &s);
+} // namespace math

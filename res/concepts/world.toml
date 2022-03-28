@@ -1,0 +1,23 @@
+# The world.toml file defines all the
+# necessary options needed for VGame to
+# setup and use a specific world generator.
+# This file will possibly be used differently
+# with its name changed to a respective subspace
+# aka dimension (eg. overworld.toml)
+
+# Common generation options
+#   base    - generation base/center
+#   height  - maximum generation height
+#   limit   - generation end from center
+[common]
+base = [0,0,0]
+height = 128
+limit = 512
+
+# World generator settings
+#   use     - generator to use (modding TBA)
+#   seed    - generator seed
+#   ...     - generator-defined parameters
+[generator]
+use = "vgen"
+seed = 1234

@@ -1,50 +1,28 @@
 /*
- * globals.hpp
- * Copyright (c) 2021, Kirill GPRB.
- * All Rights Reserved.
+ * Copyright (c) 2022 Kirill GPRB
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <common/math/types.hpp>
-#include <enet/enet.h>
+#include <core/types.hpp>
 #include <entt/entt.hpp>
 
-struct ClientSession;
-struct GLFWwindow;
 class ClientConfig;
-class ClientChunkManager;
-class VoxelDef;
-class Atlas;
-class GBuffer;
-class ScriptEngine;
+struct GLFWwindow;
 
-namespace cl_globals
+namespace client_globals
 {
-// Networking
-extern ENetHost *host;
-extern ClientSession session;
+// Configuration
+extern ClientConfig config;
 
 // Rendering
 extern GLFWwindow *window;
-extern Atlas solid_textures;
-extern GBuffer solid_gbuffer;
-extern bool ui_grabs_input;
-
-// World
-extern uint32_t local_player_network_id;
-extern entt::entity local_player;
-extern entt::registry registry;
-extern ClientChunkManager chunks;
-extern VoxelDef voxels;
-
-// Configuration
-extern ClientConfig config;
 
 // Stats
 extern float curtime;
 extern float frametime;
-extern float avg_frametime;
+extern float frametime_avg;
 extern size_t frame_count;
-extern size_t vertices_drawn;
-} // namespace cl_globals
-
-namespace globals = cl_globals;
+} // namespace client_globals
+namespace globals = client_globals;

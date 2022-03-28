@@ -15,7 +15,7 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 # File structure of the repo is organized
-# in a such way that a single project can
+# in such a way that a single project can
 # include any header from any other project.
 set(GIT_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}")
 
@@ -31,8 +31,6 @@ add_subdirectory(deps/stb)
 add_subdirectory(deps/thread_pool)
 add_subdirectory(deps/toml)
 
-add_subdirectory(common)
+add_subdirectory(core)
 add_subdirectory(client)
-add_subdirectory(server)
-add_subdirectory(shared)
-add_subdirectory(launch)
+add_subdirectory(main)

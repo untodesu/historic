@@ -3,7 +3,6 @@
         {
             "name": "default",
             "includePath": [
-                "${default}",
                 "${workspaceFolder}/deps/bitsery/include",
                 "${workspaceFolder}/deps/enet/include",
                 "${workspaceFolder}/deps/entt/src",
@@ -15,7 +14,8 @@
                 "${workspaceFolder}/deps/stb",
                 "${workspaceFolder}/deps/thread_pool",
                 "${workspaceFolder}/deps/toml",
-                "${workspaceFolder}"
+                "${workspaceFolder}",
+                "${default}"
             ],
             "defines": [
                 "GLFW_INCLUDE_NONE",
@@ -23,7 +23,9 @@
                 "VGAME_CLIENT"
             ],
             "cppStandard": "c++17",
-            "cStandard": "c99"
+            "cStandard": "c99",
+            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe",
+            "intelliSenseMode": "windows-msvc-x64"
         }
     ],
     "version": 4
