@@ -15,6 +15,7 @@
 #include <glm/vec4.hpp>
 #include <inttypes.h>
 #include <stddef.h>
+#include <limits>
 
 // float-sized types
 using matrix4f_t = glm::mat<4, 4, float, glm::packed_highp>;
@@ -22,6 +23,11 @@ using quaternf_t = glm::qua<float, glm::packed_highp>;
 using vector2f_t = glm::vec<2, float, glm::packed_highp>;
 using vector3f_t = glm::vec<3, float, glm::packed_highp>;
 using vector4f_t = glm::vec<4, float, glm::packed_highp>;
+
+// integer-sized types (generic)
+using vector2i_t = glm::vec<2, int, glm::packed_highp>;
+using vector3i_t = glm::vec<3, int, glm::packed_highp>;
+using vector4i_t = glm::vec<4, int, glm::packed_highp>;
 
 // integer-sized types (world coordinates)
 using vector3i16_t = glm::vec<3, int16_t, glm::packed_highp>;

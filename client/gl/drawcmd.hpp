@@ -36,7 +36,7 @@ public:
     void destroy();
     void set(GLenum mode, size_t vertices, size_t instances, size_t base_vertex, size_t base_instance);
     void set(GLenum mode, GLenum type, size_t indices, size_t instances, size_t base_index, size_t base_vertex, size_t base_instance);
-    void invoke();
+    void invoke() const;
     size_t size() const;
 
 private:
@@ -128,7 +128,7 @@ inline void gl::DrawCommand::set(GLenum mode, GLenum type, size_t indices, size_
     glNamedBufferData(handle, static_cast<GLsizeiptr>(sizeof(cmd)), &cmd, GL_STATIC_DRAW);
 }
 
-inline void gl::DrawCommand::invoke()
+inline void gl::DrawCommand::invoke() const
 {
     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, handle);
     

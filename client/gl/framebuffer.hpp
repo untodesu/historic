@@ -19,7 +19,7 @@ public:
     void create();
     void destroy();
     void attach(GLenum attachment, const Texture2D &texture);
-    void attach(GLenum attachment, const RenderBuffer &rbo);
+    void attach(GLenum attachment, const Renderbuffer &rbo);
     bool complete() const;
     void bind() const;
     template<typename... args_type>
@@ -60,7 +60,7 @@ inline void gl::Framebuffer::attach(GLenum attachment, const gl::Texture2D &text
     glNamedFramebufferTexture(handle, attachment, texture.get(), 0);
 }
 
-inline void gl::Framebuffer::attach(GLenum attachment, const gl::RenderBuffer &rbo)
+inline void gl::Framebuffer::attach(GLenum attachment, const gl::Renderbuffer &rbo)
 {
     glNamedFramebufferRenderbuffer(handle, attachment, GL_RENDERBUFFER, rbo.get());
 }

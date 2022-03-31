@@ -11,7 +11,7 @@
 #include <sstream>
 #include <toml.hpp>
 
-template<typename config_type>
+template<typename impl_type>
 class TomlConfig {
 public:
     bool read(const fs_std::path &path);
@@ -25,8 +25,8 @@ public:
     toml::table toml;
 };
 
-template<typename config_type>
-inline bool TomlConfig<config_type>::read(const fs_std::path &path)
+template<typename impl_type>
+inline bool TomlConfig<impl_type>::read(const fs_std::path &path)
 {
     bool success = true;
 
@@ -42,15 +42,15 @@ inline bool TomlConfig<config_type>::read(const fs_std::path &path)
         success = false;
     }
 
-    static_cast<config_type *>(this)->impl_postRead();
+    static_cast<impl_type *>(this)->impl_postRead();
 
     return success;
 }
 
-template<typename config_type>
-inline void TomlConfig<config_type>::write(const fs_std::path &path)
+template<typename impl_type>
+inline void TomlConfig<impl_type>::write(const fs_std::path &path)
 {
-    static_cast<config_type *>(this)->impl_preWrite();
+    static_cast<impl_type *>(this)->impl_preWrite();
     std::stringstream ss;
     ss << toml;
     fs::writeString(path, ss.str());

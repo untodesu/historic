@@ -10,37 +10,37 @@
 
 namespace gl
 {
-class RenderBuffer final : public Object<RenderBuffer> {
+class Renderbuffer final : public Object<Renderbuffer> {
 public:
-    RenderBuffer() = default;
-    RenderBuffer(RenderBuffer &&rhs);
-    RenderBuffer &operator=(RenderBuffer &&rhs);
+    Renderbuffer() = default;
+    Renderbuffer(Renderbuffer &&rhs);
+    Renderbuffer &operator=(Renderbuffer &&rhs);
     void create();
     void destroy();
     void storage(int width, int height, PixelFormat format);
 };
 } // namespace gl
 
-inline gl::RenderBuffer::RenderBuffer(gl::RenderBuffer &&rhs)
+inline gl::Renderbuffer::Renderbuffer(gl::Renderbuffer &&rhs)
 {
     handle = rhs.handle;
     rhs.handle = 0;
 }
 
-inline gl::RenderBuffer &gl::RenderBuffer::operator=(gl::RenderBuffer &&rhs)
+inline gl::Renderbuffer &gl::Renderbuffer::operator=(gl::Renderbuffer &&rhs)
 {
-    gl::RenderBuffer copy(std::move(rhs));
+    gl::Renderbuffer copy(std::move(rhs));
     std::swap(handle, copy.handle);
     return *this;
 }
 
-inline void gl::RenderBuffer::create()
+inline void gl::Renderbuffer::create()
 {
     destroy();
     glCreateRenderbuffers(1, &handle);
 }
 
-inline void gl::RenderBuffer::destroy()
+inline void gl::Renderbuffer::destroy()
 {
     if(handle) {
         glDeleteRenderbuffers(1, &handle);
@@ -48,7 +48,7 @@ inline void gl::RenderBuffer::destroy()
     }
 }
 
-inline void gl::RenderBuffer::storage(int width, int height, PixelFormat format)
+inline void gl::Renderbuffer::storage(int width, int height, PixelFormat format)
 {
     glNamedRenderbufferStorage(handle, gl::detail::getPixelFormatGPU(format), width, height);
 }

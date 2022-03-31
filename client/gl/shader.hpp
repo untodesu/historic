@@ -26,7 +26,6 @@ public:
 private:
     GLbitfield bit {0};
 };
-} // namespace gl
 
 namespace detail
 {
@@ -61,6 +60,7 @@ static inline void checkProgramInfoLog(GLuint program)
     }
 }
 } // namespace detail
+} // namespace gl
 
 inline gl::Shader::Shader(gl::Shader &&rhs)
     : bit(rhs.bit)
@@ -96,14 +96,14 @@ inline void gl::Shader::destroy()
 
 inline bool gl::Shader::glsl(GLenum stage, const std::string &source)
 {
-    if(!bit && (bit = detail::getStageBit(stage))) {
+    if(!bit && (bit = gl::detail::getStageBit(stage))) {
         GLint status;
         const char *data = source.c_str();
 
         GLuint shader = glCreateShader(stage);
         glShaderSource(shader, 1, &data, nullptr);
         glCompileShader(shader);
-        detail::checkShaderInfoLog(shader);
+        gl::detail::checkShaderInfoLog(shader);
 
         glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
         if(!status) {
@@ -114,7 +114,7 @@ inline bool gl::Shader::glsl(GLenum stage, const std::string &source)
         glAttachShader(handle, shader);
         glLinkProgram(handle);
         glDeleteShader(shader);
-        detail::checkProgramInfoLog(handle);
+        gl::detail::checkProgramInfoLog(handle);
 
         glGetProgramiv(handle, GL_LINK_STATUS, &status);
         return !!status;
@@ -125,13 +125,13 @@ inline bool gl::Shader::glsl(GLenum stage, const std::string &source)
 
 inline bool gl::Shader::spirv(GLenum stage, const std::vector<uint8_t> &binary)
 {
-    if(!bit && (bit = detail::getStageBit(stage))) {
+    if(!bit && (bit = gl::detail::getStageBit(stage))) {
         GLint status;
 
         GLuint shader = glCreateShader(stage);
         glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V, binary.data(), static_cast<GLsizei>(binary.size()));
         glSpecializeShader(shader, "main", 0, nullptr, nullptr);
-        detail::checkShaderInfoLog(shader);
+        gl::detail::checkShaderInfoLog(shader);
 
         glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
         if(!status) {
@@ -142,7 +142,7 @@ inline bool gl::Shader::spirv(GLenum stage, const std::vector<uint8_t> &binary)
         glAttachShader(handle, shader);
         glLinkProgram(handle);
         glDeleteShader(shader);
-        detail::checkProgramInfoLog(handle);
+        gl::detail::checkProgramInfoLog(handle);
 
         glGetProgramiv(handle, GL_LINK_STATUS, &status);
         return !!status;

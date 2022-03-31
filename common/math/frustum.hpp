@@ -10,7 +10,7 @@
 
 namespace math
 {
-struct fplane final {
+struct FPlane final {
     float d;
     vector3f_t n;
     float point(const vector3f_t &v) const;
@@ -19,11 +19,11 @@ struct fplane final {
 class Frustum final {
 public:
     Frustum();
-    Frustum(const matrix4f_t &matrix);
-    void set(const matrix4f_t &matrix);
+    Frustum(const matrix4f_t &vpmatrix);
+    void set(const matrix4f_t &vpmatrix);
     bool point(const vector3f_t &v) const;
 
 private:
-    std::array<math::fplane, 6> planes;
+    std::array<math::FPlane, 6> planes;
 };
 } // namespace math

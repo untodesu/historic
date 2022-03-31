@@ -30,7 +30,7 @@ private:
 
 template<typename clock_type>
 inline util::Clock<clock_type>::Clock()
-    : start_time(now)
+    : start_time(now())
 {
 
 }
@@ -38,20 +38,20 @@ inline util::Clock<clock_type>::Clock()
 template<typename clock_type>
 inline const typename clock_type::duration util::Clock<clock_type>::elapsed() const
 {
-    return now() - start;
+    return now() - start_time;
 }
 
 template<typename clock_type>
-inline const typename clock_type::duration util::Clock<clock_type>::reset() const
+inline const typename clock_type::duration util::Clock<clock_type>::reset()
 {
     const typename clock_type::time_point new_start = now();
-    const typename clock_type::duration delta = new_start - start;
-    start = new_start;
+    const typename clock_type::duration delta = new_start - start_time;
+    start_time = new_start;
     return delta;
 }
 
 template<typename clock_type>
-inline const typename clock_type::time_point Clock<clock_type>::now()
+inline const typename clock_type::time_point util::Clock<clock_type>::now()
 {
     return clock_type::now();
 }

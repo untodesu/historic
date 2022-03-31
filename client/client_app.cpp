@@ -6,17 +6,16 @@
  */
 #include <client/client_app.hpp>
 #include <client/config.hpp>
+#include <client/game.hpp>
 #include <client/globals.hpp>
 #include <client/gl/context.hpp>
+#include <client/input.hpp>
+#include <client/screen.hpp>
 #include <common/cmdline.hpp>
+#include <common/util/clock.hpp>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
-
-// TEST
-#include <common/types.hpp>
-#include <client/gl/drawcmd.hpp>
-#include <client/gl/pipeline.hpp>
-#include <client/gl/vertex_array.hpp>
 
 static void onGlfwError(int code, const char *message)
 {
@@ -47,86 +46,56 @@ void client_app::run()
     glfwMakeContextCurrent(globals::window);
 
     gl::initialize();
+    game::initialize();
+    input::initialize();
+    screen::initialize();
 
-    struct vertex final {
-        vector2f_t position;
-        vector2f_t uv;
-    };
+    glfwSwapInterval(globals::config.window.vsync ? 1 : 0);
 
-    const vertex vtxs[3] = {
-        vertex { { -0.5f, -0.5f }, { 0.0f, 0.0f } },
-        vertex { {  0.0f,  0.5f }, { 0.5f, 1.0f } },
-        vertex { {  0.5f, -0.5f }, { 1.0f, 0.0f } }
-    };
+    game::postInitialize();
 
-    gl::Buffer vbo;
-    vbo.create();
-    vbo.storage(sizeof(vtxs), vtxs, 0);
+    globals::curtime = 0.0f;
+    globals::frame_count = 0;
+    globals::frametime = 0.0f;
+    globals::frametime_avg = 0.0f;
 
-    gl::VertexArray vao;
-    vao.create();
-    vao.setVertexBuffer(0, vbo, sizeof(vertex));
-    vao.enableAttribute(0, true);
-    vao.enableAttribute(1, true);
-    vao.setAttributeFormat(0, GL_FLOAT, 2, offsetof(vertex, position), false);
-    vao.setAttributeFormat(1, GL_FLOAT, 2, offsetof(vertex, uv), false);
-    vao.setAttributeBinding(0, 0);
-    vao.setAttributeBinding(1, 0);
-
-    gl::DrawCommand cmd(GL_TRIANGLES, 3, 1, 0, 0);
-
-    gl::Shader shaders[2];
-
-    shaders[0].create();
-    shaders[0].glsl(GL_VERTEX_SHADER, R"(
-        #version 460 core
-        layout(location = 0) in vec2 position;
-        layout(location = 1) in vec2 uv;
-        layout(location = 0) out vec2 out_uv;
-        out gl_PerVertex { vec4 gl_Position; };
-        void main()
-        {
-            out_uv = uv;
-            gl_Position = vec4(position, 0.0, 1.0);
-        }
-    )");
-
-    shaders[1].create();
-    shaders[1].glsl(GL_FRAGMENT_SHADER, R"(
-        #version 460 core
-        layout(location = 0) in vec2 uv;
-        layout(location = 0) out vec4 color;
-        void main()
-        {
-            color = vec4(uv, 1.0, 1.0);
-        }
-    )");
-
-    gl::Pipeline pipeline;
-    pipeline.create();
-    pipeline.stage(shaders[0]);
-    pipeline.stage(shaders[1]);
-
+    util::Clock<std::chrono::high_resolution_clock> clock;
+    util::Clock<std::chrono::high_resolution_clock> clock_avg;
     while(!glfwWindowShouldClose(globals::window)) {
-        glUseProgram(0);
+        globals::curtime = util::seconds<float>(clock.now().time_since_epoch());
+        globals::frametime = util::seconds<float>(clock.reset());
 
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        if(util::seconds<float>(clock_avg.elapsed()) > 0.0625f) {
+            globals::frametime_avg += globals::frametime;
+            globals::frametime_avg *= 0.5f;
+            clock_avg.reset();
+        }
+
+        game::update();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glUseProgram(0);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        pipeline.bind();
-        glBindVertexArray(vao.get());
-        cmd.invoke();
+        game::render();
+
+        game::postRender();
+
+        // Updating input right before
+        // polling events - we reset some
+        // values before events reset them.
+        input::update();
 
         glfwSwapBuffers(globals::window);
-
         glfwPollEvents();
+
+        globals::frame_count++;
     }
 
-    pipeline.destroy();
-    shaders[1].destroy();
-    shaders[0].destroy();
-    vao.destroy();
-    vbo.destroy();
+    spdlog::info("client shutdown after {} frames. avg dt: {:.03f} ms ({:.02f} FPS)", globals::frame_count, globals::frametime_avg * 1000.0f, 1.0f / globals::frametime_avg);
+
+    game::shutdown();
 
     glfwDestroyWindow(globals::window);
     glfwTerminate();

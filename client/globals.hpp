@@ -8,7 +8,11 @@
 #include <common/types.hpp>
 #include <entt/entt.hpp>
 
+class Atlas;
+class ClientChunkManager;
 class ClientConfig;
+class GBuffer;
+class VoxelDef;
 struct GLFWwindow;
 
 namespace client_globals
@@ -18,11 +22,19 @@ extern ClientConfig config;
 
 // Rendering
 extern GLFWwindow *window;
+extern Atlas terrain_atlas;
+extern GBuffer main_gbuffer;
 
 // Stats
 extern float curtime;
 extern float frametime;
 extern float frametime_avg;
 extern size_t frame_count;
+extern size_t vertices_drawn;
+
+// World
+extern entt::registry registry;
+extern ClientChunkManager chunks;
+extern VoxelDef voxels;
 } // namespace client_globals
 namespace globals = client_globals;

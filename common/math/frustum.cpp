@@ -14,44 +14,54 @@ constexpr static const plane_t PLANE_BK = 3;
 constexpr static const plane_t PLANE_UP = 4;
 constexpr static const plane_t PLANE_DN = 5;
 
-float math::fplane::point(const vector3f_t &v) const
+float math::FPlane::point(const vector3f_t &v) const
 {
     return glm::dot(v, n) + d;
 }
 
-void math::Frustum::set(const matrix4f_t &projview)
+math::Frustum::Frustum()
 {
-    planes[PLANE_LF].n.x = projview[0][3] + projview[0][0];
-    planes[PLANE_LF].n.y = projview[1][3] + projview[1][0];
-    planes[PLANE_LF].n.z = projview[2][3] + projview[2][0];
-    planes[PLANE_LF].d = projview[3][3] + projview[3][0];
+    set(MATRIX4F_IDENT);
+}
 
-    planes[PLANE_RT].n.x = projview[0][3] - projview[0][0];
-    planes[PLANE_RT].n.y = projview[1][3] - projview[1][0];
-    planes[PLANE_RT].n.z = projview[2][3] - projview[2][0];
-    planes[PLANE_RT].d = projview[3][3] - projview[3][0];
+math::Frustum::Frustum(const matrix4f_t &vpmatrix)
+{
+    set(vpmatrix);
+}
 
-    planes[PLANE_FT].n.x = projview[0][3] + projview[0][2];
-    planes[PLANE_FT].n.y = projview[1][3] + projview[1][2];
-    planes[PLANE_FT].n.z = projview[2][3] + projview[2][2];
-    planes[PLANE_FT].d = projview[3][3] + projview[3][2];
+void math::Frustum::set(const matrix4f_t &vpmatrix)
+{
+    planes[PLANE_LF].n.x = vpmatrix[0][3] + vpmatrix[0][0];
+    planes[PLANE_LF].n.y = vpmatrix[1][3] + vpmatrix[1][0];
+    planes[PLANE_LF].n.z = vpmatrix[2][3] + vpmatrix[2][0];
+    planes[PLANE_LF].d = vpmatrix[3][3] + vpmatrix[3][0];
 
-    planes[PLANE_BK].n.x = projview[0][3] - projview[0][2];
-    planes[PLANE_BK].n.y = projview[1][3] - projview[1][2];
-    planes[PLANE_BK].n.z = projview[2][3] - projview[2][2];
-    planes[PLANE_BK].d = projview[3][3] - projview[3][2];
+    planes[PLANE_RT].n.x = vpmatrix[0][3] - vpmatrix[0][0];
+    planes[PLANE_RT].n.y = vpmatrix[1][3] - vpmatrix[1][0];
+    planes[PLANE_RT].n.z = vpmatrix[2][3] - vpmatrix[2][0];
+    planes[PLANE_RT].d = vpmatrix[3][3] - vpmatrix[3][0];
 
-    planes[PLANE_DN].n.x = projview[0][3] + projview[0][1];
-    planes[PLANE_DN].n.y = projview[1][3] + projview[1][1];
-    planes[PLANE_DN].n.z = projview[2][3] + projview[2][1];
-    planes[PLANE_DN].d = projview[3][3] + projview[3][1];
+    planes[PLANE_FT].n.x = vpmatrix[0][3] + vpmatrix[0][2];
+    planes[PLANE_FT].n.y = vpmatrix[1][3] + vpmatrix[1][2];
+    planes[PLANE_FT].n.z = vpmatrix[2][3] + vpmatrix[2][2];
+    planes[PLANE_FT].d = vpmatrix[3][3] + vpmatrix[3][2];
 
-    planes[PLANE_UP].n.x = projview[0][3] - projview[0][1];
-    planes[PLANE_UP].n.y = projview[1][3] - projview[1][1];
-    planes[PLANE_UP].n.z = projview[2][3] - projview[2][1];
-    planes[PLANE_UP].d = projview[3][3] - projview[3][1];
+    planes[PLANE_BK].n.x = vpmatrix[0][3] - vpmatrix[0][2];
+    planes[PLANE_BK].n.y = vpmatrix[1][3] - vpmatrix[1][2];
+    planes[PLANE_BK].n.z = vpmatrix[2][3] - vpmatrix[2][2];
+    planes[PLANE_BK].d = vpmatrix[3][3] - vpmatrix[3][2];
 
-    for(math::fplane &plane : planes) {
+    planes[PLANE_DN].n.x = vpmatrix[0][3] + vpmatrix[0][1];
+    planes[PLANE_DN].n.y = vpmatrix[1][3] + vpmatrix[1][1];
+    planes[PLANE_DN].n.z = vpmatrix[2][3] + vpmatrix[2][1];
+    planes[PLANE_DN].d = vpmatrix[3][3] + vpmatrix[3][1];
+
+    planes[PLANE_UP].n.x = vpmatrix[0][3] - vpmatrix[0][1];
+    planes[PLANE_UP].n.y = vpmatrix[1][3] - vpmatrix[1][1];
+    planes[PLANE_UP].n.z = vpmatrix[2][3] - vpmatrix[2][1];
+    planes[PLANE_UP].d = vpmatrix[3][3] - vpmatrix[3][1];
+
+    for(math::FPlane &plane : planes) {
         if(float length = glm::length(plane.n)) {
             plane.n /= length;
             plane.d /= length;
@@ -61,7 +71,7 @@ void math::Frustum::set(const matrix4f_t &projview)
 
 bool math::Frustum::point(const vector3f_t &v) const
 {
-    for(const math::fplane &plane : planes) {
+    for(const math::FPlane &plane : planes) {
         if(plane.point(v) >= 0.0f)
             continue;
         return false;

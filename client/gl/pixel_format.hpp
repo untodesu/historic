@@ -61,12 +61,7 @@ enum class PixelFormat {
 
 namespace detail
 {
-bool getPixelFormatCPU(gl::PixelFormat format, GLenum &fmt, GLenum &type);
-GLenum getPixelFormatGPU(gl::PixelFormat format);
-} // namespace detail
-} // namespace gl
-
-static inline bool gl::detail::getPixelFormatCPU(gl::PixelFormat format, GLenum &fmt, GLenum &type)
+static inline bool getPixelFormatCPU(gl::PixelFormat format, GLenum &fmt, GLenum &type)
 {
     switch(format) {
         case gl::PixelFormat::R8_UNORM:
@@ -179,7 +174,7 @@ static inline bool gl::detail::getPixelFormatCPU(gl::PixelFormat format, GLenum 
     return true;
 }
 
-static inline GLenum gl::detail::getPixelFormatGPU(gl::PixelFormat format)
+static inline GLenum getPixelFormatGPU(gl::PixelFormat format)
 {
     switch(format) {
         case gl::PixelFormat::R8_UNORM:
@@ -280,3 +275,5 @@ static inline GLenum gl::detail::getPixelFormatGPU(gl::PixelFormat format)
             return 0;
     }
 }
+} // namespace detail
+} // namespace gl
