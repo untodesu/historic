@@ -7,8 +7,8 @@
 #version 460 core
 
 in VERT_OUTPUT {
-    vec3 texcoord;
     float shade;
+    vec3 texcoord;
     vec3 normal;
 } vert;
 

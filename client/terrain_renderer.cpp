@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <client/atlas.hpp>
-#include <client/comp/chunk_mesh_component.hpp>
+#include <client/comp/static_chunk_mesh_component.hpp>
 #include <client/chunks.hpp>
 #include <client/gbuffer.hpp>
 #include <client/gl/pipeline.hpp>
@@ -68,9 +68,7 @@ void terrain_renderer::shutdown()
 
 void terrain_renderer::render()
 {
-    vector2i_t size;
-
-    const auto group = globals::registry.group(entt::get<ChunkComponent, ChunkMeshComponent>);
+    const auto group = globals::registry.group(entt::get<ChunkComponent, StaticChunkMeshComponent>);
     if(group.empty())
         return;
 
@@ -90,19 +88,21 @@ void terrain_renderer::render()
     globals::main_gbuffer.getFramebuffer().bind();
     globals::terrain_atlas.get().bind(0);
 
-    size = screen::size2i();
+    const vector2i_t size = screen::size2i();
     glViewport(0, 0, size.x, size.y);
 
     glClearColor(0.3f, 0.3f, 0.3f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    for(const auto [entity, chunk, meshes] : group.each()) {
+    for(const auto [entity, chunk, mesh] : group.each()) {
         uniforms.cpos_world = vector4f_t(world::getChunkWorldPosition(chunk.cpos), 0.0f);
         gbuffer_pass.uniforms.write(0, sizeof(GBufferPass_Uniforms), &uniforms);
 
-        if(const ChunkMesh *mesh = meshes.find(VoxelType::STATIC_CUBE)) {
-            mesh->vao.bind();
-            mesh->cmd.invoke();
+        // FIXME: an inline function maybe?
+        // FIXME: we should really support alpha testing here.
+        if(mesh.cube) {
+            mesh.cube->vao.bind();
+            mesh.cube->cmd.invoke();
         }
     }
 

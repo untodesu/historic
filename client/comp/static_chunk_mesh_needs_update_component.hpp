@@ -5,9 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <common/types.hpp>
+#include <common/voxels.hpp>
 
-struct PlayerComponent final {
-    vector2f_t head_angles {VECTOR2F_ZERO};
-    vector3f_t head_offset {VECTOR3F_ZERO};
-};
+template<VoxelType voxel_type>
+struct StaticChunkMeshNeedsUpdateComponent {};

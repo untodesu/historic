@@ -8,5 +8,5 @@
 #include <common/types.hpp>
 
 struct CreatureComponent final {
-    vector3f_t vpos { VECTOR3F_ZERO };
+    vector3f_t vpos {VECTOR3F_ZERO};
 };

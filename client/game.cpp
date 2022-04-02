@@ -36,8 +36,14 @@ void client_game::postInitialize()
     globals::voxels.build(0x01)
         .type(VoxelType::STATIC_CUBE)
         .face(VoxelFace::LF)
-            .texture("textures/stone1.png")
-            .texture("textures/stone2.png")
+            .texture("textures/cube1.png")
+            .texture("textures/cube2.png")
+            .texture("textures/cube3.png")
+            .texture("textures/cube4.png")
+            .texture("textures/cube5.png")
+            .texture("textures/cube6.png")
+            .texture("textures/cube7.png")
+            .texture("textures/cube8.png")
             .endFace()
         .face(VoxelFace::LF, VoxelFace::RT).endFace()
         .face(VoxelFace::LF, VoxelFace::FT).endFace()
@@ -67,6 +73,9 @@ void client_game::postInitialize()
             intdist(rng)
         };
         globals::chunks.trySetVoxel(vpos, 0x01, VOXEL_SET_FORCE | VOXEL_SET_UPDATE_NEIGHBOURS);
+    }
+    for(voxel_idx_t i = 0; i < CHUNK_VOLUME; i++) {
+        globals::chunks.trySetVoxel(world::getVoxelPosition({0,0,0}, world::getLocalPosition(i)), 0x01, VOXEL_SET_FORCE | VOXEL_SET_UPDATE_NEIGHBOURS);
     }
 
     // Create a player...

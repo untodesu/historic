@@ -8,7 +8,7 @@
 #include <common/world.hpp>
 
 struct ChunkComponent final {
-    chunk_pos_t cpos { 0, 0, 0 };
+    chunk_pos_t cpos {0, 0, 0};
     ChunkComponent() = default;
     ChunkComponent(const chunk_pos_t &cpos) : cpos(cpos) {}
 };

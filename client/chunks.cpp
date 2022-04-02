@@ -5,9 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <client/chunks.hpp>
-#include <client/comp/chunk_mesh_component.hpp>
+#include <client/comp/static_chunk_mesh_needs_update_component.hpp>
 #include <client/globals.hpp>
 #include <common/comp/chunk_component.hpp>
+
+static void forceFullStaticMeshUpdate(entt::entity entity)
+{
+    globals::registry.get_or_emplace<StaticChunkMeshNeedsUpdateComponent<VoxelType::STATIC_CUBE>>(entity);
+    globals::registry.get_or_emplace<StaticChunkMeshNeedsUpdateComponent<VoxelType::STATIC_FLORA>>(entity);
+    globals::registry.get_or_emplace<StaticChunkMeshNeedsUpdateComponent<VoxelType::STATIC_LIQUID>>(entity);
+    globals::registry.get_or_emplace<StaticChunkMeshNeedsUpdateComponent<VoxelType::STATIC_GAS>>(entity);
+}
 
 void ClientChunkManager::impl_onClear()
 {
@@ -25,21 +33,21 @@ bool ClientChunkManager::impl_onRemove(const chunk_pos_t &cpos, const ClientChun
 ClientChunk ClientChunkManager::impl_onCreate(const chunk_pos_t &cpos)
 {
     if(const ClientChunk *neighbour = find(cpos + chunk_pos_t(0, 0, 1)))
-        globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+        forceFullStaticMeshUpdate(neighbour->entity);
     if(const ClientChunk *neighbour = find(cpos - chunk_pos_t(0, 0, 1)))
-        globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+        forceFullStaticMeshUpdate(neighbour->entity);
     if(const ClientChunk *neighbour = find(cpos + chunk_pos_t(0, 1, 0)))
-        globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+        forceFullStaticMeshUpdate(neighbour->entity);
     if(const ClientChunk *neighbour = find(cpos - chunk_pos_t(0, 1, 0)))
-        globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+        forceFullStaticMeshUpdate(neighbour->entity);
     if(const ClientChunk *neighbour = find(cpos + chunk_pos_t(1, 0, 0)))
-        globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+        forceFullStaticMeshUpdate(neighbour->entity);
     if(const ClientChunk *neighbour = find(cpos - chunk_pos_t(1, 0, 0)))
-        globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+        forceFullStaticMeshUpdate(neighbour->entity);
     ClientChunk chunk = {};
     chunk.entity = globals::registry.create();
     globals::registry.emplace<ChunkComponent>(chunk.entity, ChunkComponent(cpos));
-    globals::registry.emplace<ChunkQueuedMeshingComponent>(chunk.entity);
+    forceFullStaticMeshUpdate(chunk.entity);
     chunk.data.fill(NULL_VOXEL);
     return std::move(chunk);
 }
@@ -53,18 +61,18 @@ void ClientChunkManager::impl_onSetVoxel(ClientChunk *chunk, const chunk_pos_t &
 {
     if(flags & VOXEL_SET_UPDATE_NEIGHBOURS) {
         if(const ClientChunk *neighbour = find(cpos + chunk_pos_t(0, 0, 1)))
-            globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+            forceFullStaticMeshUpdate(neighbour->entity);
         if(const ClientChunk *neighbour = find(cpos - chunk_pos_t(0, 0, 1)))
-            globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+            forceFullStaticMeshUpdate(neighbour->entity);
         if(const ClientChunk *neighbour = find(cpos + chunk_pos_t(0, 1, 0)))
-            globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+            forceFullStaticMeshUpdate(neighbour->entity);
         if(const ClientChunk *neighbour = find(cpos - chunk_pos_t(0, 1, 0)))
-            globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+            forceFullStaticMeshUpdate(neighbour->entity);
         if(const ClientChunk *neighbour = find(cpos + chunk_pos_t(1, 0, 0)))
-            globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+            forceFullStaticMeshUpdate(neighbour->entity);
         if(const ClientChunk *neighbour = find(cpos - chunk_pos_t(1, 0, 0)))
-            globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(neighbour->entity);
+            forceFullStaticMeshUpdate(neighbour->entity);
     }
     chunk->data.at(world::getVoxelIndex(lpos)) = voxel;
-    globals::registry.emplace_or_replace<ChunkQueuedMeshingComponent>(chunk->entity);
+    forceFullStaticMeshUpdate(chunk->entity);
 }

@@ -11,8 +11,8 @@ layout(location = 1) in uint pack_1;
 layout(location = 2) in uint pack_2;
 
 out VERT_OUTPUT {
-    vec3 texcoord;
     float shade;
+    vec3 texcoord;
     vec3 normal;
 } vert;
 
@@ -27,19 +27,21 @@ layout(std140, binding = 0) uniform gbuffer_uniforms {
 
 void main(void)
 {
-    vec3 position = vec3(0.0, 0.0, 0.0);
-    position.x = float((pack_0 >> 27) & 0x1F);
-    position.y = float((pack_0 >> 22) & 0x1F);
-    position.z = float((pack_0 >> 17) & 0x1F);
-    position += cpos_world.xyz;
-    vec2 texcoord = unpackUnorm4x8(pack_0 & 0xFFFF).xy;
-    vec3 normal = vec3(0.0, 0.0, 0.0);
-    normal.z = float((pack_1 >> 20) & 0x3FF) / 1023.0 * 2.0 - 1.0;
-    normal.y = float((pack_1 >> 10) & 0x3FF) / 1023.0 * 2.0 - 1.0;
-    normal.x = float(pack_1 & 0x3FF) / 1023.0 * 2.0 - 1.0;
-    vert.texcoord = vec3(texcoord, floor(float(pack_2) + 0.5));
-    const float shades[4] = { 0.4, 0.6, 0.8, 1.0 };
-    vert.shade = shades[(pack_1 >> 30) & 0x03];
-    vert.normal = normalize(normal);
-    gl_Position = vpmatrix * vec4(position, 1.0);
+    gl_Position = vec4(cpos_world.xyz, 1.0);
+    gl_Position.x += float((pack_0 >> 22) & 0x3FF) / 512.0 * 16.0;
+    gl_Position.y += float((pack_0 >> 12) & 0x3FF) / 512.0 * 16.0;
+    gl_Position.z += float((pack_0 >> 2) & 0x3FF) / 512.0 * 16.0;
+    gl_Position = vpmatrix * gl_Position;
+
+    vert.shade = float(pack_0 & 0x03);
+    vert.shade += 2.0; // [0.0; 3.0] -> [2.0; 5.0]
+    vert.shade /= 5.0; // [2.0; 5.0] -> [0.4; 1.0]
+
+    vert.texcoord.x = float((pack_1 >> 27) & 0x1F) / 16.0;
+    vert.texcoord.y = float((pack_1 >> 22) & 0x1F) / 16.0;
+    vert.texcoord.z = floor(float(pack_2) + 0.5);
+
+    vert.normal.x = float((pack_1 >> 14) & 0x7F) / 127.0 * 2.0 - 1.0;
+    vert.normal.y = float((pack_1 >> 7) & 0x7F) / 127.0 * 2.0 - 1.0;
+    vert.normal.z = float(pack_1 & 0x7F) / 127.0 * 2.0 - 1.0;
 }
