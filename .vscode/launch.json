@@ -11,6 +11,17 @@
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "internalConsole"
+        },
+        {
+            "name": "(Windows) Release CL",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/main/Release/vgame.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "internalConsole"
         }
     ]
 }

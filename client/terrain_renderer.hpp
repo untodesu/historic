@@ -10,5 +10,5 @@ namespace terrain_renderer
 {
 void initialize();
 void shutdown();
-void render();
+void renderWorld();
 } // namespace terrain_renderer

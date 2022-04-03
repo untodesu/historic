@@ -65,13 +65,10 @@ void client_game::postInitialize()
 
     // test
     std::mt19937_64 rng(1234);
-    std::uniform_int_distribution intdist(-64, 63);
-    for(size_t i = 0; i < 65536; i++) {
-        voxel_pos_t vpos = {
-            intdist(rng),
-            intdist(rng),
-            intdist(rng)
-        };
+    std::uniform_int_distribution intdist1(-128, 127);
+    std::uniform_int_distribution intdist2(0, 63);
+    for(size_t i = 0; i < 65536*16; i++) {
+        voxel_pos_t vpos = { intdist1(rng), intdist2(rng), intdist1(rng) };
         globals::chunks.trySetVoxel(vpos, 0x01, VOXEL_SET_FORCE | VOXEL_SET_UPDATE_NEIGHBOURS);
     }
     for(voxel_idx_t i = 0; i < CHUNK_VOLUME; i++) {
@@ -86,6 +83,7 @@ void client_game::postInitialize()
 
 void client_game::shutdown()
 {
+    terrain_mesher::shutdown();
     terrain_renderer::shutdown();
 }
 
@@ -104,9 +102,9 @@ void client_game::update()
     terrain_mesher::update();
 }
 
-void client_game::render()
+void client_game::renderWorld()
 {
-    terrain_renderer::render();
+    terrain_renderer::renderWorld();
 }
 
 void client_game::postRender()

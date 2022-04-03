@@ -13,7 +13,7 @@ void postInitialize();
 void shutdown();
 void mode(int width, int height);
 void update();
-void render();
+void renderWorld();
 void postRender();
 } // namespace client_game
 namespace game = client_game;

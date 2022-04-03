@@ -66,7 +66,32 @@ void terrain_renderer::shutdown()
     gbuffer_pass.shaders[0].destroy();
 }
 
-void terrain_renderer::render()
+// TODO: move this to common/math
+static bool isInFrustum(const math::Frustum &frustum, const vector3f_t &position, const chunk_pos_t &cpos)
+{
+    const vector3f_t wpos = world::getChunkWorldPosition(cpos);
+    if(math::isInBB(position, wpos, wpos + vector3f_t(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
+        return true;
+    if(frustum.point(wpos + vector3f_t(0.0f, 0.0f, 0.0f)))
+        return true;
+    if(frustum.point(wpos + vector3f_t(0.0f, 0.0f, CHUNK_SIZE)))
+        return true;
+    if(frustum.point(wpos + vector3f_t(0.0f, CHUNK_SIZE, 0.0f)))
+        return true;
+    if(frustum.point(wpos + vector3f_t(0.0f, CHUNK_SIZE, CHUNK_SIZE)))
+        return true;
+    if(frustum.point(wpos + vector3f_t(CHUNK_SIZE, 0.0f, 0.0f)))
+        return true;
+    if(frustum.point(wpos + vector3f_t(CHUNK_SIZE, 0.0f, CHUNK_SIZE)))
+        return true;
+    if(frustum.point(wpos + vector3f_t(CHUNK_SIZE, CHUNK_SIZE, 0.0f)))
+        return true;
+    if(frustum.point(wpos + vector3f_t(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)))
+        return true;
+    return false;
+}
+
+void terrain_renderer::renderWorld()
 {
     const auto group = globals::registry.group(entt::get<ChunkComponent, StaticChunkMeshComponent>);
     if(group.empty())
@@ -94,19 +119,21 @@ void terrain_renderer::render()
     glClearColor(0.3f, 0.3f, 0.3f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    for(const auto [entity, chunk, mesh] : group.each()) {
-        uniforms.cpos_world = vector4f_t(world::getChunkWorldPosition(chunk.cpos), 0.0f);
-        gbuffer_pass.uniforms.write(0, sizeof(GBufferPass_Uniforms), &uniforms);
+    const math::Frustum &frustum = view::frustum();
+    const vector3f_t &position = view::position();
 
-        // FIXME: an inline function maybe?
-        // FIXME: we should really support alpha testing here.
-        if(mesh.cube) {
-            mesh.cube->vao.bind();
-            mesh.cube->cmd.invoke();
+    for(const auto [entity, chunk, mesh] : group.each()) {
+        if(isInFrustum(frustum, position, chunk.cpos)) {
+            uniforms.cpos_world = vector4f_t(world::getChunkWorldPosition(chunk.cpos), 0.0f);
+            gbuffer_pass.uniforms.write(0, sizeof(GBufferPass_Uniforms), &uniforms);
+
+            // FIXME: an inline function maybe?
+            // FIXME: we should really support alpha testing here.
+            if(mesh.cube) {
+                mesh.cube->vao.bind();
+                mesh.cube->cmd.invoke();
+                globals::vertices_drawn += mesh.cube->cmd.size();
+            }
         }
     }
-
-    // FIXME: DON'T DO THIS! WE NEED A DEFERRED PASS!
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBlitNamedFramebuffer(globals::main_gbuffer.getFramebuffer().get(), 0, 0, 0, size.x, size.y, 0, 0, size.x, size.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }

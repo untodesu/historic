@@ -46,6 +46,10 @@ static void onKey(GLFWwindow *window, int key, int scancode, int action, int mod
     }
 }
 
+static void onChar(GLFWwindow *window, unsigned int unicode)
+{
+}
+
 static void onMouseButton(GLFWwindow *window, int button, int action, int mods)
 {
     switch(action) {
@@ -58,6 +62,10 @@ static void onMouseButton(GLFWwindow *window, int button, int action, int mods)
             last_mouse_button_release = button;
             break;
     }
+}
+
+static void onCursorEnter(GLFWwindow *window, int state)
+{
 }
 
 static void onCursorPos(GLFWwindow *window, double x, double y)
@@ -83,7 +91,9 @@ void input::initialize()
     spdlog::debug("input: taking over input callbacks");
 
     glfwSetKeyCallback(globals::window, onKey);
+    glfwSetCharCallback(globals::window, onChar);
     glfwSetMouseButtonCallback(globals::window, onMouseButton);
+    glfwSetCursorEnterCallback(globals::window, onCursorEnter);
     glfwSetCursorPosCallback(globals::window, onCursorPos);
     glfwSetScrollCallback(globals::window, onScroll);
 

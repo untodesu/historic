@@ -58,12 +58,14 @@ void client_app::run()
     globals::frame_count = 0;
     globals::frametime = 0.0f;
     globals::frametime_avg = 0.0f;
+    globals::vertices_drawn = 0;
 
     util::Clock<std::chrono::high_resolution_clock> clock;
     util::Clock<std::chrono::high_resolution_clock> clock_avg;
     while(!glfwWindowShouldClose(globals::window)) {
         globals::curtime = util::seconds<float>(clock.now().time_since_epoch());
         globals::frametime = util::seconds<float>(clock.reset());
+        globals::vertices_drawn = 0;
 
         if(util::seconds<float>(clock_avg.elapsed()) > 0.0625f) {
             globals::frametime_avg += globals::frametime;
@@ -78,7 +80,7 @@ void client_app::run()
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        game::render();
+        game::renderWorld();
 
         game::postRender();
 

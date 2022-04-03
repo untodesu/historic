@@ -14,7 +14,12 @@
 #include <common/comp/chunk_component.hpp>
 #include <common/math/constexpr.hpp>
 #include <common/math/crc64.hpp>
+#include <common/mixin.hpp>
 #include <common/voxels.hpp>
+#include <spdlog/spdlog.h>
+#include <thread_pool.hpp>
+#include <unordered_map>
+#include <vector>
 
 // WHY GREEDY MESHING IS GONE FOR GOOD:
 //  First. It doesn't allow us to use "random"
@@ -62,230 +67,351 @@ struct PackedVertex final {
     }
 };
 
-using TerrainMeshBuilder = MeshBuilder<GLushort, PackedVertex>;
+using PackedMeshIndex = GLushort;
+using PackedMeshBuilder = MeshBuilder<PackedMeshIndex, PackedVertex>;
+constexpr static const GLenum PACKED_MESH_INDEX = GL_UNSIGNED_SHORT;
 
-// NOTE: this method of meshing will be gone
-// as soon as I implement a model format in which
-// each face would have the ability to be hidden
-// when a specific side of the bloxel is obstructed
-// by an another non-transparent bloxel.
-static void pushCubeFace(TerrainMeshBuilder &builder, const AtlasEntry *atlas_entry, const local_pos_t &lpos, VoxelFace face, GLushort &base)
-{
-    vector3f_t face_normal;
-    local_pos_t offsets[4];
-    vector2f_t texcoords[4];
-    unsigned int shade;
-    switch(face) {
-        case VoxelFace::LF:
-            face_normal = vector3f_t(-1.0f, 0.0f, 0.0f);
-            offsets[0] = local_pos_t(0, 0, 0);
-            offsets[1] = local_pos_t(0, 0, 1);
-            offsets[2] = local_pos_t(0, 1, 1);
-            offsets[3] = local_pos_t(0, 1, 0);
-            texcoords[0] = vector2f_t(0.0f, 0.0f);
-            texcoords[1] = vector2f_t(1.0f, 0.0f);
-            texcoords[2] = vector2f_t(1.0f, 1.0f);
-            texcoords[3] = vector2f_t(0.0f, 1.0f);
-            shade = 1;
-            break;
-        case VoxelFace::RT:
-            face_normal = vector3f_t(1.0f, 0.0f, 0.0f);
-            offsets[0] = local_pos_t(1, 0, 0);
-            offsets[1] = local_pos_t(1, 1, 0);
-            offsets[2] = local_pos_t(1, 1, 1);
-            offsets[3] = local_pos_t(1, 0, 1);
-            texcoords[0] = vector2f_t(1.0f, 0.0f);
-            texcoords[1] = vector2f_t(1.0f, 1.0f);
-            texcoords[2] = vector2f_t(0.0f, 1.0f);
-            texcoords[3] = vector2f_t(0.0f, 0.0f);
-            shade = 1;
-            break;
-        case VoxelFace::FT:
-            face_normal = vector3f_t(0.0f, 0.0f, 1.0f);
-            offsets[0] = local_pos_t(0, 0, 0);
-            offsets[1] = local_pos_t(0, 1, 0);
-            offsets[2] = local_pos_t(1, 1, 0);
-            offsets[3] = local_pos_t(1, 0, 0);
-            texcoords[0] = vector2f_t(1.0f, 0.0f);
-            texcoords[1] = vector2f_t(1.0f, 1.0f);
-            texcoords[2] = vector2f_t(0.0f, 1.0f);
-            texcoords[3] = vector2f_t(0.0f, 0.0f);
-            shade = 2;
-            break;
-        case VoxelFace::BK:
-            face_normal = vector3f_t(0.0f, 0.0f, -1.0f);
-            offsets[0] = local_pos_t(0, 0, 1);
-            offsets[1] = local_pos_t(1, 0, 1);
-            offsets[2] = local_pos_t(1, 1, 1);
-            offsets[3] = local_pos_t(0, 1, 1);
-            texcoords[0] = vector2f_t(0.0f, 0.0f);
-            texcoords[1] = vector2f_t(1.0f, 0.0f);
-            texcoords[2] = vector2f_t(1.0f, 1.0f);
-            texcoords[3] = vector2f_t(0.0f, 1.0f);
-            shade = 2;
-            break;
-        case VoxelFace::UP:
-            face_normal = vector3f_t(0.0f, 1.0f, 0.0f);
-            offsets[0] = local_pos_t(0, 1, 0);
-            offsets[1] = local_pos_t(0, 1, 1);
-            offsets[2] = local_pos_t(1, 1, 1);
-            offsets[3] = local_pos_t(1, 1, 0);
-            texcoords[0] = vector2f_t(1.0f, 0.0f);
-            texcoords[1] = vector2f_t(1.0f, 1.0f);
-            texcoords[2] = vector2f_t(0.0f, 1.0f);
-            texcoords[3] = vector2f_t(0.0f, 0.0f);
-            shade = 3;
-            break;
-        case VoxelFace::DN:
-            face_normal = vector3f_t(0.0f, -1.0f, 0.0f);
-            offsets[0] = local_pos_t(0, 0, 0);
-            offsets[1] = local_pos_t(1, 0, 0);
-            offsets[2] = local_pos_t(1, 0, 1);
-            offsets[3] = local_pos_t(0, 0, 1);
-            texcoords[0] = vector2f_t(0.0f, 0.0f);
-            texcoords[1] = vector2f_t(1.0f, 0.0f);
-            texcoords[2] = vector2f_t(1.0f, 1.0f);
-            texcoords[3] = vector2f_t(0.0f, 1.0f);
-            shade = 0;
-            break;
-        default:
-            // oopsie
-            return;
+class WorkerContext final : mixin::NoCopy {
+public:
+    WorkerContext(const chunk_pos_t &cpos, thread_pool &pool)
+        : cancelled(false), cpos(cpos), cache()
+    {
+        cacheChunk(cpos);
+        cacheChunk(cpos + chunk_pos_t(0, 0, 1));
+        cacheChunk(cpos - chunk_pos_t(0, 0, 1));
+        cacheChunk(cpos + chunk_pos_t(0, 1, 0));
+        cacheChunk(cpos - chunk_pos_t(0, 1, 0));
+        cacheChunk(cpos + chunk_pos_t(1, 0, 0));
+        cacheChunk(cpos - chunk_pos_t(1, 0, 0));
+        future = pool.submit(std::bind(&WorkerContext::run, this));
     }
 
-    builder.vertex(PackedVertex(vector3f_t(lpos + offsets[0]), texcoords[0] * atlas_entry->max_texcoord, shade, face_normal, atlas_entry->entry_index));
-    builder.vertex(PackedVertex(vector3f_t(lpos + offsets[1]), texcoords[1] * atlas_entry->max_texcoord, shade, face_normal, atlas_entry->entry_index));
-    builder.vertex(PackedVertex(vector3f_t(lpos + offsets[2]), texcoords[2] * atlas_entry->max_texcoord, shade, face_normal, atlas_entry->entry_index));
-    builder.vertex(PackedVertex(vector3f_t(lpos + offsets[3]), texcoords[3] * atlas_entry->max_texcoord, shade, face_normal, atlas_entry->entry_index));
-    builder.index(base + 0);
-    builder.index(base + 1);
-    builder.index(base + 2);
-    builder.index(base + 2);
-    builder.index(base + 3);
-    builder.index(base + 0);
-    base += 4;
-}
-
-static inline bool isFaceTransparent(const chunk_pos_t &cpos, const local_pos_t &lpos, voxel_t compare, VoxelFace face)
-{
-    const voxel_pos_t &vpos = world::getVoxelPosition(cpos, lpos);
-    if(const ClientChunk *chunk = globals::chunks.find(world::getChunkPosition(vpos))) {
-        const voxel_t voxel = chunk->data.at(world::getVoxelIndex(world::getLocalPosition(vpos)));
-        if(compare != voxel) {
-            if(const VoxelDefEntry *def = globals::voxels.find(voxel)) {
-                const auto def_face = def->faces.find(face);
-                if(def_face != def->faces.cend())
-                    return def_face->second.transparent;
-                return true;
-            }
-
-            return true;
-        }
-
-        // Voxels with the same type that are contiguous
-        // should have no faces between each other.
-        return false;
+    void cancel()
+    {
+        cancelled = true;
     }
 
-    return true;
-}
-#include <sstream>
-static void doNaiveMeshing(TerrainMeshBuilder &builder, const chunk_pos_t &cpos)
-{
-    GLushort base = 0;
-    if(const ClientChunk *chunk = globals::chunks.find(cpos)) {
-        for(voxel_idx_t i = 0; i < CHUNK_VOLUME; i++) {
-            const voxel_t voxel = chunk->data.at(i);
-            if(const VoxelDefEntry *def = globals::voxels.find(voxel)) {
-                const local_pos_t lpos = world::getLocalPosition(i);
-                const voxel_pos_t vpos = world::getVoxelPosition(cpos, lpos);
+    bool isComplete() const
+    {
+        return future.valid() && future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+    }
 
-                // Choosing a random texture - we just hash the bastard.
-                const int64_t vpos_sum = vpos.x + vpos.y + vpos.z;
-                const hash_t vpos_hash = math::crc64(&vpos_sum, sizeof(vpos_sum));
+    bool isCancelled() const
+    {
+        return cancelled;
+    }
 
-                for(const auto &def_face : def->faces) {
-                    if(const AtlasEntry *entry = globals::terrain_atlas.find(def_face.second.textures[vpos_hash % def_face.second.textures.size()])) {
-                        VoxelFace neighbour_face = VoxelFace::LF;
-                        local_pos_t neighbour_lpos = { 0, 0, 0 };
-                        switch(def_face.first) {
-                            case VoxelFace::LF:
-                                neighbour_face = VoxelFace::RT;
-                                neighbour_lpos = lpos - local_pos_t(1, 0, 0);
-                                break;
-                            case VoxelFace::RT:
-                                neighbour_face = VoxelFace::LF;
-                                neighbour_lpos = lpos + local_pos_t(1, 0, 0);
-                                break;
-                            case VoxelFace::FT:
-                                neighbour_face = VoxelFace::BK;
-                                neighbour_lpos = lpos - local_pos_t(0, 0, 1);
-                                break;
-                            case VoxelFace::BK:
-                                neighbour_face = VoxelFace::FT;
-                                neighbour_lpos = lpos + local_pos_t(0, 0, 1);
-                                break;
-                            case VoxelFace::UP:
-                                neighbour_face = VoxelFace::DN;
-                                neighbour_lpos = lpos + local_pos_t(0, 1, 0);
-                                break;
-                            case VoxelFace::DN:
-                                neighbour_face = VoxelFace::UP;
-                                neighbour_lpos = lpos - local_pos_t(0, 1, 0);
-                                break;
+    const chunk_pos_t &getChunkPos() const
+    {
+        return cpos;
+    }
+
+    const PackedMeshBuilder &getBuilder() const
+    {
+        return builder;
+    }
+
+    const size_t getMemoryUsage() const
+    {
+        return sizeof(WorkerContext) + sizeof(chunk_t) * cache.size();
+    }
+
+private:
+    void run()
+    {
+        PackedMeshIndex base = 0;
+        const auto chunk = cache.find(cpos);
+        if(chunk != cache.cend()) {
+            for(voxel_idx_t i = 0; i < CHUNK_VOLUME; i++) {
+                const voxel_t voxel = chunk->second.at(i);
+                if(const VoxelDefEntry *def = globals::voxels.find(voxel)) {
+                    const local_pos_t lpos = world::getLocalPosition(i);
+                    const voxel_pos_t vpos = world::getVoxelPosition(cpos, lpos);
+
+                    // Choosing a random texture - we just hash the bastard.
+                    const int64_t vpos_sum = vpos.x + vpos.y + vpos.z;
+                    const hash_t vpos_hash = math::crc64(&vpos_sum, sizeof(vpos_sum));
+
+                    for(const auto &def_face : def->faces) {
+                        if(const AtlasEntry *entry = globals::terrain_atlas.find(def_face.second.textures[vpos_hash % def_face.second.textures.size()])) {
+                            VoxelFace neighbour_face = VoxelFace::LF;
+                            local_pos_t neighbour_lpos = { 0, 0, 0 };
+                            switch(def_face.first) {
+                                case VoxelFace::LF:
+                                    neighbour_face = VoxelFace::RT;
+                                    neighbour_lpos = lpos - local_pos_t(1, 0, 0);
+                                    break;
+                                case VoxelFace::RT:
+                                    neighbour_face = VoxelFace::LF;
+                                    neighbour_lpos = lpos + local_pos_t(1, 0, 0);
+                                    break;
+                                case VoxelFace::FT:
+                                    neighbour_face = VoxelFace::BK;
+                                    neighbour_lpos = lpos - local_pos_t(0, 0, 1);
+                                    break;
+                                case VoxelFace::BK:
+                                    neighbour_face = VoxelFace::FT;
+                                    neighbour_lpos = lpos + local_pos_t(0, 0, 1);
+                                    break;
+                                case VoxelFace::UP:
+                                    neighbour_face = VoxelFace::DN;
+                                    neighbour_lpos = lpos + local_pos_t(0, 1, 0);
+                                    break;
+                                case VoxelFace::DN:
+                                    neighbour_face = VoxelFace::UP;
+                                    neighbour_lpos = lpos - local_pos_t(0, 1, 0);
+                                    break;
+                            }
+
+                            if(!checkTransparency(cpos, neighbour_lpos, voxel, neighbour_face))
+                                continue;
+                            pushFace(entry, lpos, def_face.first, base);
                         }
-
-                        if(!isFaceTransparent(cpos, neighbour_lpos, voxel, neighbour_face))
-                            continue;
-                        pushCubeFace(builder, entry, lpos, def_face.first, base);
                     }
                 }
             }
         }
     }
+
+private:
+    bool checkTransparency(const chunk_pos_t &cpos, const local_pos_t &lpos, voxel_t compare_voxel, VoxelFace compare_face)
+    {
+        const voxel_pos_t vpos = world::getVoxelPosition(cpos, lpos);
+        const auto chunk = cache.find(world::getChunkPosition(vpos));
+        if(chunk != cache.cend()) {
+            const voxel_t voxel = chunk->second.at(world::getVoxelIndex(world::getLocalPosition(vpos)));
+            if(compare_voxel != voxel) {
+                if(const VoxelDefEntry *def = globals::voxels.find(voxel)) {
+                    const auto face = def->faces.find(compare_face);
+                    if(face != def->faces.cend())
+                        return face->second.transparent;
+                    return true;
+                }
+
+                return true;
+            }
+
+            // Assuming contiguous voxels
+            // with the same type always have
+            // no faces inbetween each other.
+            return false;
+        }
+
+        return true;
+    }
+
+    void pushFace(const AtlasEntry *atlas_entry, const local_pos_t &lpos, VoxelFace face, PackedMeshIndex &base)
+    {
+        vector3f_t face_normal;
+        local_pos_t offsets[4];
+        vector2f_t texcoords[4];
+        unsigned int shade;
+        switch(face) {
+            case VoxelFace::LF:
+                face_normal = vector3f_t(-1.0f, 0.0f, 0.0f);
+                offsets[0] = local_pos_t(0, 0, 0);
+                offsets[1] = local_pos_t(0, 0, 1);
+                offsets[2] = local_pos_t(0, 1, 1);
+                offsets[3] = local_pos_t(0, 1, 0);
+                texcoords[0] = vector2f_t(0.0f, 0.0f);
+                texcoords[1] = vector2f_t(1.0f, 0.0f);
+                texcoords[2] = vector2f_t(1.0f, 1.0f);
+                texcoords[3] = vector2f_t(0.0f, 1.0f);
+                shade = 1;
+                break;
+            case VoxelFace::RT:
+                face_normal = vector3f_t(1.0f, 0.0f, 0.0f);
+                offsets[0] = local_pos_t(1, 0, 0);
+                offsets[1] = local_pos_t(1, 1, 0);
+                offsets[2] = local_pos_t(1, 1, 1);
+                offsets[3] = local_pos_t(1, 0, 1);
+                texcoords[0] = vector2f_t(1.0f, 0.0f);
+                texcoords[1] = vector2f_t(1.0f, 1.0f);
+                texcoords[2] = vector2f_t(0.0f, 1.0f);
+                texcoords[3] = vector2f_t(0.0f, 0.0f);
+                shade = 1;
+                break;
+            case VoxelFace::FT:
+                face_normal = vector3f_t(0.0f, 0.0f, 1.0f);
+                offsets[0] = local_pos_t(0, 0, 0);
+                offsets[1] = local_pos_t(0, 1, 0);
+                offsets[2] = local_pos_t(1, 1, 0);
+                offsets[3] = local_pos_t(1, 0, 0);
+                texcoords[0] = vector2f_t(1.0f, 0.0f);
+                texcoords[1] = vector2f_t(1.0f, 1.0f);
+                texcoords[2] = vector2f_t(0.0f, 1.0f);
+                texcoords[3] = vector2f_t(0.0f, 0.0f);
+                shade = 2;
+                break;
+            case VoxelFace::BK:
+                face_normal = vector3f_t(0.0f, 0.0f, -1.0f);
+                offsets[0] = local_pos_t(0, 0, 1);
+                offsets[1] = local_pos_t(1, 0, 1);
+                offsets[2] = local_pos_t(1, 1, 1);
+                offsets[3] = local_pos_t(0, 1, 1);
+                texcoords[0] = vector2f_t(0.0f, 0.0f);
+                texcoords[1] = vector2f_t(1.0f, 0.0f);
+                texcoords[2] = vector2f_t(1.0f, 1.0f);
+                texcoords[3] = vector2f_t(0.0f, 1.0f);
+                shade = 2;
+                break;
+            case VoxelFace::UP:
+                face_normal = vector3f_t(0.0f, 1.0f, 0.0f);
+                offsets[0] = local_pos_t(0, 1, 0);
+                offsets[1] = local_pos_t(0, 1, 1);
+                offsets[2] = local_pos_t(1, 1, 1);
+                offsets[3] = local_pos_t(1, 1, 0);
+                texcoords[0] = vector2f_t(1.0f, 0.0f);
+                texcoords[1] = vector2f_t(1.0f, 1.0f);
+                texcoords[2] = vector2f_t(0.0f, 1.0f);
+                texcoords[3] = vector2f_t(0.0f, 0.0f);
+                shade = 3;
+                break;
+            case VoxelFace::DN:
+                face_normal = vector3f_t(0.0f, -1.0f, 0.0f);
+                offsets[0] = local_pos_t(0, 0, 0);
+                offsets[1] = local_pos_t(1, 0, 0);
+                offsets[2] = local_pos_t(1, 0, 1);
+                offsets[3] = local_pos_t(0, 0, 1);
+                texcoords[0] = vector2f_t(0.0f, 0.0f);
+                texcoords[1] = vector2f_t(1.0f, 0.0f);
+                texcoords[2] = vector2f_t(1.0f, 1.0f);
+                texcoords[3] = vector2f_t(0.0f, 1.0f);
+                shade = 0;
+                break;
+            default:
+                // oopsie
+                return;
+        }
+
+        builder.vertex(PackedVertex(vector3f_t(lpos + offsets[0]), texcoords[0] * atlas_entry->max_texcoord, shade, face_normal, atlas_entry->entry_index));
+        builder.vertex(PackedVertex(vector3f_t(lpos + offsets[1]), texcoords[1] * atlas_entry->max_texcoord, shade, face_normal, atlas_entry->entry_index));
+        builder.vertex(PackedVertex(vector3f_t(lpos + offsets[2]), texcoords[2] * atlas_entry->max_texcoord, shade, face_normal, atlas_entry->entry_index));
+        builder.vertex(PackedVertex(vector3f_t(lpos + offsets[3]), texcoords[3] * atlas_entry->max_texcoord, shade, face_normal, atlas_entry->entry_index));
+        builder.index(base + 0);
+        builder.index(base + 1);
+        builder.index(base + 2);
+        builder.index(base + 2);
+        builder.index(base + 3);
+        builder.index(base + 0);
+        base += 4;
+    }
+
+    void cacheChunk(const chunk_pos_t &cpos)
+    {
+        if(const ClientChunk *chunk = globals::chunks.find(cpos)) {
+            // Each worker generates a mesh based on
+            // a cached snapshot of the chunk and its
+            // neighbouring chunks. It's memory inefficient
+            // but a thread-safe solution.
+            cache[cpos] = chunk->data;
+        }
+    }
+
+private:
+    bool cancelled;
+    chunk_pos_t cpos;
+    PackedMeshBuilder builder;
+    std::unordered_map<chunk_pos_t, chunk_t> cache;
+    std::shared_future<bool> future;
+};
+
+#if defined(NDEBUG)
+constexpr static const size_t MAX_CHUNKS_PER_FRAME = 16;
+constexpr static const size_t WORKER_POOL_SIZE = 4;
+#else
+// Debug builds for Win32 have a distinctive feature
+// to completely and absolutely shit themselves wihen
+// there's a lot of threading going on. I guess that's
+// why Source tries to be as less threaded as possible.
+constexpr static const size_t MAX_CHUNKS_PER_FRAME = 4;
+constexpr static const size_t WORKER_POOL_SIZE = 1;
+#endif
+
+static thread_pool workers_pool(WORKER_POOL_SIZE);
+static std::vector<WorkerContext *> workers;
+static size_t memory_usage = 0;
+
+void terrain_mesher::shutdown()
+{
+    for(WorkerContext *worker : workers)
+        worker->cancel();
+    workers_pool.wait_for_tasks();
+    for(WorkerContext *worker : workers)
+        delete worker;
+    workers.clear();
+    memory_usage = 0;
 }
 
 void terrain_mesher::update()
 {
-    const auto cube_group = globals::registry.group<StaticChunkMeshNeedsUpdateComponent<VoxelType::STATIC_CUBE>>(entt::get<ChunkComponent>);
-    for(const auto [entity, chunk] : cube_group.each()) {
-        StaticChunkMeshComponent &mesh = globals::registry.get_or_emplace<StaticChunkMeshComponent>(entity);
+    size_t count = 0;
+    auto worker = workers.begin();
+    while(worker != workers.end()) {
+        if((*worker)->isComplete()) {
+            const PackedMeshBuilder &builder = (*worker)->getBuilder();
 
-        TerrainMeshBuilder builder;
-        doNaiveMeshing(builder, chunk.cpos);
+            if(const ClientChunk *chunk = globals::chunks.find((*worker)->getChunkPos())) {
+                do {
+                    StaticChunkMeshComponent &mesh = globals::registry.get_or_emplace<StaticChunkMeshComponent>(chunk->entity);
 
-        if(!builder.empty()) {
-            if(!mesh.cube) {
-                mesh.cube = std::make_unique<Mesh>();
-                mesh.cube->ibo.create();
-                mesh.cube->vbo.create();
-                mesh.cube->vao.create();
-                mesh.cube->cmd.create();
+                    if(builder.empty()) {
+                        mesh.cube = nullptr;
+                        break;
+                    }
 
-                mesh.cube->vao.setIndexBuffer(mesh.cube->ibo);
-                mesh.cube->vao.setVertexBuffer(0, mesh.cube->vbo, sizeof(PackedVertex));
+                    if(!mesh.cube) {
+                        mesh.cube = std::make_unique<Mesh>();
+                        mesh.cube->ibo.create();
+                        mesh.cube->vbo.create();
+                        mesh.cube->vao.create();
+                        mesh.cube->cmd.create();
 
-                mesh.cube->vao.enableAttribute(0, true);
-                mesh.cube->vao.enableAttribute(1, true);
-                mesh.cube->vao.enableAttribute(2, true);
+                        mesh.cube->vao.setIndexBuffer(mesh.cube->ibo);
+                        mesh.cube->vao.setVertexBuffer(0, mesh.cube->vbo, sizeof(PackedVertex));
 
-                mesh.cube->vao.setAttributeFormat(0, GL_UNSIGNED_INT, 1, offsetof(PackedVertex, pack_0), false);
-                mesh.cube->vao.setAttributeFormat(1, GL_UNSIGNED_INT, 1, offsetof(PackedVertex, pack_1), false);
-                mesh.cube->vao.setAttributeFormat(2, GL_UNSIGNED_INT, 1, offsetof(PackedVertex, pack_2), false);
+                        mesh.cube->vao.enableAttribute(0, true);
+                        mesh.cube->vao.enableAttribute(1, true);
+                        mesh.cube->vao.enableAttribute(2, true);
 
-                mesh.cube->vao.setAttributeBinding(0, 0);
-                mesh.cube->vao.setAttributeBinding(1, 0);
-                mesh.cube->vao.setAttributeBinding(2, 0);
+                        mesh.cube->vao.setAttributeFormat(0, GL_UNSIGNED_INT, 1, offsetof(PackedVertex, pack_0), false);
+                        mesh.cube->vao.setAttributeFormat(1, GL_UNSIGNED_INT, 1, offsetof(PackedVertex, pack_1), false);
+                        mesh.cube->vao.setAttributeFormat(2, GL_UNSIGNED_INT, 1, offsetof(PackedVertex, pack_2), false);
+
+                        mesh.cube->vao.setAttributeBinding(0, 0);
+                        mesh.cube->vao.setAttributeBinding(1, 0);
+                        mesh.cube->vao.setAttributeBinding(2, 0);
+                    }
+
+                    mesh.cube->ibo.resize(builder.isize(), builder.idata(), GL_STATIC_DRAW);
+                    mesh.cube->vbo.resize(builder.vsize(), builder.vdata(), GL_STATIC_DRAW);
+                    mesh.cube->cmd.set(GL_TRIANGLES, PACKED_MESH_INDEX, builder.icount(), 1, 0, 0, 0);
+
+                    count++;
+                } while(false);
             }
 
-            mesh.cube->ibo.resize(builder.isize(), builder.idata(), GL_STATIC_DRAW);
-            mesh.cube->vbo.resize(builder.vsize(), builder.vdata(), GL_STATIC_DRAW);
-            mesh.cube->cmd.set(GL_TRIANGLES, GL_UNSIGNED_SHORT, builder.icount(), 1, 0, 0, 0);
+            memory_usage -= (*worker)->getMemoryUsage();
+
+            delete (*worker);
+            worker = workers.erase(worker);
+
+            if(count >= MAX_CHUNKS_PER_FRAME)
+                break;
+            continue;
         }
 
-        globals::registry.remove<StaticChunkMeshNeedsUpdateComponent<VoxelType::STATIC_CUBE>>(entity);
-
-        spdlog::info("{}", cube_group.size());
-        break;
+        worker++;
     }
+
+    const auto group = globals::registry.group<StaticChunkMeshNeedsUpdateComponent<VoxelType::STATIC_CUBE>>(entt::get<ChunkComponent>);
+    for(const auto [entity, chunk] : group.each()) {
+        memory_usage += workers.emplace_back(new WorkerContext(chunk.cpos, workers_pool))->getMemoryUsage();
+        globals::registry.remove<StaticChunkMeshNeedsUpdateComponent<VoxelType::STATIC_CUBE>>(entity);
+    }
+}
+
+size_t terrain_mesher::getMemoryUsage()
+{
+    return memory_usage;
 }
