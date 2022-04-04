@@ -65,14 +65,10 @@ void client_game::postInitialize()
 
     // test
     std::mt19937_64 rng(1234);
-    std::uniform_int_distribution intdist1(-128, 127);
-    std::uniform_int_distribution intdist2(0, 63);
-    for(size_t i = 0; i < 65536*16; i++) {
-        voxel_pos_t vpos = { intdist1(rng), intdist2(rng), intdist1(rng) };
+    std::uniform_int_distribution intdist(-64, 63);
+    for(size_t i = 0; i < 65536; i++) {
+        voxel_pos_t vpos = { intdist(rng), intdist(rng), intdist(rng) };
         globals::chunks.trySetVoxel(vpos, 0x01, VOXEL_SET_FORCE | VOXEL_SET_UPDATE_NEIGHBOURS);
-    }
-    for(voxel_idx_t i = 0; i < CHUNK_VOLUME; i++) {
-        globals::chunks.trySetVoxel(world::getVoxelPosition({0,0,0}, world::getLocalPosition(i)), 0x01, VOXEL_SET_FORCE | VOXEL_SET_UPDATE_NEIGHBOURS);
     }
 
     // Create a player...

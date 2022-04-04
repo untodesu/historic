@@ -11,7 +11,6 @@ layout(location = 1) in uint pack_1;
 layout(location = 2) in uint pack_2;
 
 out VERT_OUTPUT {
-    float shade;
     vec3 texcoord;
     vec3 normal;
 } vert;
@@ -32,10 +31,6 @@ void main(void)
     gl_Position.y += float((pack_0 >> 12) & 0x3FF) / 512.0 * 16.0;
     gl_Position.z += float((pack_0 >> 2) & 0x3FF) / 512.0 * 16.0;
     gl_Position = vpmatrix * gl_Position;
-
-    vert.shade = float(pack_0 & 0x03);
-    vert.shade += 2.0; // [0.0; 3.0] -> [2.0; 5.0]
-    vert.shade /= 5.0; // [2.0; 5.0] -> [0.4; 1.0]
 
     vert.texcoord.x = float((pack_1 >> 27) & 0x1F) / 16.0;
     vert.texcoord.y = float((pack_1 >> 22) & 0x1F) / 16.0;

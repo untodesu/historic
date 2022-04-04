@@ -7,7 +7,6 @@
 #version 460 core
 
 in VERT_OUTPUT {
-    float shade;
     vec3 texcoord;
     vec3 normal;
 } vert;
@@ -20,6 +19,5 @@ layout(binding = 0) uniform sampler2DArray atlas;
 void main(void)
 {
     gbuffer_albedo = texture(atlas, vert.texcoord);
-    gbuffer_albedo.rgb *= vert.shade;
     gbuffer_normal = normalize(vert.normal);
 }
