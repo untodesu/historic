@@ -7,6 +7,7 @@ target_sources(client PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/chunks.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/client_app.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/config.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/deferred_pass.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/game.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gbuffer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/globals.cpp"
@@ -15,7 +16,7 @@ target_sources(client PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/player_look.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/player_move.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/screen.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/terrain_mesher.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/terrain_renderer.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/view.cpp")
+    "${CMAKE_CURRENT_LIST_DIR}/view.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/voxel_mesher.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/voxel_renderer.cpp")
 add_subdirectory(gl)

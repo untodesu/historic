@@ -12,8 +12,8 @@
 #include <client/gl/sampler.hpp>
 #include <client/globals.hpp>
 #include <client/screen.hpp>
-#include <client/terrain_renderer.hpp>
 #include <client/view.hpp>
+#include <client/voxel_renderer.hpp>
 #include <common/comp/chunk_component.hpp>
 #include <common/util/include.hpp>
 #include <exception>
@@ -29,41 +29,41 @@ static struct {
     gl::Pipeline pipeline;
     gl::Sampler sampler;
     gl::Buffer uniforms;
-} gbuffer_pass;
+} gbuffer_ctx;
 
-void terrain_renderer::initialize()
+void voxel_renderer::initialize()
 {
     std::string glsl_source;
 
-    gbuffer_pass.shaders[0].create();
-    gbuffer_pass.shaders[1].create();
+    gbuffer_ctx.shaders[0].create();
+    gbuffer_ctx.shaders[1].create();
 
-    if(!util::include("shaders/gbuffer_terrain.vert", glsl_source) || !gbuffer_pass.shaders[0].glsl(GL_VERTEX_SHADER, glsl_source))
+    if(!util::include("shaders/gbuffer_terrain.vert", glsl_source) || !gbuffer_ctx.shaders[0].glsl(GL_VERTEX_SHADER, glsl_source))
         std::terminate();
-    if(!util::include("shaders/gbuffer_terrain.frag", glsl_source) || !gbuffer_pass.shaders[1].glsl(GL_FRAGMENT_SHADER, glsl_source))
+    if(!util::include("shaders/gbuffer_terrain.frag", glsl_source) || !gbuffer_ctx.shaders[1].glsl(GL_FRAGMENT_SHADER, glsl_source))
         std::terminate();
 
-    gbuffer_pass.pipeline.create();
-    gbuffer_pass.pipeline.stage(gbuffer_pass.shaders[0]);
-    gbuffer_pass.pipeline.stage(gbuffer_pass.shaders[1]);
+    gbuffer_ctx.pipeline.create();
+    gbuffer_ctx.pipeline.stage(gbuffer_ctx.shaders[0]);
+    gbuffer_ctx.pipeline.stage(gbuffer_ctx.shaders[1]);
 
-    gbuffer_pass.sampler.create();
-    gbuffer_pass.sampler.parameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
-    gbuffer_pass.sampler.parameter(GL_TEXTURE_WRAP_T, GL_REPEAT);
-    gbuffer_pass.sampler.parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    gbuffer_pass.sampler.parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    gbuffer_ctx.sampler.create();
+    gbuffer_ctx.sampler.parameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
+    gbuffer_ctx.sampler.parameter(GL_TEXTURE_WRAP_T, GL_REPEAT);
+    gbuffer_ctx.sampler.parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    gbuffer_ctx.sampler.parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    gbuffer_pass.uniforms.create();
-    gbuffer_pass.uniforms.storage(sizeof(GBufferPass_Uniforms), nullptr, GL_DYNAMIC_STORAGE_BIT);
+    gbuffer_ctx.uniforms.create();
+    gbuffer_ctx.uniforms.storage(sizeof(GBufferPass_Uniforms), nullptr, GL_DYNAMIC_STORAGE_BIT);
 }
 
-void terrain_renderer::shutdown()
+void voxel_renderer::shutdown()
 {
-    gbuffer_pass.uniforms.destroy();
-    gbuffer_pass.sampler.destroy();
-    gbuffer_pass.pipeline.destroy();
-    gbuffer_pass.shaders[1].destroy();
-    gbuffer_pass.shaders[0].destroy();
+    gbuffer_ctx.uniforms.destroy();
+    gbuffer_ctx.sampler.destroy();
+    gbuffer_ctx.pipeline.destroy();
+    gbuffer_ctx.shaders[1].destroy();
+    gbuffer_ctx.shaders[0].destroy();
 }
 
 // TODO: move this to common/math
@@ -91,7 +91,7 @@ static bool isInFrustum(const math::Frustum &frustum, const vector3f_t &position
     return false;
 }
 
-void terrain_renderer::renderWorld()
+void voxel_renderer::renderWorld()
 {
     const auto group = globals::registry.group(entt::get<ChunkComponent, StaticChunkMeshComponent>);
     if(group.empty())
@@ -107,17 +107,19 @@ void terrain_renderer::renderWorld()
     GBufferPass_Uniforms uniforms = {};
     uniforms.vpmatrix = view::viewProjectionMatrix();
 
-    gbuffer_pass.pipeline.bind();
-    gbuffer_pass.sampler.bind(0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, gbuffer_pass.uniforms.get());
+    gbuffer_ctx.pipeline.bind();
+    gbuffer_ctx.sampler.bind(0);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, gbuffer_ctx.uniforms.get());
+
     globals::main_gbuffer.getFramebuffer().bind();
+    glClearColor(0.3f, 0.3f, 0.3f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     globals::terrain_atlas.get().bind(0);
 
     const vector2i_t size = screen::size2i();
     glViewport(0, 0, size.x, size.y);
-
-    glClearColor(0.3f, 0.3f, 0.3f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     const math::Frustum &frustum = view::frustum();
     const vector3f_t &position = view::position();
@@ -125,7 +127,7 @@ void terrain_renderer::renderWorld()
     for(const auto [entity, chunk, mesh] : group.each()) {
         if(isInFrustum(frustum, position, chunk.cpos)) {
             uniforms.cpos_world = vector4f_t(world::getChunkWorldPosition(chunk.cpos), 0.0f);
-            gbuffer_pass.uniforms.write(0, sizeof(GBufferPass_Uniforms), &uniforms);
+            gbuffer_ctx.uniforms.write(0, sizeof(GBufferPass_Uniforms), &uniforms);
 
             // FIXME: an inline function maybe?
             // FIXME: we should really support alpha testing here.

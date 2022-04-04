@@ -12,12 +12,12 @@ in VERT_OUTPUT {
 } vert;
 
 layout(location = 0) out vec4 gbuffer_albedo;
-layout(location = 1) out vec3 gbuffer_normal;
+layout(location = 1) out vec4 gbuffer_normal;
 
 layout(binding = 0) uniform sampler2DArray atlas;
 
 void main(void)
 {
     gbuffer_albedo = texture(atlas, vert.texcoord);
-    gbuffer_normal = normalize(vert.normal);
+    gbuffer_normal = vec4(normalize(vert.normal), 1.0);
 }

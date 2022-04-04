@@ -6,15 +6,16 @@
  */
 #include <client/atlas.hpp>
 #include <client/chunks.hpp>
+#include <client/deferred_pass.hpp>
 #include <client/game.hpp>
 #include <client/gbuffer.hpp>
 #include <client/globals.hpp>
 #include <client/input.hpp>
 #include <client/player_look.hpp>
 #include <client/player_move.hpp>
-#include <client/terrain_mesher.hpp>
-#include <client/terrain_renderer.hpp>
 #include <client/view.hpp>
+#include <client/voxel_mesher.hpp>
+#include <client/voxel_renderer.hpp>
 #include <common/comp/creature_component.hpp>
 #include <common/comp/player_component.hpp>
 #include <common/voxels.hpp>
@@ -24,7 +25,8 @@
 
 void client_game::initialize()
 {
-    terrain_renderer::initialize();
+    voxel_renderer::initialize();
+    deferred_pass::initialize();
 
 }
 
@@ -79,13 +81,15 @@ void client_game::postInitialize()
 
 void client_game::shutdown()
 {
-    terrain_mesher::shutdown();
-    terrain_renderer::shutdown();
+    voxel_mesher::shutdown();
+
+    deferred_pass::shutdown();
+    voxel_renderer::shutdown();
 }
 
 void client_game::mode(int width, int height)
 {
-
+    globals::main_gbuffer.create(width, height);
 }
 
 void client_game::update()
@@ -95,12 +99,13 @@ void client_game::update()
 
     view::update();
 
-    terrain_mesher::update();
+    voxel_mesher::update();
 }
 
 void client_game::renderWorld()
 {
-    terrain_renderer::renderWorld();
+    voxel_renderer::renderWorld();
+    deferred_pass::renderWorld();
 }
 
 void client_game::postRender()

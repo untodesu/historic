@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
+#include <client/gl/fwd.hpp>
 #include <common/types.hpp>
 #include <entt/entt.hpp>
 

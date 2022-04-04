@@ -39,4 +39,5 @@ void main(void)
     vert.normal.x = float((pack_1 >> 14) & 0x7F) / 127.0 * 2.0 - 1.0;
     vert.normal.y = float((pack_1 >> 7) & 0x7F) / 127.0 * 2.0 - 1.0;
     vert.normal.z = float(pack_1 & 0x7F) / 127.0 * 2.0 - 1.0;
+    vert.normal = normalize(vert.normal);
 }

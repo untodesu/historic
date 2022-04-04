@@ -6,9 +6,9 @@
  */
 #pragma once
 
-namespace terrain_renderer
+namespace deferred_pass
 {
 void initialize();
 void shutdown();
 void renderWorld();
-} // namespace terrain_renderer
+} // namespace deferred_pass

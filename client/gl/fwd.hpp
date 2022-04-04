@@ -5,11 +5,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
-#include <common/types.hpp>
 
-namespace terrain_mesher
+namespace gl
 {
-void shutdown();
-void update();
-size_t getMemoryUsage();
-} // namespace terrain_mesher
+class Buffer;
+class DrawCommand;
+class Framebuffer;
+class Pipeline;
+class Renderbuffer;
+class Sampler;
+class Shader;
+class Texture;
+class VertexArray;
+} // namespace gl

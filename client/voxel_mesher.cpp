@@ -10,7 +10,7 @@
 #include <client/comp/static_chunk_mesh_needs_update_component.hpp>
 #include <client/globals.hpp>
 #include <client/mesh_builder.hpp>
-#include <client/terrain_mesher.hpp>
+#include <client/voxel_mesher.hpp>
 #include <common/comp/chunk_component.hpp>
 #include <common/math/constexpr.hpp>
 #include <common/math/crc64.hpp>
@@ -386,7 +386,7 @@ static thread_pool workers_pool(WORKER_POOL_SIZE);
 static std::vector<IWorkerContext *> workers;
 static size_t memory_usage = 0;
 
-void terrain_mesher::shutdown()
+void voxel_mesher::shutdown()
 {
     for(IWorkerContext *worker : workers)
         worker->cancelTask();
@@ -410,7 +410,7 @@ static void queueNewWorkers(size_t &worker_count)
     }
 }
 
-void terrain_mesher::update()
+void voxel_mesher::update()
 {
     size_t worker_count;
 
