@@ -16,6 +16,7 @@ target_sources(client PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/player_look.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/player_move.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/screen.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/screenshots.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/view.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/voxel_mesher.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/voxel_renderer.cpp")

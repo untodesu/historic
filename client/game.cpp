@@ -13,6 +13,7 @@
 #include <client/input.hpp>
 #include <client/player_look.hpp>
 #include <client/player_move.hpp>
+#include <client/screenshots.hpp>
 #include <client/view.hpp>
 #include <client/voxel_mesher.hpp>
 #include <client/voxel_renderer.hpp>
@@ -110,6 +111,8 @@ void client_game::renderWorld()
 
 void client_game::postRender()
 {
+    if(input::isKeyJustPressed(GLFW_KEY_F2))
+        screenshots::take();
     if(input::isKeyJustPressed(GLFW_KEY_ESCAPE))
         glfwSetWindowShouldClose(globals::window, GLFW_TRUE);
 }
